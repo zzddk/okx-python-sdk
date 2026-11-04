@@ -5,7 +5,7 @@ These tests do not mock individual client methods. They invoke every public
 method on every *API class, capture the (HTTP method, path) pair that would be
 sent to OKX, and check it against the declared path constants. This is the
 layer that catches a shadowed constant (two names with the same value being
-defined twice) or a method pointing at a path that is not in consts.py.
+defined twice) or a method pointing at a path that is not in okx/consts.
 
 Mirror: okx/*.py -> test/unit/okx/test_contract.py
 """
