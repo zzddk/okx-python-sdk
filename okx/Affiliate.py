@@ -15,66 +15,66 @@ class AffiliateAPI(OkxClient):
         params = {'uid': uid}
         return self._request_with_params(GET, AFFILIATE_TVB_INVITEE_DETAIL, params)
 
-    def get_tvb_invitee_list(self, periodType='', begin='', end='', feeTier=None, tradeType='',
-                             keyword='', orderBy='', orderDir='', page='', limit=''):
+    def get_tvb_invitee_list(self, periodType = None, begin = None, end = None, feeTier = None, tradeType = None,
+                             keyword = None, orderBy = None, orderDir = None, page = None, limit = None):
         params = {}
-        if periodType != '':
+        if periodType is not None:
             params['periodType'] = periodType
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         if feeTier is not None:
             params['feeTier'] = feeTier
-        if tradeType != '':
+        if tradeType is not None:
             params['tradeType'] = tradeType
-        if keyword != '':
+        if keyword is not None:
             params['keyword'] = keyword
-        if orderBy != '':
+        if orderBy is not None:
             params['orderBy'] = orderBy
-        if orderDir != '':
+        if orderDir is not None:
             params['orderDir'] = orderDir
-        if page != '':
+        if page is not None:
             params['page'] = page
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
         return self._request_with_params(GET, AFFILIATE_TVB_INVITEE_LIST, params)
 
-    def get_tvb_link_list(self, periodType='', begin='', end='', page='', limit='',
-                          linkType='', linkStatus=''):
+    def get_tvb_link_list(self, periodType = None, begin = None, end = None, page = None, limit = None,
+                          linkType = None, linkStatus = None):
         params = {}
-        if periodType != '':
+        if periodType is not None:
             params['periodType'] = periodType
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
-        if page != '':
+        if page is not None:
             params['page'] = page
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
-        if linkType != '':
+        if linkType is not None:
             params['linkType'] = linkType
-        if linkStatus != '':
+        if linkStatus is not None:
             params['linkStatus'] = linkStatus
         return self._request_with_params(GET, AFFILIATE_TVB_LINK_LIST, params)
 
-    def get_tvb_performance_summary(self, periodType='', begin='', end=''):
+    def get_tvb_performance_summary(self, periodType = None, begin = None, end = None):
         params = {}
-        if periodType != '':
+        if periodType is not None:
             params['periodType'] = periodType
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         return self._request_with_params(GET, AFFILIATE_TVB_PERFORMANCE_SUMMARY, params)
 
-    def get_tvb_tier_breakdown(self, periodType='', begin='', end=''):
+    def get_tvb_tier_breakdown(self, periodType = None, begin = None, end = None):
         params = {}
-        if periodType != '':
+        if periodType is not None:
             params['periodType'] = periodType
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         return self._request_with_params(GET, AFFILIATE_TVB_TIER_BREAKDOWN, params)

@@ -14,3 +14,7 @@ Release: 0.5.0
 ## 完成标准
 
 同一模块内不再混用两种空值约定；传空串会真的发出空串参数。
+
+## Comments
+
+- 2026-11-05: done in 0.5.0. Every optional REST argument defaults to `None`; `if x:` / `if x != ''` became `if x is not None`. `parse_params_to_str` drops only `None`, keeps `''`, and JSON-encodes list/dict values; POST bodies drop top-level `None` via `utils.drop_none_params`. Also caught a leftover shared `attachAlgoOrds=[]` default in `TradeAPI.place_algo_order` and changed it to `None`.

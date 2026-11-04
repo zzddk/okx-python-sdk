@@ -6,13 +6,13 @@ class FlexibleLoanAPI(OkxClient):
     def borrow_currencies(self):
         return self._request_without_params(GET, FINANCE_BORROW_CURRENCIES)
 
-    def collateral_assets(self, ccy=''):
+    def collateral_assets(self, ccy = None):
         params = {}
-        if ccy != '':
+        if ccy is not None:
             params['ccy'] = ccy
         return self._request_with_params(GET, FINANCE_COLLATERAL_ASSETS, params)
 
-    def max_loan(self, borrowCcy='', supCollateral=None):
+    def max_loan(self, borrowCcy = None, supCollateral = None):
         if supCollateral is None:
             supCollateral = []
         params = {
@@ -21,13 +21,13 @@ class FlexibleLoanAPI(OkxClient):
         }
         return self._request_with_params(POST, FINANCE_MAX_LOAN, params)
 
-    def max_collateral_redeem_amount(self, ccy=''):
+    def max_collateral_redeem_amount(self, ccy = None):
         params = {}
-        if ccy != '':
+        if ccy is not None:
             params['ccy'] = ccy
         return self._request_with_params(GET, FINANCE_MAX_REDEEM, params)
 
-    def adjust_collateral(self, type='', collateralCcy='', collateralAmt=''):
+    def adjust_collateral(self, type = None, collateralCcy = None, collateralAmt = None):
         params = {
             'type': type,
             'collateralCcy': collateralCcy,
@@ -38,40 +38,40 @@ class FlexibleLoanAPI(OkxClient):
     def loan_info(self):
         return self._request_without_params(GET, FINANCE_LOAN_INFO)
 
-    def loan_history(self, type='', after='', before='', limit=''):
+    def loan_history(self, type = None, after = None, before = None, limit = None):
         params = {}
-        if type != '':
+        if type is not None:
             params['type'] = type
-        if after != '':
+        if after is not None:
             params['after'] = after
-        if before != '':
+        if before is not None:
             params['before'] = before
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
         return self._request_with_params(GET, FINANCE_LOAN_HISTORY, params)
 
-    def interest_accrued(self, ccy='', after='', before='', limit=''):
+    def interest_accrued(self, ccy = None, after = None, before = None, limit = None):
         params = {}
-        if ccy != '':
+        if ccy is not None:
             params['ccy'] = ccy
-        if after != '':
+        if after is not None:
             params['after'] = after
-        if before != '':
+        if before is not None:
             params['before'] = before
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
         return self._request_with_params(GET, FINANCE_INTEREST_ACCRUED, params)
 
-    def borrow(self, loanData, clOrdId, ordId='', collateralData=None, eMode=''):
+    def borrow(self, loanData, clOrdId, ordId = None, collateralData = None, eMode = None):
         params = {
             'loanData': loanData,
             'clOrdId': clOrdId,
         }
-        if ordId != '':
+        if ordId is not None:
             params['ordId'] = ordId
         if collateralData is not None:
             params['collateralData'] = collateralData
-        if eMode != '':
+        if eMode is not None:
             params['eMode'] = eMode
         return self._request_with_params(POST, FINANCE_FLEXIBLE_LOAN_BORROW, params)
 

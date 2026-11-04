@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class WsPrivateAsync:
-    def __init__(self, apiKey, passphrase, secretKey, url, useServerTime=None, debug=False):
+    def __init__(self, apiKey, passphrase, secretKey, url, useServerTime = None, debug=False):
         self.url = url
         self.subscriptions = set()
         self.callback = None
@@ -94,7 +94,7 @@ class WsPrivateAsync:
             logger.info(f"unsubscribe: {payload}")
         await self.websocket.send(payload)
 
-    async def send(self, op: str, args: list, callback=None, id: str = None):
+    async def send(self, op: str, args: list, callback = None, id: str = None):
         """
         Generic send method
         :param op: Operation type
@@ -115,7 +115,7 @@ class WsPrivateAsync:
             logger.debug(f"send: {payload}")
         await self.websocket.send(payload)
 
-    async def place_order(self, args: list, callback=None, id: str = None):
+    async def place_order(self, args: list, callback = None, id: str = None):
         """
         Place order
         :param args: Order parameter list
@@ -126,7 +126,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("order", args, id=id)
 
-    async def batch_orders(self, args: list, callback=None, id: str = None):
+    async def batch_orders(self, args: list, callback = None, id: str = None):
         """
         Batch place orders
         :param args: Batch order parameter list
@@ -137,7 +137,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("batch-orders", args, id=id)
 
-    async def cancel_order(self, args: list, callback=None, id: str = None):
+    async def cancel_order(self, args: list, callback = None, id: str = None):
         """
         Cancel order
         :param args: Cancel order parameter list
@@ -148,7 +148,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("cancel-order", args, id=id)
 
-    async def batch_cancel_orders(self, args: list, callback=None, id: str = None):
+    async def batch_cancel_orders(self, args: list, callback = None, id: str = None):
         """
         Batch cancel orders
         :param args: Batch cancel order parameter list
@@ -159,7 +159,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("batch-cancel-orders", args, id=id)
 
-    async def amend_order(self, args: list, callback=None, id: str = None):
+    async def amend_order(self, args: list, callback = None, id: str = None):
         """
         Amend order
         :param args: Amend order parameter list
@@ -170,7 +170,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("amend-order", args, id=id)
 
-    async def batch_amend_orders(self, args: list, callback=None, id: str = None):
+    async def batch_amend_orders(self, args: list, callback = None, id: str = None):
         """
         Batch amend orders
         :param args: Batch amend order parameter list
@@ -181,7 +181,7 @@ class WsPrivateAsync:
             self.callback = callback
         await self.send("batch-amend-orders", args, id=id)
 
-    async def mass_cancel(self, args: list, callback=None, id: str = None):
+    async def mass_cancel(self, args: list, callback = None, id: str = None):
         """
         Mass cancel orders
         Note: This method is for /ws/v5/business channel, rate limit: 1 request/second

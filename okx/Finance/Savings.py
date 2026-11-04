@@ -4,14 +4,14 @@ from okx.consts import *
 
 class SavingsAPI(OkxClient):
     # - Get saving balance
-    def get_saving_balance(self, ccy=''):
+    def get_saving_balance(self, ccy = None):
         params = {
             'ccy': ccy
         }
         return self._request_with_params(GET, GET_SAVING_BALANCE, params)
 
     # - Savings purchase/redemption
-    def savings_purchase_redemption(self, ccy='', amt='', side='', rate=''):
+    def savings_purchase_redemption(self, ccy = None, amt = None, side = None, rate = None):
 
         params = {
             'ccy': ccy,
@@ -22,7 +22,7 @@ class SavingsAPI(OkxClient):
         return self._request_with_params(POST, SAVING_PURCHASE_REDEMPTION, params)
 
     # - Set lending rate
-    def set_lending_rate(self, ccy='', rate=''):
+    def set_lending_rate(self, ccy = None, rate = None):
         params = {
             'ccy': ccy,
             'rate': rate
@@ -30,7 +30,7 @@ class SavingsAPI(OkxClient):
         return self._request_with_params(POST, SET_LENDING_RATE, params)
 
     # - Get lending history
-    def get_lending_history(self, ccy='', after='', before='', limit=''):
+    def get_lending_history(self, ccy = None, after = None, before = None, limit = None):
         params = {
             'ccy': ccy,
             'after': after,
@@ -40,7 +40,7 @@ class SavingsAPI(OkxClient):
         return self._request_with_params(GET, GET_LENDING_HISTORY, params)
 
     # - Get public borrow history (public)
-    def get_public_borrow_history(self, ccy='', after='', before='', limit=''):
+    def get_public_borrow_history(self, ccy = None, after = None, before = None, limit = None):
         params = {
             'ccy': ccy,
             'after': after,
@@ -50,7 +50,7 @@ class SavingsAPI(OkxClient):
         return self._request_with_params(GET, GET_PUBLIC_BORROW_HISTORY, params)
 
     # GET / Public borrow info (public)
-    def get_public_borrow_info(self, ccy=''):
+    def get_public_borrow_info(self, ccy = None):
         params = {
             'ccy': ccy
         }

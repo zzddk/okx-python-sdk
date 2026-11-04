@@ -3,8 +3,8 @@ from .consts import *
 
 
 class GridAPI(OkxClient):
-    def grid_order_algo(self, instId='', algoOrdType='', maxPx='', minPx='', gridNum='', runType='', tpTriggerPx='',
-                        slTriggerPx='', tag='', quoteSz='', baseSz='', sz='', direction='', lever='', basePos='', tradeQuoteCcy=None):
+    def grid_order_algo(self, instId = None, algoOrdType = None, maxPx = None, minPx = None, gridNum = None, runType = None, tpTriggerPx = None,
+                        slTriggerPx = None, tag = None, quoteSz = None, baseSz = None, sz = None, direction = None, lever = None, basePos = None, tradeQuoteCcy = None):
         params = {'instId': instId, 'algoOrdType': algoOrdType, 'maxPx': maxPx, 'minPx': minPx, 'gridNum': gridNum,
                   'runType': runType, 'tpTriggerPx': tpTriggerPx, 'slTriggerPx': slTriggerPx, 'tag': tag,
                   'quoteSz': quoteSz, 'baseSz': baseSz, 'sz': sz, 'direction': direction, 'lever': lever,
@@ -13,44 +13,44 @@ class GridAPI(OkxClient):
             params['tradeQuoteCcy'] = tradeQuoteCcy
         return self._request_with_params(POST, GRID_ORDER_ALGO, params)
 
-    def grid_amend_order_algo(self, algoId='', instId='', slTriggerPx='', tpTriggerPx=''):
+    def grid_amend_order_algo(self, algoId = None, instId = None, slTriggerPx = None, tpTriggerPx = None):
         params = {'algoId': algoId, 'instId': instId, 'slTriggerPx': slTriggerPx, 'tpTriggerPx': tpTriggerPx}
         return self._request_with_params(POST, GRID_AMEND_ORDER_ALGO, params)
 
-    def grid_stop_order_algo(self, algoId='', instId='', algoOrdType='', stopType=''):
+    def grid_stop_order_algo(self, algoId = None, instId = None, algoOrdType = None, stopType = None):
         params = [{'algoId': algoId, 'instId': instId, 'algoOrdType': algoOrdType, 'stopType': stopType}]
         return self._request_with_params(POST, GRID_STOP_ORDER_ALGO, params)
 
-    def grid_orders_algo_pending(self, algoOrdType='', algoId='', instId='', instType='', after='', before='',
-                                 limit='', instFamily = ''):
+    def grid_orders_algo_pending(self, algoOrdType = None, algoId = None, instId = None, instType = None, after = None, before = None,
+                                 limit = None, instFamily = None):
         params = {'algoOrdType': algoOrdType, 'algoId': algoId, 'instId': instId, 'instType': instType, 'after': after,
                   'before': before, 'limit': limit,'instFamily':instFamily}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_PENDING, params)
 
-    def grid_orders_algo_history(self, algoOrdType='', algoId='', instId='', instType='', after='', before='',
-                                 limit='',instFamily = ''):
+    def grid_orders_algo_history(self, algoOrdType = None, algoId = None, instId = None, instType = None, after = None, before = None,
+                                 limit = None,instFamily = None):
         params = {'algoOrdType': algoOrdType, 'algoId': algoId, 'instId': instId, 'instType': instType, 'after': after,
                   'before': before, 'limit': limit,'instFamily':instFamily}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_HISTORY, params)
 
-    def grid_orders_algo_details(self, algoOrdType='', algoId=''):
+    def grid_orders_algo_details(self, algoOrdType = None, algoId = None):
         params = {'algoOrdType': algoOrdType, 'algoId': algoId}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_DETAILS, params)
 
-    def grid_sub_orders(self, algoId='', algoOrdType='', type='', groupId='', after='', before='', limit=''):
+    def grid_sub_orders(self, algoId = None, algoOrdType = None, type = None, groupId = None, after = None, before = None, limit = None):
         params = {'algoId': algoId, 'algoOrdType': algoOrdType, 'type': type, 'groupId': groupId, 'after': after,
                   'before': before, 'limit': limit}
         return self._request_with_params(GET, GRID_SUB_ORDERS, params)
 
-    def grid_positions(self, algoOrdType='', algoId=''):
+    def grid_positions(self, algoOrdType = None, algoId = None):
         params = {'algoOrdType': algoOrdType, 'algoId': algoId}
         return self._request_with_params(GET, GRID_POSITIONS, params)
 
-    def grid_withdraw_income(self, algoId=''):
+    def grid_withdraw_income(self, algoId = None):
         params = {'algoId': algoId}
         return self._request_with_params(POST, GRID_WITHDRAW_INCOME, params)
 
-    def grid_compute_margin_balance(self, algoId='', type='', amt=''):
+    def grid_compute_margin_balance(self, algoId = None, type = None, amt = None):
         params = {
             'algoId': algoId,
             'type': type,
@@ -58,7 +58,7 @@ class GridAPI(OkxClient):
         }
         return self._request_with_params(POST, GRID_COMPUTE_MARGIN_BALANCE, params)
 
-    def grid_adjust_margin_balance(self, algoId='', type='', amt='', percent=''):
+    def grid_adjust_margin_balance(self, algoId = None, type = None, amt = None, percent = None):
         params = {
             'algoId': algoId,
             'type': type,
@@ -67,7 +67,7 @@ class GridAPI(OkxClient):
         }
         return self._request_with_params(POST, GRID_MARGIN_BALANCE, params)
 
-    def grid_ai_param(self, algoOrdType='', instId='', direction='', duration=''):
+    def grid_ai_param(self, algoOrdType = None, instId = None, direction = None, duration = None):
         params = {
             'algoOrdType': algoOrdType,
             'instId': instId,
@@ -77,8 +77,8 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GRID_AI_PARAM, params)
 
     # - Place recurring buy order
-    def place_recurring_buy_order(self, stgyName='', recurringList=None, period='', recurringDay='', recurringTime='',
-                                  timeZone='', amt='', investmentCcy='', tdMode='', algoClOrdId='', tag='', tradeQuoteCcy=None):
+    def place_recurring_buy_order(self, stgyName = None, recurringList = None, period = None, recurringDay = None, recurringTime = None,
+                                  timeZone = None, amt = None, investmentCcy = None, tdMode = None, algoClOrdId = None, tag = None, tradeQuoteCcy = None):
         if recurringList is None:
             recurringList = []
         params = {'stgyName': stgyName, 'recurringList': recurringList, 'period': period, 'recurringDay': recurringDay,
@@ -90,7 +90,7 @@ class GridAPI(OkxClient):
         return self._request_with_params(POST, PLACE_RECURRING_BUY_ORDER, params)
 
     # - Amend recurring buy order
-    def amend_recurring_buy_order(self, algoId='', stgyName=''):
+    def amend_recurring_buy_order(self, algoId = None, stgyName = None):
         params = {'algoId': algoId, 'stgyName': stgyName}
         return self._request_with_params(POST, AMEND_RECURRING_BUY_ORDER, params)
 
@@ -99,7 +99,7 @@ class GridAPI(OkxClient):
         return self._request_with_params(POST, STOP_RECURRING_BUY_ORDER, orders_data)
 
     # - Get recurring buy order list
-    def get_recurring_buy_order_list(self, algoId='', after='', before='', limit=''):
+    def get_recurring_buy_order_list(self, algoId = None, after = None, before = None, limit = None):
         params = {
             'algoId': algoId,
             'after': after,
@@ -109,7 +109,7 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_LIST, params)
 
     # - Get recurring buy order history
-    def get_recurring_buy_order_history(self, algoId='', after='', before='', limit=''):
+    def get_recurring_buy_order_history(self, algoId = None, after = None, before = None, limit = None):
         params = {
             'algoId': algoId,
             'after': after,
@@ -119,12 +119,12 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_HISTORY, params)
 
     # - Get recurring buy order details
-    def get_recurring_buy_order_details(self, algoId=''):
+    def get_recurring_buy_order_details(self, algoId = None):
         params = {'algoId': algoId}
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_DETAILS, params)
 
     # - Get recurring buy sub orders
-    def get_recurring_buy_sub_orders(self, algoId='', ordId='', after='', before='', limit=''):
+    def get_recurring_buy_sub_orders(self, algoId = None, ordId = None, after = None, before = None, limit = None):
         params = {
             'algoId': algoId,
             'ordId': ordId,

@@ -40,11 +40,11 @@ class TestEthCancelRedeem(unittest.TestCase):
 
     @patch.object(EthStakingAPI, '_request_with_params')
     def test_eth_cancel_redeem_default_ordid(self, mock_request):
-        # additive/back-compat: ordId defaults to '' like eth_purchase/eth_redeem
+        # ordId defaults to None: the key is omitted from the request body
         mock_request.return_value = {'code': '0'}
         self.api.eth_cancel_redeem()
         mock_request.assert_called_once_with(
-            c.POST, c.STACK_ETH_CANCEL_REDEEM, {'ordId': ''})
+            c.POST, c.STACK_ETH_CANCEL_REDEEM, {'ordId': None})
 
 
 if __name__ == "__main__":

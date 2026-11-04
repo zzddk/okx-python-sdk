@@ -7,25 +7,25 @@ class SubAccountAPI(OkxClient):
         params = {"subAcct": subAcct}
         return self._request_with_params(GET, BALANCE, params)
 
-    def bills(self, ccy='', type='', subAcct='', after='', before='', limit=''):
+    def bills(self, ccy = None, type = None, subAcct = None, after = None, before = None, limit = None):
         params = {"ccy": ccy, 'type': type, 'subAcct': subAcct, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, SUBACCOUNT_BILLS, params)
 
 
-    def reset_subaccount_apikey(self, subAcct,apiKey, label='', perm='', ip='-1'):
+    def reset_subaccount_apikey(self, subAcct,apiKey, label = None, perm = None, ip='-1'):
         params = {'subAcct': subAcct, 'apiKey': apiKey}
 
         if ip != '-1':
             params['ip'] = ip
-        if label != '':
+        if label is not None:
             params['label'] = label
-        if perm != '':
+        if perm is not None:
             params['perm'] = perm
         #params = {'subAcct': subAcct, 'label': label, 'apiKey': apiKey, 'perm': perm, 'ip': ip}
         return self._request_with_params(POST, RESET, params)
 
 
-    def get_subaccount_list(self, enable='', subAcct='', after='', before='', limit=''):
+    def get_subaccount_list(self, enable = None, subAcct = None, after = None, before = None, limit = None):
         params = {'enable': enable, 'subAcct': subAcct, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, VIEW_LIST, params)
 
@@ -34,14 +34,14 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, SUBACCOUNT_TRANSFER, params)
 
     #GET /api/v5/users/entrust-subaccount-list
-    def get_entrust_subaccount_list(self,subAcct = ''):
+    def get_entrust_subaccount_list(self,subAcct = None):
         params = {
             'subAcct':subAcct
         }
         return self._request_with_params(GET, ENTRUST_SUBACCOUNT_LIST, params)
 
     #POST /api/v5/users/subaccount/set-transfer-out
-    def set_permission_transfer_out(self,subAcct = '',canTransOut = ''):
+    def set_permission_transfer_out(self,subAcct = None,canTransOut = None):
         params = {
             'subAcct':subAcct,
             'canTransOut':canTransOut
@@ -49,7 +49,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, SET_TRANSFER_OUT, params)
 
     #GET /api/v5/asset/subaccount/balances
-    def get_funding_balance(self,subAcct='',ccy=''):
+    def get_funding_balance(self,subAcct = None,ccy = None):
         params = {
             'subAcct':subAcct,
             'ccy':ccy
@@ -57,7 +57,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(GET, GET_ASSET_SUBACCOUNT_BALANCE, params)
 
     # - Set sub_accounts VIP loan%
-    def set_sub_accounts_vip_loan(self, enable='', alloc=None):
+    def set_sub_accounts_vip_loan(self, enable = None, alloc = None):
         if alloc is None:
             alloc = []
         params = {
@@ -67,7 +67,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, SET_SUB_ACCOUNTS_VIP_LOAN, params)
 
     # - Get sub_account borrow interest and limit
-    def get_sub_account_borrow_interest_and_limit(self, subAcct='', ccy=''):
+    def get_sub_account_borrow_interest_and_limit(self, subAcct = None, ccy = None):
         params = {
             'subAcct': subAcct,
             'ccy': ccy

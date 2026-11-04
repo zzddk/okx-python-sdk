@@ -29,7 +29,7 @@ class TestGetRpiOrderbook(unittest.TestCase):
         mock_request.return_value = {'code': '0'}
         self.api.get_rpi_orderbook(instId='BTC-USDT-SWAP')
         mock_request.assert_called_once_with(
-            c.GET, c.MARKET_BOOKS_RPI, {'instId': 'BTC-USDT-SWAP', 'sz': ''})
+            c.GET, c.MARKET_BOOKS_RPI, {'instId': 'BTC-USDT-SWAP', 'sz': None})
 
     @patch.object(MarketAPI, '_request_with_params')
     def test_get_rpi_orderbook_with_sz(self, mock_request):

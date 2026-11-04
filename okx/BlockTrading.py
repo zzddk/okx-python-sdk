@@ -7,8 +7,8 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self._request_with_params(GET, COUNTERPARTIES, params)
 
-    def create_rfq(self, counterparties=None, anonymous='false', clRfqId='', tag='', allowPartialExecution='false',
-                   legs=None):
+    def create_rfq(self, counterparties = None, anonymous='false', clRfqId = None, tag = None, allowPartialExecution='false',
+                   legs = None):
         if counterparties is None:
             counterparties = []
         if legs is None:
@@ -17,11 +17,11 @@ class BlockTradingAPI(OkxClient):
                   'allowPartialExecution': allowPartialExecution, 'legs': legs}
         return self._request_with_params(POST, CREATE_RFQ, params)
 
-    def cancel_rfq(self, rfqId = '', clRfqId = ''):
+    def cancel_rfq(self, rfqId = None, clRfqId = None):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId}
         return self._request_with_params(POST, CANCEL_RFQ, params)
 
-    def cancel_batch_rfqs(self, rfqIds=None, clRfqIds=None):
+    def cancel_batch_rfqs(self, rfqIds = None, clRfqIds = None):
         if rfqIds is None:
             rfqIds = []
         if clRfqIds is None:
@@ -33,24 +33,24 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self._request_with_params(POST, CANCEL_ALL_RFQS, params)
 
-    def execute_quote(self, rfqId='', quoteId='', legs=None):
+    def execute_quote(self, rfqId = None, quoteId = None, legs = None):
         if legs is None:
             legs = []
         params = {'rfqId': rfqId, 'quoteId': quoteId, 'legs': legs}
         return self._request_with_params(POST, EXECUTE_QUOTE, params)
 
-    def create_quote(self, rfqId='', clQuoteId='', tag='', quoteSide='', legs=None, anonymous=False, expiresIn=''):
+    def create_quote(self, rfqId = None, clQuoteId = None, tag = None, quoteSide = None, legs = None, anonymous=False, expiresIn = None):
         if legs is None:
             legs = []
         params = {'rfqId': rfqId, 'clQuoteId': clQuoteId, 'tag': tag, 'quoteSide': quoteSide, 'legs': legs,
                   'anonymous': anonymous, 'expiresIn': expiresIn}
         return self._request_with_params(POST, CREATE_QUOTE, params)
 
-    def cancel_quote(self, quoteId  = '', clQuoteId = ''):
+    def cancel_quote(self, quoteId = None, clQuoteId = None):
         params = {'quoteId': quoteId, 'clQuoteId': clQuoteId}
         return self._request_with_params(POST, CANCEL_QUOTE, params)
 
-    def cancel_batch_quotes(self, quoteIds='', clQuoteIds=''):
+    def cancel_batch_quotes(self, quoteIds = None, clQuoteIds = None):
         params = {'quoteIds': quoteIds, 'clQuoteIds': clQuoteIds}
         return self._request_with_params(POST, CANCEL_BATCH_QUOTES, params)
 
@@ -58,21 +58,21 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self._request_with_params(POST, CANCEL_ALL_QUOTES, params)
 
-    def get_rfqs(self, rfqId = '', clRfqId = '',  state = '', beginId = '', endId = '', limit = ''):
+    def get_rfqs(self, rfqId = None, clRfqId = None,  state = None, beginId = None, endId = None, limit = None):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId, 'state': state, 'beginId': beginId, 'endId': endId, 'limit':limit}
         return self._request_with_params(GET, GET_RFQS, params)
 
-    def get_quotes(self, rfqId = '', clRfqId = '', quoteId = '', clQuoteId = '', state = '', beginId = '', endId = '', limit = ''):
+    def get_quotes(self, rfqId = None, clRfqId = None, quoteId = None, clQuoteId = None, state = None, beginId = None, endId = None, limit = None):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId, 'quoteId':quoteId,'clQuoteId':clQuoteId, 'state': state, 'beginId': beginId, 'endId': endId, 'limit':limit}
         return self._request_with_params(GET, GET_QUOTES, params)
 
-    def get_trades(self, rfqId='', clRfqId='', quoteId='', clQuoteId='', state='', beginId='', endId='', beginTs='',
-                   endTs='', limit=''):
+    def get_trades(self, rfqId = None, clRfqId = None, quoteId = None, clQuoteId = None, state = None, beginId = None, endId = None, beginTs = None,
+                   endTs = None, limit = None):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId, 'quoteId': quoteId, 'clQuoteId': clQuoteId, 'state': state,
                   'beginId': beginId, 'endId': endId, 'beginTs': beginTs, 'endTs': endTs, 'limit': limit}
         return self._request_with_params(GET, GET_RFQ_TRADES, params)
 
-    def get_public_trades(self, beginId = '', endId = '', limit = ''):
+    def get_public_trades(self, beginId = None, endId = None, limit = None):
         params = {'beginId': beginId, 'endId': endId, 'limit': limit}
         return self._request_with_params(GET, GET_PUBLIC_TRADES, params)
 

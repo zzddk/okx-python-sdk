@@ -93,7 +93,7 @@ class WsPublicAsync:
             logger.info(f"unsubscribe: {payload}")
         await self.websocket.send(payload)
 
-    async def send(self, op: str, args: list, callback=None, id: str = None):
+    async def send(self, op: str, args: list, callback = None, id: str = None):
         """
         Generic send method
         :param op: Operation type

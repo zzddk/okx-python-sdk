@@ -10,7 +10,7 @@ class SolStakingAPI(OkxClient):
         }
         return self._request_with_params(POST, STACK_SOL_PURCHASE, params)
 
-    def sol_redeem(self, amt=''):
+    def sol_redeem(self, amt = None):
 
         params = {
             'amt': amt,
@@ -22,18 +22,18 @@ class SolStakingAPI(OkxClient):
         params = {}
         return self._request_with_params(GET, STACK_SOL_BALANCE, params)
 
-    def sol_purchase_redeem_history(self, type='', status='', after='', before='', limit=''):
+    def sol_purchase_redeem_history(self, type = None, status = None, after = None, before = None, limit = None):
 
         params = {}
-        if type != '':
+        if type is not None:
             params['type'] = type
-        if status != '':
+        if status is not None:
             params['status'] = status
-        if after != '':
+        if after is not None:
             params['after'] = after
-        if before != '':
+        if before is not None:
             params['before'] = before
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
         return self._request_with_params(GET, STACK_SOL_PURCHASE_REDEEM_HISTORY, params)
 

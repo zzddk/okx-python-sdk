@@ -7,9 +7,9 @@ from .consts import *
 class TradeAPI(OkxClient):
 
     # Place Order
-    def place_order(self, instId, tdMode, side, ordType, sz, ccy='', clOrdId='', tag='', posSide='', px='',  # NOSONAR - public OKX v5 place-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
-                    reduceOnly='', tgtCcy='', stpMode='', attachAlgoOrds=None, pxUsd='', pxVol='', banAmend='', tradeQuoteCcy=None, pxAmendType=None,
-                    isElpTakerAccess=None, instIdCode=None):
+    def place_order(self, instId, tdMode, side, ordType, sz, ccy = None, clOrdId = None, tag = None, posSide = None, px = None,  # NOSONAR - public OKX v5 place-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
+                    reduceOnly = None, tgtCcy = None, stpMode = None, attachAlgoOrds = None, pxUsd = None, pxVol = None, banAmend = None, tradeQuoteCcy = None, pxAmendType = None,
+                    isElpTakerAccess = None, instIdCode = None):
         params = {'instId': instId, 'tdMode': tdMode, 'side': side, 'ordType': ordType, 'sz': sz, 'ccy': ccy,
                   'clOrdId': clOrdId, 'tag': tag, 'posSide': posSide, 'px': px, 'reduceOnly': reduceOnly,
                   'tgtCcy': tgtCcy, 'stpMode': stpMode, 'pxUsd': pxUsd, 'pxVol': pxVol, 'banAmend': banAmend}
@@ -29,7 +29,7 @@ class TradeAPI(OkxClient):
         return self._request_with_params(POST, BATCH_ORDERS, orders_data)
 
     # Cancel Order
-    def cancel_order(self, instId, ordId='', clOrdId=''):
+    def cancel_order(self, instId, ordId = None, clOrdId = None):
         params = {'instId': instId, 'ordId': ordId, 'clOrdId': clOrdId}
         return self._request_with_params(POST, CANCEL_ORDER, params)
 
@@ -38,10 +38,10 @@ class TradeAPI(OkxClient):
         return self._request_with_params(POST, CANCEL_BATCH_ORDERS, orders_data)
 
     # Amend Order
-    def amend_order(self, instId, cxlOnFail='', ordId='', clOrdId='', reqId='', newSz='', newPx='', newTpTriggerPx='',  # NOSONAR - public OKX v5 amend-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
-                    newTpOrdPx='', newSlTriggerPx='', newSlOrdPx='', newTpTriggerPxType='', newSlTriggerPxType='',
-                    attachAlgoOrds='', newTriggerPx='', newOrdPx='', pxAmendType=None,
-                    newTpTriggerRatio=None, newSlTriggerRatio=None):
+    def amend_order(self, instId, cxlOnFail = None, ordId = None, clOrdId = None, reqId = None, newSz = None, newPx = None, newTpTriggerPx = None,  # NOSONAR - public OKX v5 amend-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
+                    newTpOrdPx = None, newSlTriggerPx = None, newSlOrdPx = None, newTpTriggerPxType = None, newSlTriggerPxType = None,
+                    attachAlgoOrds = None, newTriggerPx = None, newOrdPx = None, pxAmendType = None,
+                    newTpTriggerRatio = None, newSlTriggerRatio = None):
         params = {'instId': instId, 'cxlOnFail': cxlOnFail, 'ordId': ordId, 'clOrdId': clOrdId, 'reqId': reqId,
                   'newSz': newSz, 'newPx': newPx, 'newTpTriggerPx': newTpTriggerPx, 'newTpOrdPx': newTpOrdPx,
                   'newSlTriggerPx': newSlTriggerPx, 'newSlOrdPx': newSlOrdPx, 'newTpTriggerPxType': newTpTriggerPxType,
@@ -60,56 +60,56 @@ class TradeAPI(OkxClient):
         return self._request_with_params(POST, AMEND_BATCH_ORDER, orders_data)
 
     # Close Positions
-    def close_positions(self, instId, mgnMode, posSide='', ccy='', autoCxl='', clOrdId='', tag=''):
+    def close_positions(self, instId, mgnMode, posSide = None, ccy = None, autoCxl = None, clOrdId = None, tag = None):
         params = {'instId': instId, 'mgnMode': mgnMode, 'posSide': posSide, 'ccy': ccy, 'autoCxl': autoCxl,
                   'clOrdId': clOrdId, 'tag': tag}
         return self._request_with_params(POST, CLOSE_POSITION, params)
 
     # Get Order Details
-    def get_order(self, instId, ordId='', clOrdId=''):
+    def get_order(self, instId, ordId = None, clOrdId = None):
         params = {'instId': instId, 'ordId': ordId, 'clOrdId': clOrdId}
         return self._request_with_params(GET, ORDER_INFO, params)
 
     # Get Order List
-    def get_order_list(self, instType='', uly='', instId='', ordType='', state='', after='', before='', limit='',
-                       instFamily=''):
+    def get_order_list(self, instType = None, uly = None, instId = None, ordType = None, state = None, after = None, before = None, limit = None,
+                       instFamily = None):
         params = {'instType': instType, 'uly': uly, 'instId': instId, 'ordType': ordType, 'state': state,
                   'after': after, 'before': before, 'limit': limit, 'instFamily': instFamily}
         return self._request_with_params(GET, ORDERS_PENDING, params)
 
     # Get Order History (last 7 days）
-    def get_orders_history(self, instType, uly='', instId='', ordType='', state='', after='', before='', begin='',
-                           end='', limit='', instFamily=''):
+    def get_orders_history(self, instType, uly = None, instId = None, ordType = None, state = None, after = None, before = None, begin = None,
+                           end = None, limit = None, instFamily = None):
         params = {'instType': instType, 'uly': uly, 'instId': instId, 'ordType': ordType, 'state': state,
                   'after': after, 'before': before, 'begin': begin, 'end': end, 'limit': limit,
                   'instFamily': instFamily}
         return self._request_with_params(GET, ORDERS_HISTORY, params)
 
     # Get Order History (last 3 months)
-    def get_orders_history_archive(self, instType, uly='', instId='', ordType='', state='', after='', before='',
-                                   begin='', end='', limit='', instFamily=''):
+    def get_orders_history_archive(self, instType, uly = None, instId = None, ordType = None, state = None, after = None, before = None,
+                                   begin = None, end = None, limit = None, instFamily = None):
         params = {'instType': instType, 'uly': uly, 'instId': instId, 'ordType': ordType, 'state': state,
                   'after': after, 'before': before, 'begin': begin, 'end': end, 'limit': limit,
                   'instFamily': instFamily}
         return self._request_with_params(GET, ORDERS_HISTORY_ARCHIVE, params)
 
     # Get Transaction Details
-    def get_fills(self, instType='', uly='', instId='', ordId='', after='', before='', limit='', instFamily='',begin='',end=''):
+    def get_fills(self, instType = None, uly = None, instId = None, ordId = None, after = None, before = None, limit = None, instFamily = None,begin = None,end = None):
         params = {'instType': instType, 'uly': uly, 'instId': instId, 'ordId': ordId, 'after': after, 'before': before,
                   'limit': limit, 'instFamily': instFamily,'begin': begin, 'end' :end}
         return self._request_with_params(GET, ORDER_FILLS, params)
 
     # Place Algo Order
-    def place_algo_order(self, instId='', tdMode='', side='', ordType='', sz='', ccy='',  # NOSONAR - public OKX v5 place-algo-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
-                         posSide='', reduceOnly='', tpTriggerPx='',
-                         tpOrdPx='', slTriggerPx='', slOrdPx='',
-                         triggerPx='', orderPx='', tgtCcy='', pxVar='',
-                         pxSpread='',
-                         szLimit='', pxLimit='', timeInterval='', tpTriggerPxType='', slTriggerPxType='',
-                         callbackRatio='', callbackSpread='', activePx='', tag='', triggerPxType='', closeFraction=''
-                         , quickMgnType='', algoClOrdId='', tradeQuoteCcy=None, tpOrdKind='', cxlOnClosePos=''
-                         , chaseType='', chaseVal='', maxChaseType='', maxChaseVal='', attachAlgoOrds=[], pxAmendType=None
-                         , advanceOrdType=None, tpTriggerRatio=None, slTriggerRatio=None):
+    def place_algo_order(self, instId = None, tdMode = None, side = None, ordType = None, sz = None, ccy = None,  # NOSONAR - public OKX v5 place-algo-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
+                         posSide = None, reduceOnly = None, tpTriggerPx = None,
+                         tpOrdPx = None, slTriggerPx = None, slOrdPx = None,
+                         triggerPx = None, orderPx = None, tgtCcy = None, pxVar = None,
+                         pxSpread = None,
+                         szLimit = None, pxLimit = None, timeInterval = None, tpTriggerPxType = None, slTriggerPxType = None,
+                         callbackRatio = None, callbackSpread = None, activePx = None, tag = None, triggerPxType = None, closeFraction = None
+                         , quickMgnType = None, algoClOrdId = None, tradeQuoteCcy = None, tpOrdKind = None, cxlOnClosePos = None
+                         , chaseType = None, chaseVal = None, maxChaseType = None, maxChaseVal = None, attachAlgoOrds = None, pxAmendType = None
+                         , advanceOrdType = None, tpTriggerRatio = None, slTriggerRatio = None):
         params = {'instId': instId, 'tdMode': tdMode, 'side': side, 'ordType': ordType, 'sz': sz, 'ccy': ccy,
                   'posSide': posSide, 'reduceOnly': reduceOnly, 'tpTriggerPx': tpTriggerPx, 'tpOrdPx': tpOrdPx,
                   'slTriggerPx': slTriggerPx, 'slOrdPx': slOrdPx, 'triggerPx': triggerPx, 'orderPx': orderPx,
@@ -134,7 +134,7 @@ class TradeAPI(OkxClient):
         return self._request_with_params(POST, PLACE_ALGO_ORDER, params)
 
     # Cancel Algo Order
-    def cancel_algo_order(self, orders_data=None, params=None):
+    def cancel_algo_order(self, orders_data = None, params = None):
         """
         Cancel algo orders — POST /api/v5/trade/cancel-algos.
 
@@ -148,19 +148,19 @@ class TradeAPI(OkxClient):
         return self._request_with_params(POST, CANCEL_ALGOS, data)
 
     # Get Algo Order List
-    def order_algos_list(self, ordType='', algoId='', instType='', instId='', after='', before='', limit=''):
+    def order_algos_list(self, ordType = None, algoId = None, instType = None, instId = None, after = None, before = None, limit = None):
         params = {'ordType': ordType, 'algoId': algoId, 'instType': instType, 'instId': instId, 'after': after,
                   'before': before, 'limit': limit}
         return self._request_with_params(GET, ORDERS_ALGO_PENDING, params)
 
     # Get Algo Order History
-    def order_algos_history(self, ordType, state='', algoId='', instType='', instId='', after='', before='', limit=''):
+    def order_algos_history(self, ordType, state = None, algoId = None, instType = None, instId = None, after = None, before = None, limit = None):
         params = {'ordType': ordType, 'state': state, 'algoId': algoId, 'instType': instType, 'instId': instId,
                   'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, ORDERS_ALGO_HISTORY, params)
 
     # Get Transaction Details History
-    def get_fills_history(self, instType, uly='', instId='', ordId='', after='', before='', limit='', instFamily=''):
+    def get_fills_history(self, instType, uly = None, instId = None, ordId = None, after = None, before = None, limit = None, instFamily = None):
         params = {'instType': instType, 'uly': uly, 'instId': instId, 'ordId': ordId, 'after': after, 'before': before,
                   'limit': limit, 'instFamily': instFamily}
         return self._request_with_params(GET, ORDERS_FILLS_HISTORY, params)
@@ -168,7 +168,7 @@ class TradeAPI(OkxClient):
     def get_easy_convert_currency_list(self):
         return self._request_without_params(GET, EASY_CONVERT_CURRENCY_LIST)
 
-    def easy_convert(self, fromCcy=None, toCcy=''):
+    def easy_convert(self, fromCcy = None, toCcy = None):
         if fromCcy is None:
             fromCcy = []
         params = {
@@ -177,7 +177,7 @@ class TradeAPI(OkxClient):
         }
         return self._request_with_params(POST, EASY_CONVERT, params)
 
-    def get_easy_convert_history(self, before='', after='', limit=''):
+    def get_easy_convert_history(self, before = None, after = None, limit = None):
         params = {
             'before': before,
             'after': after,
@@ -185,13 +185,13 @@ class TradeAPI(OkxClient):
         }
         return self._request_with_params(GET, CONVERT_EASY_HISTORY, params)
 
-    def get_oneclick_repay_list(self, debtType=''):
+    def get_oneclick_repay_list(self, debtType = None):
         params = {
             'debtType': debtType
         }
         return self._request_with_params(GET, ONE_CLICK_REPAY_SUPPORT, params)
 
-    def oneclick_repay(self, debtCcy=None, repayCcy=''):
+    def oneclick_repay(self, debtCcy = None, repayCcy = None):
         if debtCcy is None:
             debtCcy = []
         params = {
@@ -200,7 +200,7 @@ class TradeAPI(OkxClient):
         }
         return self._request_with_params(POST, ONE_CLICK_REPAY, params)
 
-    def oneclick_repay_history(self, after='', before='', limit=''):
+    def oneclick_repay_history(self, after = None, before = None, limit = None):
         params = {
             'after': after,
             'before': before,
@@ -209,14 +209,14 @@ class TradeAPI(OkxClient):
         return self._request_with_params(GET, ONE_CLICK_REPAY_HISTORY, params)
 
     # Get algo order details
-    def get_algo_order_details(self, algoId='', algoClOrdId=''):
+    def get_algo_order_details(self, algoId = None, algoClOrdId = None):
         params = {'algoId': algoId, 'algoClOrdId': algoClOrdId}
         return self._request_with_params(GET, GET_ALGO_ORDER_DETAILS, params)
 
     # Amend algo order
-    def amend_algo_order(self, instId='', algoId='', algoClOrdId='', cxlOnFail='', reqId='', newSz='', newTriggerPx='', newOrdPx='',
-                         newTpTriggerPx='', newTpOrdPx='', newSlTriggerPx='', newSlOrdPx='', newTpTriggerPxType='',
-                         newSlTriggerPxType=''):
+    def amend_algo_order(self, instId = None, algoId = None, algoClOrdId = None, cxlOnFail = None, reqId = None, newSz = None, newTriggerPx = None, newOrdPx = None,
+                         newTpTriggerPx = None, newTpOrdPx = None, newSlTriggerPx = None, newSlOrdPx = None, newTpTriggerPxType = None,
+                         newSlTriggerPxType = None):
         params = {'instId': instId, 'algoId': algoId, 'algoClOrdId': algoClOrdId, 'cxlOnFail': cxlOnFail,
                   'reqId': reqId, 'newSz': newSz, 'newTriggerPx': newTriggerPx, 'newOrdPx': newOrdPx, 'newTpTriggerPx': newTpTriggerPx, 'newTpOrdPx': newTpOrdPx,
                   'newSlTriggerPx': newSlTriggerPx, 'newSlOrdPx': newSlOrdPx,
@@ -226,7 +226,7 @@ class TradeAPI(OkxClient):
     def get_oneclick_repay_list_v2(self):
         return self._request_without_params(GET, ONE_CLICK_REPAY_SUPPORT_V2)
 
-    def oneclick_repay_v2(self, debtCcy='', repayCcyList=None):
+    def oneclick_repay_v2(self, debtCcy = None, repayCcyList = None):
         if repayCcyList is None:
             repayCcyList = []
         params = {
@@ -235,7 +235,7 @@ class TradeAPI(OkxClient):
         }
         return self._request_with_params(POST, ONE_CLICK_REPAY_V2, params)
 
-    def oneclick_repay_history_v2(self, after='', before='', limit=''):
+    def oneclick_repay_history_v2(self, after = None, before = None, limit = None):
         params = {
             'after': after,
             'before': before,

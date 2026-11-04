@@ -588,8 +588,8 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
         expected_params = {
             'instId': 'BTC-USDT',
             'tdMode': 'cash',
-            'ccy': '',
-            'px': ''
+            'ccy': None,
+            'px': None
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_TRADE_SIZE, expected_params)
         self.assertEqual(result, mock_response)
@@ -609,8 +609,8 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
         expected_params = {
             'instId': 'BTC-USD',
             'tdMode': 'cash',
-            'ccy': '',
-            'px': '',
+            'ccy': None,
+            'px': None,
             'tradeQuoteCcy': 'USDC'
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_TRADE_SIZE, expected_params)
@@ -656,10 +656,10 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
         expected_params = {
             'instId': 'BTC-USDT',
             'tdMode': 'cash',
-            'ccy': '',
-            'reduceOnly': '',
-            'unSpotOffset': '',
-            'quickMgnType': ''
+            'ccy': None,
+            'reduceOnly': None,
+            'unSpotOffset': None,
+            'quickMgnType': None
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_AVAIL_SIZE, expected_params)
         self.assertEqual(result, mock_response)
@@ -679,10 +679,10 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
         expected_params = {
             'instId': 'BTC-USD',
             'tdMode': 'cash',
-            'ccy': '',
-            'reduceOnly': '',
-            'unSpotOffset': '',
-            'quickMgnType': '',
+            'ccy': None,
+            'reduceOnly': None,
+            'unSpotOffset': None,
+            'quickMgnType': None,
             'tradeQuoteCcy': 'USDC'
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_AVAIL_SIZE, expected_params)
@@ -723,9 +723,9 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         result = self.account_api.get_account_bills()
 
         expected_params = {
-            'instType': '', 'ccy': '', 'mgnMode': '', 'ctType': '', 'type': '',
-            'subType': '', 'after': '', 'before': '', 'limit': '',
-            'begin': '', 'end': ''
+            'instType': None, 'ccy': None, 'mgnMode': None, 'ctType': None, 'type': None,
+            'subType': None, 'after': None, 'before': None, 'limit': None,
+            'begin': None, 'end': None
         }
         mock_request.assert_called_once_with(c.GET, c.BILLS_DETAIL, expected_params)
         self.assertEqual(result, mock_response)
@@ -741,8 +741,8 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         )
 
         expected_params = {
-            'instType': 'SWAP', 'ccy': '', 'mgnMode': '', 'ctType': '', 'type': '',
-            'subType': '', 'after': '', 'before': '', 'limit': '',
+            'instType': 'SWAP', 'ccy': None, 'mgnMode': None, 'ctType': None, 'type': None,
+            'subType': None, 'after': None, 'before': None, 'limit': None,
             'begin': '1597026383085', 'end': '1597026683085'
         }
         mock_request.assert_called_once_with(c.GET, c.BILLS_DETAIL, expected_params)
@@ -761,8 +761,8 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         self.assertEqual(call_args['ccy'], 'BTC')
         self.assertEqual(call_args['limit'], '10')
         # New params default to empty -> identical request to today
-        self.assertEqual(call_args['begin'], '')
-        self.assertEqual(call_args['end'], '')
+        self.assertEqual(call_args['begin'], None)
+        self.assertEqual(call_args['end'], None)
 
     @patch.object(AccountAPI, '_request_with_params')
     def test_get_account_bills_mirrors_archive_param_keys(self, mock_request):

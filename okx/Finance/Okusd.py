@@ -14,44 +14,44 @@ class OkusdAPI(OkxClient):
     def get_account(self):
         return self._request_without_params(GET, OKUSD_ACCOUNT)
 
-    def get_rate_history(self, limit='', begin='', end=''):
+    def get_rate_history(self, limit = None, begin = None, end = None):
         params = {}
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         return self._request_with_params(GET, OKUSD_RATE_HISTORY, params)
 
-    def get_subscribe_history(self, limit='', begin='', end=''):
+    def get_subscribe_history(self, limit = None, begin = None, end = None):
         params = {}
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         return self._request_with_params(GET, OKUSD_SUBSCRIBE_HISTORY, params)
 
-    def get_redeem_history(self, limit='', begin='', end='', type=''):
+    def get_redeem_history(self, limit = None, begin = None, end = None, type = None):
         params = {}
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
-        if type != '':
+        if type is not None:
             params['type'] = type
         return self._request_with_params(GET, OKUSD_REDEEM_HISTORY, params)
 
-    def get_rewards_history(self, limit='', begin='', end=''):
+    def get_rewards_history(self, limit = None, begin = None, end = None):
         params = {}
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
-        if begin != '':
+        if begin is not None:
             params['begin'] = begin
-        if end != '':
+        if end is not None:
             params['end'] = end
         return self._request_with_params(GET, OKUSD_REWARDS_HISTORY, params)

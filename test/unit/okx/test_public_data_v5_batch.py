@@ -20,7 +20,7 @@ class TestGetAnnouncements(unittest.TestCase):
     def test_get_announcements_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_announcements()
-        mock_request.assert_called_once_with(c.GET, c.ANNOUNCEMENTS, {'annType': '', 'page': ''})
+        mock_request.assert_called_once_with(c.GET, c.ANNOUNCEMENTS, {'annType': None, 'page': None})
 
     @patch.object(PublicAPI, '_request_with_params')
     def test_get_announcements_with_params(self, mock_request):

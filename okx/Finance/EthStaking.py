@@ -7,21 +7,21 @@ class EthStakingAPI(OkxClient):
 
         return self._request_without_params(GET, STACK_ETH_PRODUCT_INFO)
 
-    def eth_purchase(self, amt=''):
+    def eth_purchase(self, amt = None):
 
         params = {
             'amt': amt,
         }
         return self._request_with_params(POST, STACK_ETH_PURCHASE, params)
 
-    def eth_redeem(self, amt=''):
+    def eth_redeem(self, amt = None):
 
         params = {
             'amt': amt,
         }
         return self._request_with_params(POST, STACK_ETH_REDEEM, params)
 
-    def eth_cancel_redeem(self, ordId=''):
+    def eth_cancel_redeem(self, ordId = None):
 
         params = {
             'ordId': ordId,
@@ -33,18 +33,18 @@ class EthStakingAPI(OkxClient):
         params = {}
         return self._request_with_params(GET, STACK_ETH_BALANCE, params)
 
-    def eth_purchase_redeem_history(self, type='', status='', after='', before='', limit=''):
+    def eth_purchase_redeem_history(self, type = None, status = None, after = None, before = None, limit = None):
 
         params = {}
-        if type != '':
+        if type is not None:
             params['type'] = type
-        if status != '':
+        if status is not None:
             params['status'] = status
-        if after != '':
+        if after is not None:
             params['after'] = after
-        if before != '':
+        if before is not None:
             params['before'] = before
-        if limit != '':
+        if limit is not None:
             params['limit'] = limit
         return self._request_with_params(GET, STACK_ETH_PURCHASE_REDEEM_HISTORY, params)
 

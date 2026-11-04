@@ -3,7 +3,7 @@ from okx.consts import *
 
 
 class StakingDefiAPI(OkxClient):
-    def get_offers(self, productId='', protocolType='', ccy=''):
+    def get_offers(self, productId = None, protocolType = None, ccy = None):
         params = {
             'productId': productId,
             'protocolType': protocolType,
@@ -11,20 +11,20 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(GET, STACK_DEFI_OFFERS, params)
 
-    def purchase(self, productId='', investData=None, term='', tag=''):
+    def purchase(self, productId = None, investData = None, term = None, tag = None):
         if investData is None:
             investData = []
         params = {
             'productId': productId,
             'investData': investData
         }
-        if term != '':
+        if term is not None:
             params['term'] = term
-        if tag != '':
+        if tag is not None:
             params['tag'] = tag
         return self._request_with_params(POST, STACK_DEFI_PURCHASE, params)
 
-    def redeem(self, ordId='', protocolType='', allowEarlyRedeem=''):
+    def redeem(self, ordId = None, protocolType = None, allowEarlyRedeem = None):
         params = {
             'ordId': ordId,
             'protocolType': protocolType,
@@ -32,14 +32,14 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(POST, STACK_DEFI_REDEEM, params)
 
-    def cancel(self, ordId='', protocolType=''):
+    def cancel(self, ordId = None, protocolType = None):
         params = {
             'ordId': ordId,
             'protocolType': protocolType
         }
         return self._request_with_params(POST, STACK_DEFI_CANCEL, params)
 
-    def get_activity_orders(self, productId='', protocolType='', ccy='', state=''):
+    def get_activity_orders(self, productId = None, protocolType = None, ccy = None, state = None):
         params = {
             'productId': productId,
             'protocolType': protocolType,
@@ -48,7 +48,7 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(GET, STACK_DEFI_ORDERS_ACTIVITY, params)
 
-    def get_orders_history(self, productId='', protocolType='', ccy='', after='', before='', limit=''):
+    def get_orders_history(self, productId = None, protocolType = None, ccy = None, after = None, before = None, limit = None):
         params = {
             'productId': productId,
             'protocolType': protocolType,

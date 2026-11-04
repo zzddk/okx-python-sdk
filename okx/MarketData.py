@@ -5,8 +5,8 @@ from .consts import *
 class MarketAPI(OkxClient):
 
     # Get Tickers
-    def get_tickers(self, instType, uly='', instFamily =''):
-        if uly:
+    def get_tickers(self, instType, uly = None, instFamily = None):
+        if uly is not None:
             params = {'instType': instType, 'uly': uly, 'instFamily': instFamily}
         else:
             params = {'instType': instType, 'instFamily': instFamily}
@@ -18,42 +18,42 @@ class MarketAPI(OkxClient):
         return self._request_with_params(GET, TICKER_INFO, params)
 
     # Get Index Tickers
-    def get_index_tickers(self, quoteCcy='', instId=''):
+    def get_index_tickers(self, quoteCcy = None, instId = None):
         params = {'quoteCcy': quoteCcy, 'instId': instId}
         return self._request_with_params(GET, INDEX_TICKERS, params)
 
     # Get Order Book
-    def get_orderbook(self, instId, sz=''):
+    def get_orderbook(self, instId, sz = None):
         params = {'instId': instId, 'sz': sz}
         return self._request_with_params(GET, ORDER_BOOKS, params)
 
     # Get RPI Order Book
-    def get_rpi_orderbook(self, instId, sz=''):
+    def get_rpi_orderbook(self, instId, sz = None):
         params = {'instId': instId, 'sz': sz}
         return self._request_with_params(GET, MARKET_BOOKS_RPI, params)
 
     # Get Candlesticks
-    def get_candlesticks(self, instId, after='', before='', bar='', limit=''):
+    def get_candlesticks(self, instId, after = None, before = None, bar = None, limit = None):
         params = {'instId': instId, 'after': after, 'before': before, 'bar': bar, 'limit': limit}
         return self._request_with_params(GET, MARKET_CANDLES, params)
 
     # GGet Candlesticks History（top currencies only）
-    def get_history_candlesticks(self, instId, after='', before='', bar='', limit=''):
+    def get_history_candlesticks(self, instId, after = None, before = None, bar = None, limit = None):
         params = {'instId': instId, 'after': after, 'before': before, 'bar': bar, 'limit': limit}
         return self._request_with_params(GET, HISTORY_CANDLES, params)
 
     # Get Index Candlesticks
-    def get_index_candlesticks(self, instId, after='', before='', bar='', limit=''):
+    def get_index_candlesticks(self, instId, after = None, before = None, bar = None, limit = None):
         params = {'instId': instId, 'after': after, 'before': before, 'bar': bar, 'limit': limit}
         return self._request_with_params(GET, INDEX_CANDLES, params)
 
     # Get Mark Price Candlesticks
-    def get_mark_price_candlesticks(self, instId, after='', before='', bar='', limit=''):
+    def get_mark_price_candlesticks(self, instId, after = None, before = None, bar = None, limit = None):
         params = {'instId': instId, 'after': after, 'before': before, 'bar': bar, 'limit': limit}
         return self._request_with_params(GET, MARKPRICE_CANDLES, params)
 
     # Get Index Candlesticks
-    def get_trades(self, instId, limit=''):
+    def get_trades(self, instId, limit = None):
         params = {'instId': instId, 'limit': limit}
         return self._request_with_params(GET, MARKET_TRADES, params)
 
@@ -62,12 +62,12 @@ class MarketAPI(OkxClient):
         return self._request_without_params(GET, VOLUME)
 
     # Get Tier
-    def get_tier(self, instType='', tdMode='', uly='', instId='', ccy='', tier=''):
+    def get_tier(self, instType = None, tdMode = None, uly = None, instId = None, ccy = None, tier = None):
         params = {'instType': instType, 'tdMode': tdMode, 'uly': uly, 'instId': instId, 'ccy': ccy, 'tier': tier}
         return self._request_with_params(GET, TIER, params)
 
     #GET /api/v5/market/index-components
-    def get_index_components(self,index = ''):
+    def get_index_components(self,index = None):
         param = {
             'index':index
         }
@@ -79,7 +79,7 @@ class MarketAPI(OkxClient):
         return self._request_without_params(GET, EXCHANGE_RATE)
 
     #GET /api/v5/market/history-trades
-    def get_history_trades(self,instId = '',type = '',after = '',before = '',limit = ''):
+    def get_history_trades(self,instId = None,type = None,after = None,before = None,limit = None):
         params = {
             'instId':instId,
             'type':type,
@@ -90,14 +90,14 @@ class MarketAPI(OkxClient):
         return self._request_with_params(GET,HISTORY_TRADES,params)
 
     #GET /api/v5/market/block-ticker
-    def get_block_ticker(self,instId = ''):
+    def get_block_ticker(self,instId = None):
         params = {
             'instId':instId
         }
         return self._request_with_params(GET,BLOCK_TICKER,params)
 
     #GET /api/v5/market/block-tickers
-    def get_block_tickers(self,instType = '',uly = '', instFamily = ''):
+    def get_block_tickers(self,instType = None,uly = None, instFamily = None):
         params = {
             'instType':instType,
             'uly':uly,
@@ -106,21 +106,21 @@ class MarketAPI(OkxClient):
         return self._request_with_params(GET, BLOCK_TICKERS, params)
 
     #GET /api/v5/market/block-trades
-    def get_block_trades(self,instId = ''):
+    def get_block_trades(self,instId = None):
         params = {
             'instId':instId
         }
         return self._request_with_params(GET, BLOCK_TRADES, params)
 
     #- Get order lite book
-    def get_order_lite_book(self,instId = ''):
+    def get_order_lite_book(self,instId = None):
         params = {
             'instId':instId
         }
         return self._request_with_params(GET, GET_ORDER_LITE_BOOK, params)
 
     #- Get option trades
-    def get_option_trades(self,instFamily = ''):
+    def get_option_trades(self,instFamily = None):
         params = {
             'instFamily':instFamily
         }

@@ -42,9 +42,9 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
             'amt': '100',
             'dest': '4',
             'toAddr': '0x1234567890abcdef',
-            'chain': '',
-            'areaCode': '',
-            'clientId': ''
+            'chain': None,
+            'areaCode': None,
+            'clientId': None
         }
         mock_request.assert_called_once_with(c.POST, c.WITHDRAWAL_COIN, expected_params)
         self.assertEqual(result, mock_response)

@@ -26,7 +26,7 @@ class TestGetFeeRatesGroupId(_Base):
     def test_backward_compatible_omits_groupId(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_fee_rates('SPOT')
-        expected = {'instType': 'SPOT', 'instId': '', 'uly': '', 'category': '', 'instFamily': ''}
+        expected = {'instType': 'SPOT', 'instId': None, 'uly': None, 'category': None, 'instFamily': None}
         mock_request.assert_called_once_with(c.GET, c.FEE_RATES, expected)
 
     @patch.object(AccountAPI, '_request_with_params')

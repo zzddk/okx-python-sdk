@@ -1,6 +1,7 @@
 import base64
 import datetime
 import hmac
+import json
 from urllib.parse import urlencode
 
 from loguru import logger
@@ -41,18 +42,28 @@ def get_header_no_sign(flag,debug = True):
     return header
 
 def parse_params_to_str(params):
+    """Serialize query parameters. Only None means "not supplied"."""
     filtered = {}
     for key, value in params.items():
-        if value is None or value == '':
+        if value is None:
             continue
         if value is True:
             value = 'true'
         elif value is False:
             value = 'false'
+        elif isinstance(value, (list, dict)):
+            value = json.dumps(value, separators=(',', ':'))
         filtered[key] = value
     if not filtered:
         return ''
     return '?' + urlencode(filtered)
+
+
+def drop_none_params(params):
+    """Drop top-level None values before serializing a JSON request body."""
+    if isinstance(params, dict):
+        return {key: value for key, value in params.items() if value is not None}
+    return params
 
 
 def get_timestamp():

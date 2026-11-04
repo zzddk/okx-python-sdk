@@ -75,8 +75,8 @@ class TestDualInvestParamMethods(_Base):
         self.api.get_order_history(ordId='o1', productId='p1', state='filled', limit='10')
         mock_request.assert_called_once_with(
             c.GET, c.DUAL_INVEST_ORDER_HISTORY,
-            {'ordId': 'o1', 'productId': 'p1', 'uly': '', 'state': 'filled',
-             'beginId': '', 'endId': '', 'begin': '', 'end': '', 'limit': '10'})
+            {'ordId': 'o1', 'productId': 'p1', 'uly': None, 'state': 'filled',
+             'beginId': None, 'endId': None, 'begin': None, 'end': None, 'limit': '10'})
 
 
 class TestDualInvestConstants(unittest.TestCase):

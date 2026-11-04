@@ -3,6 +3,7 @@ Unit tests for okx.okxclient module
 
 Mirrors the structure: okx/okxclient.py -> test/unit/okx/test_okxclient.py
 """
+import json
 import unittest
 import warnings
 from unittest.mock import MagicMock, patch
@@ -184,6 +185,29 @@ class TestOkxClientRequest(unittest.TestCase):
             result = self.client._request_with_params('GET', TEST_API_ENDPOINT, params)
             
             mock_request.assert_called_once_with('GET', TEST_API_ENDPOINT, params)
+
+    def test_post_body_omits_none_params(self):
+        """Only None means "not supplied" in a JSON body."""
+        with patch.object(self.client, 'post') as mock_post:
+            mock_post.return_value.json.return_value = {'code': '0'}
+
+            result = self.client._request(
+                'POST', TEST_API_ENDPOINT, {'instId': 'BTC-USDT', 'sz': None, 'px': ''}
+            )
+
+        body = json.loads(mock_post.call_args.kwargs['data'])
+        self.assertEqual(body, {'instId': 'BTC-USDT', 'px': ''})
+        self.assertEqual(result, {'code': '0'})
+
+    def test_get_query_keeps_explicit_empty_string(self):
+        """An explicit '' is a value, not an absent parameter."""
+        with patch.object(self.client, 'get') as mock_get:
+            mock_get.return_value.json.return_value = {'code': '0'}
+
+            self.client._request('GET', TEST_API_ENDPOINT, {'instId': '', 'uly': None})
+
+        mock_get.assert_called_once()
+        self.assertTrue(mock_get.call_args.args[0].endswith('?instId='))
 
 
 class TestSubclassConstructor(unittest.TestCase):

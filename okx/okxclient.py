@@ -11,8 +11,8 @@ from . import utils
 class OkxClient(Client):
 
     def __init__(self, api_key=c._NO_CREDENTIAL, api_secret_key=c._NO_CREDENTIAL,
-                 passphrase=c._NO_CREDENTIAL, use_server_time=None, flag='1',
-                 base_api=c.API_URL, debug=False, proxy=None, client=None):
+                 passphrase=c._NO_CREDENTIAL, use_server_time = None, flag='1',
+                 base_api=c.API_URL, debug=False, proxy = None, client = None):
         # Compatible with different versions of httpx
         # New versions (0.24.0+) use proxy, older versions use proxies
         try:
@@ -53,7 +53,7 @@ class OkxClient(Client):
         if method == c.GET:
             request_path = request_path + utils.parse_params_to_str(params)
         timestamp = utils.get_timestamp()
-        body = json.dumps(params) if method == c.POST else ""
+        body = json.dumps(utils.drop_none_params(params)) if method == c.POST else ""
         if self.API_KEY != '-1':
             sign = utils.sign(utils.pre_hash(timestamp, method, request_path, str(body), self.debug), self.API_SECRET_KEY)
             header = utils.get_header(self.API_KEY, sign, timestamp, self.PASSPHRASE, self.flag, self.debug)
