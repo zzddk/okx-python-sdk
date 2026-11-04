@@ -4,6 +4,7 @@ import logging
 
 from websockets.exceptions import ConnectionClosedError
 
+from okx import consts
 from okx.websocket import WsUtils
 from okx.websocket.WebSocketFactory import WebSocketFactory
 
@@ -11,7 +12,30 @@ logger = logging.getLogger(__name__)
 
 
 class WsPublicAsync:
-    def __init__(self, url, apiKey='', passphrase='', secretKey='', debug=False):
+    @classmethod
+    def from_client(cls, client, channel: str = 'public', url: str = None, debug: bool = None):
+        """Build from an existing REST client, matching its credentials and environment.
+
+        `channel` selects the public or business endpoint; `client.flag == '1'`
+        (demo trading) selects the demo host.
+        """
+        if channel not in ('public', 'business'):
+            raise ValueError(f"channel must be 'public' or 'business', got {channel!r}")
+        demo = str(client.flag) == '1'
+        if url is None:
+            if channel == 'business':
+                url = consts.WS_BUSINESS_DEMO_URL if demo else consts.WS_BUSINESS_URL
+            else:
+                url = consts.WS_PUBLIC_DEMO_URL if demo else consts.WS_PUBLIC_URL
+        return cls(
+            url=url,
+            apiKey=client.API_KEY,
+            passphrase=client.PASSPHRASE,
+            secretKey=client.API_SECRET_KEY,
+            debug=client.debug if debug is None else debug,
+        )
+
+    def __init__(self, url=consts.WS_PUBLIC_URL, apiKey='', passphrase='', secretKey='', debug=False):
         self.url = url
         self.subscriptions = set()
         self.callback = None

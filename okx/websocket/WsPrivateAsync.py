@@ -5,6 +5,7 @@ import warnings
 
 from websockets.exceptions import ConnectionClosedError
 
+from okx import consts
 from okx.websocket import WsUtils
 from okx.websocket.WebSocketFactory import WebSocketFactory
 
@@ -12,7 +13,25 @@ logger = logging.getLogger(__name__)
 
 
 class WsPrivateAsync:
-    def __init__(self, apiKey, passphrase, secretKey, url, useServerTime = None, debug=False):
+    @classmethod
+    def from_client(cls, client, url: str = None, debug: bool = None):
+        """Build from an existing REST client, matching its credentials and environment.
+
+        `flag='1'` on the REST client means demo trading, so the demo host is
+        used automatically — the two layers cannot end up in different
+        environments by accident.
+        """
+        if url is None:
+            url = consts.WS_PRIVATE_DEMO_URL if str(client.flag) == '1' else consts.WS_PRIVATE_URL
+        return cls(
+            apiKey=client.API_KEY,
+            passphrase=client.PASSPHRASE,
+            secretKey=client.API_SECRET_KEY,
+            url=url,
+            debug=client.debug if debug is None else debug,
+        )
+
+    def __init__(self, apiKey, passphrase, secretKey, url=consts.WS_PRIVATE_URL, useServerTime=None, debug=False):
         self.url = url
         self.subscriptions = set()
         self.callback = None

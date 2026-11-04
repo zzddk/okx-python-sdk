@@ -2,6 +2,19 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.8.0]
+
+Feature release. Existing constructor calls keep working; `url` now has a default.
+
+### Added
+- WebSocket endpoint constants in `okx.consts`: `WS_PUBLIC_URL`, `WS_PRIVATE_URL`, `WS_BUSINESS_URL` and the demo counterparts (`wspap` host with `brokerId=9999`).
+- `WsPublicAsync` and `WsPrivateAsync` default their `url` to the live endpoint, so the host no longer has to be hardcoded.
+- `WsPrivateAsync.from_client(client)` and `WsPublicAsync.from_client(client, channel='public')`: take the credentials from an existing REST client and pick the live or demo host from its `flag`. `flag='1'` on REST (demo trading) now selects the demo WebSocket host, so the two layers cannot silently end up in different environments.
+
+### Notes
+- Pass `url=` to override; if OKX moves a host before this package is updated, that is the way around it.
+- `WsPrivateAsync` still accepts the deprecated `useServerTime` argument. Removing it is a signature change, so it waits for the next breaking window (tracked in `.scratch/ws-config/issues/02-remove-use-server-time.md`).
+
 ## [0.7.0]
 
 Feature release. Nothing existing changes behaviour.

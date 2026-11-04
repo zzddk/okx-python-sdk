@@ -5,7 +5,7 @@ working. Endpoint modules are merged with duplicate detection: two modules
 defining the same name raise instead of silently shadowing each other.
 """
 
-from . import http
+from . import http, websocket
 from .endpoints import (
     account,
     affiliate,
@@ -29,7 +29,7 @@ from .endpoints import (
     trading_data,
 )
 
-_MODULES = (http, account, affiliate, block_trading, convert, copy_trading, dual_invest, fd_broker, flexible_loan, funding, glp, market_data, okusd, public_data, spread_trading, stacking, status, subaccount, trade, trading_bot, trading_data)
+_MODULES = (http, websocket, account, affiliate, block_trading, convert, copy_trading, dual_invest, fd_broker, flexible_loan, funding, glp, market_data, okusd, public_data, spread_trading, stacking, status, subaccount, trade, trading_bot, trading_data)
 
 _EXPORTS = {}
 for _module in _MODULES:

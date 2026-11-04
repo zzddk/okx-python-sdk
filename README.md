@@ -106,6 +106,20 @@ for bill in account.paginate(account.get_account_bills, cursor='billId',
 
 The walk ends on an empty page or when the cursor stops advancing, and each page goes through the retry and rate-limit path. A page shorter than `page_size` does not end the walk — endpoints cap `limit` at their own maximum — so expect one final empty request.
 
+### WebSocket
+
+Endpoints default to the live host; pass `url=` for anything else. To share the REST client's credentials and environment:
+
+```python
+from okx import Account
+from okx.websocket import WsPrivateAsync
+
+rest = Account.AccountAPI(api_key, secret, passphrase, flag="1")  # demo
+ws = WsPrivateAsync.from_client(rest)                             # demo host, same credentials
+```
+
+`flag="1"` on the REST client selects the demo WebSocket host automatically, so the two layers cannot end up in different environments. Use `WsPublicAsync.from_client(rest, channel="business")` for the business channel.
+
 ### Development Setup
 
 For contributors or local development:

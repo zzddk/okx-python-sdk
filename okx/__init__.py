@@ -4,7 +4,7 @@ Python SDK for the OKX API v5
 """
 import logging
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 # Library logging: records propagate to the application's handlers, and the
 # null handler keeps "no handler found" noise out when nobody configures logging.
