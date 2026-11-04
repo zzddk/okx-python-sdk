@@ -15,7 +15,7 @@ class WsPublicAsync:
         self.url = url
         self.subscriptions = set()
         self.callback = None
-        self.loop = asyncio.get_event_loop()
+        self.loop = None  # captured by start(); the loop must be running
         self.factory = WebSocketFactory(url)
         self.websocket = None
         self.debug = debug
@@ -123,9 +123,12 @@ class WsPublicAsync:
         else:
             logger.info("Connecting to WebSocket...")
         await self.connect()
-        return self.loop.create_task(self.consume())
+        self.loop = asyncio.get_running_loop()
+        return asyncio.create_task(self.consume())
 
     def stop_sync(self):
+        if self.loop is None:
+            raise RuntimeError("stop_sync() requires a prior start(); no event loop has been captured")
         if self.loop.is_running():
             future = asyncio.run_coroutine_threadsafe(self.stop(), self.loop)
             future.result(timeout=10)
