@@ -1,7 +1,8 @@
 # 删除 WsPrivateAsync 的死参数 useServerTime
 
-Status: needs-triage
-Blocked by: 下一次破坏性窗口
+Status: resolved
+Done in: 0.9.0
+Superseded by: .scratch/ws-hardening/issues/03-breaking-batch.md
 
 ## 为什么
 
@@ -21,4 +22,8 @@ ADR-0001 把破坏性改动集中到了 0.5.0，那扇门已关。不要为一�
 ## 完成标准
 
 - `grep -rn useServerTime okx/` 无输出。
-- CHANGELOG 里写明第四位位置参数已变化。
+- CHANGELOG 里写明位置参数序的变化（`debug` 成为第五位）。
+
+## Comments
+
+- 2026-11-05: Closed with the 0.9.0 WebSocket batch; the same work is tracked in `.scratch/ws-hardening/issues/03-breaking-batch.md`. `useServerTime` and `getServerTime` are gone, `grep -rn useServerTime okx/` is empty, and the CHANGELOG records the positional shift.

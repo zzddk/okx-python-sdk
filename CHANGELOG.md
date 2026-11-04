@@ -41,6 +41,14 @@ API is untouched.
   `WsPrivateAsync` are now thin subclasses; their public methods did not change.
 - Type annotations across `okx.websocket`.
 
+### Removed
+- `WsPrivateAsync(useServerTime=...)` and its `DeprecationWarning`. The argument
+  never did anything: the constructor forced `self.useServerTime = False`, so
+  login always signed with local time. `WsUtils.initLoginParams` no longer takes
+  it either.
+- `okx.websocket.WsUtils.getServerTime`, which hardcoded the live-site host and
+  existed only to serve that argument.
+
 ### Migration
 - Await the value of `start()` as the supervisor: it now ends at `stop()`
   rather than when the socket drops. Pass `reconnect=False` to have it end (and
@@ -52,6 +60,14 @@ API is untouched.
   instead of silently running a second read loop.
 - Subscribing while a reconnect is in progress raises `RuntimeError` because
   there is no socket to send on; retry after the session is back.
+- `useServerTime` is gone, so the positional order after `url` shifted: `debug`
+  is now the fifth positional parameter. A call that passed `useServerTime`
+  positionally would land on `debug` instead — drop the argument, or pass
+  `debug=` by name.
+- `WsUtils.initLoginParams` lost its leading `useServerTime` parameter, so
+  `initLoginParams(False, key, passphrase, secret)` would now mix up every
+  argument; call it with keywords. It is an internal helper, but it was
+  importable.
 
 ## [0.8.1]
 

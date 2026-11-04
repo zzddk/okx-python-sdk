@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, List, Optional
 
 from okx import consts
@@ -41,12 +40,9 @@ class WsPrivateAsync(WsBaseAsync):
         passphrase: str,
         secretKey: str,
         url: str = consts.WS_PRIVATE_URL,
-        useServerTime: Optional[bool] = None,
         debug: bool = False,
         **options: Any,
     ) -> None:
-        if useServerTime is not None:
-            warnings.warn("useServerTime parameter is deprecated. Please remove it.", DeprecationWarning)
         super().__init__(
             url=url,
             apiKey=apiKey,
@@ -55,9 +51,6 @@ class WsPrivateAsync(WsBaseAsync):
             debug=debug,
             **options,
         )
-        # Kept for the deprecated argument's test surface until it is removed
-        # with the rest of the 0.9.0 breaking batch.
-        self.useServerTime = False
 
     async def place_order(
         self,

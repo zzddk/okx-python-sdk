@@ -110,7 +110,6 @@ class TestWsPublicAsyncLogin(unittest.TestCase):
                 self.assertTrue(result)
                 self.assertTrue(ws.isLoggedIn)
                 mock_init_login.assert_called_once_with(
-                    useServerTime=False,
                     apiKey=_STUB_ID,
                     passphrase=_STUB_PHRASE,
                     secretKey=_STUB_SIGN

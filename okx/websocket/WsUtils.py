@@ -8,18 +8,13 @@ import json
 import time
 from typing import Any, Dict, List, Optional, Set
 
-import httpx
-
 
 def initLoginParams(
-    useServerTime: bool,
     apiKey: str,
     passphrase: str,
     secretKey: str,
 ) -> str:
     timestamp = getLocalTime()
-    if useServerTime:
-        timestamp = getServerTime()
     message = str(timestamp) + 'GET' + '/users/self/verify'
     mac = hmac.new(bytes(secretKey, encoding='utf8'), bytes(message, encoding='utf-8'), digestmod='sha256')
     d = mac.digest()
@@ -77,15 +72,6 @@ def checkSocketParams(
         if channel not in channelArgs:
             channelArgs[channel] = []
         channelArgs[channel].append(p)
-
-
-def getServerTime() -> str:
-    url = "https://www.okx.com/api/v5/public/time"
-    response = httpx.get(url)
-    if response.status_code == 200:
-        return response.json()['data'][0]['ts']
-    else:
-        return ""
 
 
 def getLocalTime() -> int:

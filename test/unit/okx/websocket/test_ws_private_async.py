@@ -6,7 +6,6 @@ Mirrors the structure: okx/websocket/WsPrivateAsync.py -> test/unit/okx/websocke
 import json
 import unittest
 import asyncio
-import warnings
 from unittest.mock import patch, MagicMock, AsyncMock
 
 # Import the module first so patch can resolve the path
@@ -42,7 +41,6 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
             self.assertEqual(ws.passphrase, _STUB_PHRASE)
             self.assertEqual(ws.secretKey, _STUB_SIGN)
             self.assertEqual(ws.url, TEST_WS_URL)
-            self.assertFalse(ws.useServerTime)
             self.assertFalse(ws.debug)
             mock_factory.assert_called_once_with(TEST_WS_URL)
 
@@ -59,43 +57,6 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
             )
 
             self.assertTrue(ws.debug)
-
-    def test_init_with_deprecated_useServerTime_shows_warning(self):
-        """Test that using deprecated useServerTime parameter shows warning"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPrivateAsync import WsPrivateAsync
-
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                ws = WsPrivateAsync(
-                    apiKey=_STUB_ID,
-                    passphrase=_STUB_PHRASE,
-                    secretKey=_STUB_SIGN,
-                    url=TEST_WS_URL,
-                    useServerTime=True
-                )
-
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-                self.assertIn("useServerTime parameter is deprecated", str(w[0].message))
-
-    def test_init_without_useServerTime_no_warning(self):
-        """Test that not using useServerTime parameter shows no warning"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPrivateAsync import WsPrivateAsync
-
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                ws = WsPrivateAsync(
-                    apiKey=_STUB_ID,
-                    passphrase=_STUB_PHRASE,
-                    secretKey=_STUB_SIGN,
-                    url=TEST_WS_URL
-                )
-
-                # No deprecation warning expected
-                deprecation_warnings = [warning for warning in w if issubclass(warning.category, DeprecationWarning)]
-                self.assertEqual(len(deprecation_warnings), 0)
 
 
 class TestWsPrivateAsyncSubscribe(unittest.TestCase):
@@ -564,7 +525,6 @@ class TestWsPrivateAsyncLogin(unittest.TestCase):
                 result = await ws.login()
                 self.assertTrue(result)
                 mock_ws_utils.initLoginParams.assert_called_once_with(
-                    useServerTime=False,
                     apiKey=_STUB_ID,
                     passphrase=_STUB_PHRASE,
                     secretKey=_STUB_SIGN

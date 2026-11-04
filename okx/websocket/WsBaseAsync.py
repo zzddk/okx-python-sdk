@@ -233,7 +233,6 @@ class WsBaseAsync:
             raise RuntimeError("start() must be called before login()")
 
         payload = WsUtils.initLoginParams(
-            useServerTime=False,
             apiKey=self.apiKey,
             passphrase=self.passphrase,
             secretKey=self.secretKey,
