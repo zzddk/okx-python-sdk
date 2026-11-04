@@ -14,3 +14,8 @@ Release: 0.5.0
 ## 完成标准
 
 `grep -rln 'OkxClient.__init__' okx/` 只剩基类；`TradeAPI(api_key=..., flag='0')` 仍可用。
+
+
+## Comments
+
+- 2026-11-05: done in 0.5.0. All 22 subclass constructors removed; `domain=` unified to `base_api=` (positional slot unchanged) and `client=` added for connection-pool sharing. `grep -rln 'OkxClient.__init__' okx/` now matches only `okx/okxclient.py`.

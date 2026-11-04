@@ -186,6 +186,59 @@ class TestOkxClientRequest(unittest.TestCase):
             mock_request.assert_called_once_with('GET', TEST_API_ENDPOINT, params)
 
 
+class TestSubclassConstructor(unittest.TestCase):
+    """Subclasses inherit the base constructor instead of re-declaring it."""
+
+    def test_subclass_accepts_keyword_arguments(self):
+        with patch(MOCK_CLIENT_INIT) as mock_init:
+            mock_init.return_value = None
+            from okx.Trade import TradeAPI
+
+            api = TradeAPI(api_key='k', api_secret_key='s', passphrase='p', flag='0')
+
+        self.assertEqual(api.API_KEY, 'k')
+        self.assertEqual(api.flag, '0')
+        self.assertFalse(api.debug)
+
+    def test_subclass_keeps_positional_argument_order(self):
+        with patch(MOCK_CLIENT_INIT) as mock_init:
+            mock_init.return_value = None
+            from okx.Trade import TradeAPI
+
+            api = TradeAPI('k', 's', 'p', False, '0')
+
+        self.assertEqual(api.API_KEY, 'k')
+        self.assertEqual(api.API_SECRET_KEY, 's')
+        self.assertEqual(api.PASSPHRASE, 'p')
+        self.assertEqual(api.flag, '0')
+
+    def test_base_api_keyword_sets_domain(self):
+        with patch(MOCK_CLIENT_INIT) as mock_init:
+            mock_init.return_value = None
+            from okx.Trade import TradeAPI
+
+            api = TradeAPI(base_api='https://example.test')
+
+        self.assertEqual(api.domain, 'https://example.test')
+
+    def test_shared_client_reuses_credentials_and_requests(self):
+        with patch(MOCK_CLIENT_INIT) as mock_init:
+            mock_init.return_value = None
+            from okx.okxclient import OkxClient
+            from okx.Trade import TradeAPI
+
+            shared = OkxClient(api_key='k', api_secret_key='s', passphrase='p', flag='0')
+            api = TradeAPI(client=shared)
+
+        self.assertEqual(api.API_KEY, 'k')
+        self.assertEqual(api.flag, '0')
+
+        shared._request = MagicMock(return_value={'code': '0'})
+        result = api._request('GET', TEST_API_ENDPOINT, {})
+
+        shared._request.assert_called_once_with('GET', TEST_API_ENDPOINT, {})
+        self.assertEqual(result, {'code': '0'})
+
+
 if __name__ == '__main__':
     unittest.main()
-

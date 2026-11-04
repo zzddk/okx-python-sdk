@@ -10,8 +10,9 @@ from . import utils
 
 class OkxClient(Client):
 
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1',
-                 base_api=c.API_URL, debug=False, proxy=None):
+    def __init__(self, api_key=c._NO_CREDENTIAL, api_secret_key=c._NO_CREDENTIAL,
+                 passphrase=c._NO_CREDENTIAL, use_server_time=None, flag='1',
+                 base_api=c.API_URL, debug=False, proxy=None, client=None):
         # Compatible with different versions of httpx
         # New versions (0.24.0+) use proxy, older versions use proxies
         try:
@@ -22,12 +23,23 @@ class OkxClient(Client):
                 super().__init__(base_url=base_api, http2=True, proxies={'http://': proxy, 'https://': proxy})
             else:
                 super().__init__(base_url=base_api, http2=True)
-        self.API_KEY = api_key
-        self.API_SECRET_KEY = api_secret_key
-        self.PASSPHRASE = passphrase
-        self.flag = flag
-        self.domain = base_api
-        self.debug = debug
+        # Sharing an existing client routes every request through that client's
+        # connection pool, so callers can fan one pool out across API classes.
+        self._client = client
+        if client is not None:
+            self.API_KEY = client.API_KEY
+            self.API_SECRET_KEY = client.API_SECRET_KEY
+            self.PASSPHRASE = client.PASSPHRASE
+            self.flag = client.flag
+            self.debug = client.debug
+            self.domain = client.domain
+        else:
+            self.API_KEY = api_key
+            self.API_SECRET_KEY = api_secret_key
+            self.PASSPHRASE = passphrase
+            self.flag = flag
+            self.debug = debug
+            self.domain = base_api
         if use_server_time:
             warnings.warn(
                 "use_server_time has no effect and will be removed in 0.5.0.",
@@ -36,6 +48,8 @@ class OkxClient(Client):
             )
 
     def _request(self, method, request_path, params):
+        if self._client is not None:
+            return self._client._request(method, request_path, params)
         if method == c.GET:
             request_path = request_path + utils.parse_params_to_str(params)
         timestamp = utils.get_timestamp()

@@ -11,10 +11,6 @@ from okx.consts import (
 
 
 class OkusdAPI(OkxClient):
-    def __init__(self, api_key=_NO_CREDENTIAL, api_secret_key=_NO_CREDENTIAL, passphrase=_NO_CREDENTIAL, use_server_time=None, flag='1',
-                 domain='https://www.okx.com', debug=False, proxy=None):
-        OkxClient.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag, domain, debug, proxy)
-
     def get_account(self):
         return self._request_without_params(GET, OKUSD_ACCOUNT)
 

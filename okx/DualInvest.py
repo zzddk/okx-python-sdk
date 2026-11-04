@@ -14,9 +14,6 @@ from .consts import (
 
 
 class DualInvestAPI(OkxClient):
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1', domain='https://www.okx.com', debug=False, proxy=None):  # NOSONAR - '-1' is the SDK-wide "no credential supplied" sentinel (auth is gated on api_key != '-1' in OkxClient), not a hard-coded secret
-        OkxClient.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag, domain, debug, proxy)
-
     # GET /api/v5/finance/sfp/dcd/currency-pair
     def get_currency_pairs(self):
         return self._request_without_params(GET, DUAL_INVEST_CURRENCY_PAIRS)

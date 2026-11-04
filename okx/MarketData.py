@@ -4,10 +4,6 @@ from .consts import *
 
 class MarketAPI(OkxClient):
 
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1', domain = 'https://www.okx.com',debug = False, proxy=None):
-        OkxClient.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag, domain, debug, proxy)
-
-
     # Get Tickers
     def get_tickers(self, instType, uly='', instFamily =''):
         if uly:

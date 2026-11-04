@@ -6,10 +6,6 @@ from .consts import *
 
 class TradeAPI(OkxClient):
 
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1',
-                 domain='https://www.okx.com', debug=False, proxy=None):
-        OkxClient.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag, domain, debug, proxy)
-
     # Place Order
     def place_order(self, instId, tdMode, side, ordType, sz, ccy='', clOrdId='', tag='', posSide='', px='',  # NOSONAR - public OKX v5 place-order API surface; the parameter list mirrors the REST endpoint 1:1 and cannot be reduced without breaking backward compatibility
                     reduceOnly='', tgtCcy='', stpMode='', attachAlgoOrds=None, pxUsd='', pxVol='', banAmend='', tradeQuoteCcy=None, pxAmendType=None,

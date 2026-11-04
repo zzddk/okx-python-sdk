@@ -4,9 +4,6 @@ from .consts import *
 
 class SpreadTradingAPI(OkxClient):
 
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1', domain = 'https://www.okx.com',debug = False, proxy=None):
-        OkxClient.__init__(self, api_key, api_secret_key, passphrase, use_server_time, flag, domain, debug, proxy)
-
     # Place Order
     def place_order(self, sprdId='', clOrdId='', tag='', side='', ordType='', sz='', px=''):
         params = {'sprdId': sprdId, 'clOrdId': clOrdId, 'tag': tag, 'side': side, 'ordType': ordType, 'sz': sz,
