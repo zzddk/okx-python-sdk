@@ -2,6 +2,21 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.7.0]
+
+Feature release. Nothing existing changes behaviour.
+
+### Added
+- `OkxClient.paginate(method, cursor=..., params=..., page_size=100, max_pages=None)` and the standalone `okx.pagination.paginate`: walk a list endpoint backwards through `after`, yielding one record at a time.
+- `cursor` is **required** and names the response field `after` refers to (`billId`, `ordId`, `ts`, …). The field differs per endpoint and guessing it silently skips or repeats records, so a missing `cursor` raises at the call site.
+- Endpoints that paginate by page number (`get_announcements`, `get_tvb_link_list`) are rejected with a message pointing at `page=`.
+
+### Notes
+- The walk stops at an empty page or when the cursor stops advancing — the latter guards against a server that ignores `after`.
+- A page shorter than `page_size` does **not** stop the walk: endpoints cap `limit` at their own maximum, so a short page means the cap was reached, not the end. Expect one final empty page.
+- `before` (fetching newer records) is not supported; polling belongs to the WebSocket layer.
+- Every page goes through the retry and rate-limit path like any other request.
+
 ## [0.6.0]
 
 Feature release, opt-in only: the defaults are unchanged, so upgrading changes no existing behaviour.

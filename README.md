@@ -91,6 +91,21 @@ Retries only replay requests that are safe to replay: every GET, and a POST only
 
 `rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, which covers the endpoints with published limits. Endpoints missing from that table are not throttled.
 
+### Pagination
+
+List endpoints page backwards with `after`. `paginate()` takes the response field that `after` refers to; it differs per endpoint, so it is required:
+
+```python
+from okx import Account
+
+account = Account.AccountAPI(api_key, secret, passphrase, flag="0")
+for bill in account.paginate(account.get_account_bills, cursor='billId',
+                             params={'instType': 'SPOT'}, page_size=100):
+    print(bill['billId'])
+```
+
+The walk ends on an empty page or when the cursor stops advancing, and each page goes through the retry and rate-limit path. A page shorter than `page_size` does not end the walk — endpoints cap `limit` at their own maximum — so expect one final empty request.
+
 ### Development Setup
 
 For contributors or local development:

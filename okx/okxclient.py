@@ -1,13 +1,14 @@
+import inspect
 import json
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
 
 import httpx
 from httpx import Client
 
 from . import consts as c
-from . import exceptions, utils
+from . import exceptions, pagination, utils
 from .consts.rate_limits import RATE_LIMITS
 from .rate_limit import RateLimiter
 
@@ -160,3 +161,26 @@ class OkxClient(Client):
 
     def _request_with_params(self, method: Any, request_path: Any, params: Any) -> Dict[str, Any]:
         return self._request(method, request_path, params)
+
+    def paginate(self, method: Any, cursor: Optional[str] = None,
+                 params: Optional[Dict[str, Any]] = None,
+                 page_size: Optional[int] = pagination.DEFAULT_PAGE_SIZE,
+                 max_pages: Optional[int] = None) -> Iterator[Dict[str, Any]]:
+        """Walk a list endpoint backwards, one record at a time.
+
+        `cursor` names the response field `after` refers to and is required;
+        see `okx.pagination.paginate`. Validation happens here rather than on
+        the first `next()`, so a wrong call fails at the call site.
+        """
+        name = getattr(method, '__name__', str(method))
+        if not cursor:
+            if 'page' in inspect.signature(method).parameters:
+                raise ValueError(
+                    f"{name} pages by page number, not by cursor; call it directly with page="
+                )
+            raise ValueError(
+                f"cursor is required for {name}: name the response field 'after' "
+                "refers to, for example cursor='billId'"
+            )
+        return pagination.paginate(method, cursor=cursor, params=params,
+                                   page_size=page_size, max_pages=max_pages)
