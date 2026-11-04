@@ -66,17 +66,34 @@ Then load it in your code:
 import os
 from dotenv import load_dotenv
 from okx import Account
+from okx.transport import Transport
 
 load_dotenv()
 
-account = Account.AccountAPI(
+account = Account.AccountAPI(Transport(
     api_key=os.getenv('OKX_API_KEY'),
     api_secret_key=os.getenv('OKX_API_SECRET'),
     passphrase=os.getenv('OKX_PASSPHRASE'),
     flag=os.getenv('OKX_FLAG', '1'),
-    debug=False
-)
+    debug=False,
+))
 ```
+
+`Transport` holds every REST setting — credentials, environment, proxy, retries
+and rate limits — and one instance can be handed to any number of API classes so
+they share one connection pool:
+
+```python
+from okx import Account, Trade
+from okx.transport import Transport
+
+transport = Transport(api_key, secret, passphrase, flag="0")
+account = Account.AccountAPI(transport)   # same transport, one pool
+trade = Trade.TradeAPI(transport)
+```
+
+A `Transport` built with an explicit `http=` transport does not read proxy
+environment variables; the caller owns that configuration.
 
 ### Retries and rate limiting
 
@@ -84,8 +101,10 @@ Both are off by default, so passing the new arguments is the only way to turn th
 
 ```python
 from okx import Trade
+from okx.transport import Transport
 
-trade = Trade.TradeAPI(api_key, secret, passphrase, flag="0", max_retries=2, rate_limit=True)
+trade = Trade.TradeAPI(Transport(
+    api_key, secret, passphrase, flag="0", max_retries=2, rate_limit=True))
 ```
 
 Retries only replay requests that are safe to replay: every GET, and a POST only when it carries `clOrdId`, `algoClOrdId` or `reqId`. **Without one of those keys an order is never retried** — a retry would place it twice. Transient failures (network errors, HTTP 429/5xx, business codes 50001/50004/50011/50013) are retried with exponential backoff; a rejection such as a parameter error is returned immediately.
@@ -98,8 +117,9 @@ List endpoints page backwards with `after`. `paginate()` takes the response fiel
 
 ```python
 from okx import Account
+from okx.transport import Transport
 
-account = Account.AccountAPI(api_key, secret, passphrase, flag="0")
+account = Account.AccountAPI(Transport(api_key, secret, passphrase, flag="0"))
 for bill in account.paginate(account.get_account_bills, cursor='billId',
                              params={'instType': 'SPOT'}, page_size=100):
     print(bill['billId'])
@@ -113,9 +133,10 @@ Endpoints default to the live host; pass `url=` for anything else. To share the 
 
 ```python
 from okx import Account
+from okx.transport import Transport
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
-rest = Account.AccountAPI(api_key, secret, passphrase, flag="1")  # demo
+rest = Account.AccountAPI(Transport(api_key, secret, passphrase, flag="1"))  # demo
 ws = WsPrivateAsync.from_client(rest)                             # demo host, same credentials
 ```
 

@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Affiliate import AffiliateAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 _STUB_ID = 'test_key'
 _STUB_SIGN = 'test_secret'
@@ -15,12 +16,7 @@ _STUB_PHRASE = 'test_pass'
 
 class TestAffiliateAPI(unittest.TestCase):
     def setUp(self):
-        self.api = AffiliateAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0',
-        )
+        self.api = AffiliateAPI(FakeTransport())
 
     def test_constant_paths(self):
         self.assertEqual(c.AFFILIATE_TVB_INVITEE_DETAIL, '/api/v5/affiliate/tvb/invitee/detail')
@@ -29,21 +25,21 @@ class TestAffiliateAPI(unittest.TestCase):
         self.assertEqual(c.AFFILIATE_TVB_PERFORMANCE_SUMMARY, '/api/v5/affiliate/tvb/performance/summary')
         self.assertEqual(c.AFFILIATE_TVB_TIER_BREAKDOWN, '/api/v5/affiliate/tvb/tier-breakdown')
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_invitee_detail(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_invitee_detail(uid='123456')
         mock_request.assert_called_once_with(
             c.GET, c.AFFILIATE_TVB_INVITEE_DETAIL, {'uid': '123456'})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_invitee_list_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_invitee_list()
         mock_request.assert_called_once_with(
             c.GET, c.AFFILIATE_TVB_INVITEE_LIST, {})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_invitee_list_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         fee_tier = ['0', '10']
@@ -57,14 +53,14 @@ class TestAffiliateAPI(unittest.TestCase):
              'tradeType': 'SPOT', 'keyword': 'abc', 'orderBy': 'validVol',
              'orderDir': 'asc', 'page': '2', 'limit': '50'})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_link_list_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_link_list()
         mock_request.assert_called_once_with(
             c.GET, c.AFFILIATE_TVB_LINK_LIST, {})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_link_list_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_link_list(
@@ -75,14 +71,14 @@ class TestAffiliateAPI(unittest.TestCase):
             {'periodType': 'last_7d', 'begin': '1', 'end': '2', 'page': '1',
              'limit': '100', 'linkType': 'standard', 'linkStatus': 'normal'})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_performance_summary_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_performance_summary()
         mock_request.assert_called_once_with(
             c.GET, c.AFFILIATE_TVB_PERFORMANCE_SUMMARY, {})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_performance_summary_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_performance_summary(periodType='custom', begin='1', end='2')
@@ -90,14 +86,14 @@ class TestAffiliateAPI(unittest.TestCase):
             c.GET, c.AFFILIATE_TVB_PERFORMANCE_SUMMARY,
             {'periodType': 'custom', 'begin': '1', 'end': '2'})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_tier_breakdown_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_tier_breakdown()
         mock_request.assert_called_once_with(
             c.GET, c.AFFILIATE_TVB_TIER_BREAKDOWN, {})
 
-    @patch.object(AffiliateAPI, '_request_with_params')
+    @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_tier_breakdown_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_tier_breakdown(periodType='this_month', begin='1', end='2')

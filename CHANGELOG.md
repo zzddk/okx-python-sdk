@@ -2,6 +2,48 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.10.0]
+
+Breaking release, the batch ADR-0004 reserved for the REST transport (ADR-0006).
+The REST API surface keeps its endpoint methods; construction and the internal
+request seam change.
+
+### Changed
+- Every REST API class is constructed with one `okx.transport.Transport`
+  instead of its own copy of the connection settings.
+- `Transport` owns the credentials, environment, proxy, retry and rate-limit
+  configuration. One instance can be passed to any number of API classes; they
+  then share a connection pool, a rate limiter and one configuration.
+- `_request_with_params` and `_request_without_params` are replaced by
+  `request(method, path, params=None)`, the single seam every endpoint method
+  calls.
+
+### Removed
+- The `client=` constructor argument and its 11-line field copy. Sharing is now
+  passing the same `Transport`.
+- The configuration arguments on every API class constructor: `api_key`,
+  `api_secret_key`, `passphrase`, `flag`, `base_api`, `debug`, `proxy`,
+  `raise_on_error`, `max_retries`, `retry_backoff`, `rate_limit`.
+- `OkxClient` is no longer an `httpx.Client`. `close()` and the context-manager
+  protocol are kept as forwarding methods; other httpx methods (`get`,
+  `post`, …) were never used by an endpoint and are gone.
+
+### Migration
+
+| Before | After |
+| --- | --- |
+| `TradeAPI(api_key=…, api_secret_key=…, passphrase=…, flag=…)` | `TradeAPI(Transport(api_key=…, api_secret_key=…, passphrase=…, flag=…))` |
+| `base_api=…` on an API class | `base_api=…` on `Transport` |
+| `debug=…` on an API class | `debug=…` on `Transport` |
+| `proxy=…` on an API class | `proxy=…` on `Transport` |
+| `raise_on_error=…` on an API class | `raise_on_error=…` on `Transport` |
+| `max_retries=…` on an API class | `max_retries=…` on `Transport` |
+| `retry_backoff=…` on an API class | `retry_backoff=…` on `Transport` |
+| `rate_limit=…` on an API class | `rate_limit=…` on `Transport` |
+| `AccountAPI(client=trade)` | `AccountAPI(transport)` with the same `Transport` |
+| `api._request_with_params(POST, path, params)` | `api.request(POST, path, params)` |
+| `api._request_without_params(GET, path)` | `api.request(GET, path)` |
+
 ## [0.9.0]
 
 Breaking release, the batch ADR-0004 reserved for the WebSocket layer. The REST

@@ -6,13 +6,13 @@ from okx.consts import *
 
 class FlexibleLoanAPI(OkxClient):
     def borrow_currencies(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, FINANCE_BORROW_CURRENCIES)
+        return self.request(GET, FINANCE_BORROW_CURRENCIES)
 
     def collateral_assets(self, ccy: Any = None) -> Dict[str, Any]:
         params = {}
         if ccy is not None:
             params['ccy'] = ccy
-        return self._request_with_params(GET, FINANCE_COLLATERAL_ASSETS, params)
+        return self.request(GET, FINANCE_COLLATERAL_ASSETS, params)
 
     def max_loan(self, borrowCcy: Any = None, supCollateral: Any = None) -> Dict[str, Any]:
         if supCollateral is None:
@@ -21,13 +21,13 @@ class FlexibleLoanAPI(OkxClient):
             'borrowCcy': borrowCcy,
             'supCollateral': supCollateral,
         }
-        return self._request_with_params(POST, FINANCE_MAX_LOAN, params)
+        return self.request(POST, FINANCE_MAX_LOAN, params)
 
     def max_collateral_redeem_amount(self, ccy: Any = None) -> Dict[str, Any]:
         params = {}
         if ccy is not None:
             params['ccy'] = ccy
-        return self._request_with_params(GET, FINANCE_MAX_REDEEM, params)
+        return self.request(GET, FINANCE_MAX_REDEEM, params)
 
     def adjust_collateral(self, type: Any = None, collateralCcy: Any = None, collateralAmt: Any = None) -> Dict[str, Any]:
         params = {
@@ -35,10 +35,10 @@ class FlexibleLoanAPI(OkxClient):
             'collateralCcy': collateralCcy,
             'collateralAmt': collateralAmt,
         }
-        return self._request_with_params(POST, FINANCE_ADJUST_COLLATERAL, params)
+        return self.request(POST, FINANCE_ADJUST_COLLATERAL, params)
 
     def loan_info(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, FINANCE_LOAN_INFO)
+        return self.request(GET, FINANCE_LOAN_INFO)
 
     def loan_history(self, type: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {}
@@ -50,7 +50,7 @@ class FlexibleLoanAPI(OkxClient):
             params['before'] = before
         if limit is not None:
             params['limit'] = limit
-        return self._request_with_params(GET, FINANCE_LOAN_HISTORY, params)
+        return self.request(GET, FINANCE_LOAN_HISTORY, params)
 
     def interest_accrued(self, ccy: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {}
@@ -62,7 +62,7 @@ class FlexibleLoanAPI(OkxClient):
             params['before'] = before
         if limit is not None:
             params['limit'] = limit
-        return self._request_with_params(GET, FINANCE_INTEREST_ACCRUED, params)
+        return self.request(GET, FINANCE_INTEREST_ACCRUED, params)
 
     def borrow(self, loanData: Any, clOrdId: Any, ordId: Any = None, collateralData: Any = None, eMode: Any = None) -> Dict[str, Any]:
         params = {
@@ -75,7 +75,7 @@ class FlexibleLoanAPI(OkxClient):
             params['collateralData'] = collateralData
         if eMode is not None:
             params['eMode'] = eMode
-        return self._request_with_params(POST, FINANCE_FLEXIBLE_LOAN_BORROW, params)
+        return self.request(POST, FINANCE_FLEXIBLE_LOAN_BORROW, params)
 
     def repay(self, ordId: Any, ccy: Any, amt: Any, clOrdId: Any) -> Dict[str, Any]:
         params = {
@@ -84,7 +84,7 @@ class FlexibleLoanAPI(OkxClient):
             'amt': amt,
             'clOrdId': clOrdId,
         }
-        return self._request_with_params(POST, FINANCE_FLEXIBLE_LOAN_REPAY, params)
+        return self.request(POST, FINANCE_FLEXIBLE_LOAN_REPAY, params)
 
     def emode_info(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, FINANCE_FLEXIBLE_LOAN_EMODE_INFO)
+        return self.request(GET, FINANCE_FLEXIBLE_LOAN_EMODE_INFO)

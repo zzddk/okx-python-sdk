@@ -1,6 +1,7 @@
 import asyncio
 
 from okx.websocket.WsPublicAsync import WsPublicAsync
+from okx.transport import Transport
 
 
 def publicCallback(message):

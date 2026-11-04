@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.PublicData import PublicAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 
 class TestPublicAPIMarketDataHistory(unittest.TestCase):
@@ -14,9 +15,9 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.public_api = PublicAPI(flag='0')
+        self.public_api = PublicAPI(FakeTransport())
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_with_required_params(self, mock_request):
         """Test get_market_data_history with required parameters only"""
         # Arrange
@@ -47,7 +48,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
         mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_with_all_params(self, mock_request):
         """Test get_market_data_history with all parameters provided"""
         # Arrange
@@ -82,7 +83,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
         mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_with_inst_id_list(self, mock_request):
         """Test get_market_data_history with instIdList parameter"""
         # Arrange
@@ -110,7 +111,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_with_inst_family_list(self, mock_request):
         """Test get_market_data_history with instFamilyList parameter"""
         # Arrange
@@ -138,7 +139,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_different_inst_types(self, mock_request):
         """Test get_market_data_history with different instType values"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -160,7 +161,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
             self.assertEqual(call_args[0][1], c.MARKET_DATA_HISTORY)
             self.assertEqual(call_args[1]['instType'] if call_args[1] else call_args[0][2]['instType'], inst_type)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_different_date_aggr_types(self, mock_request):
         """Test get_market_data_history with different dateAggrType values"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -181,7 +182,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
             call_args = mock_request.call_args[0][2]
             self.assertEqual(call_args['dateAggrType'], aggr_type)
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_different_modules(self, mock_request):
         """Test get_market_data_history with different module values"""
         mock_response = {'code': '0', 'msg': '', 'data': []}

@@ -1,13 +1,14 @@
 import unittest
 from okx.Finance import StakingDefi
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class StakingDefiTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.StackingAPI = StakingDefi.StakingDefiAPI(api_key, api_secret_key, passphrase,
-                                                      flag=flag)
+        self.StackingAPI = StakingDefi.StakingDefiAPI(
+            Transport(api_key, api_secret_key, passphrase, flag=flag))
 
     def test_get_offers(self):
         print(self.StackingAPI.get_offers(ccy="USDT"))

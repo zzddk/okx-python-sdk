@@ -22,6 +22,8 @@ import pytest
 import okx
 from okx import consts
 
+from .fakes import FakeTransport
+
 OKX_ROOT = pathlib.Path(okx.__file__).parent
 
 # Constants that are intentionally not dispatched by an *API method:
@@ -72,14 +74,11 @@ def _capture_requests(cls, method_name):
         else:
             positional.append(value)
 
-    calls = []
-    instance = object.__new__(cls)
-    instance._request = lambda http_method, path, params=None: (
-        calls.append((http_method, path)) or {"code": "0"}
-    )
+    transport = FakeTransport()
+    instance = cls(transport=transport)
 
     method(instance, *positional, **keyword)
-    return calls
+    return [(http_method, path) for http_method, path, _ in transport.calls]
 
 
 def _const_source_files():

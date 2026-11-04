@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Funding import FundingAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 
 class TestFundingAPIWithdrawal(unittest.TestCase):
@@ -14,14 +15,9 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.funding_api = FundingAPI(
-            api_key='test_key',
-            api_secret_key='test_secret',
-            passphrase='test_pass',
-            flag='0'
-        )
+        self.funding_api = FundingAPI(FakeTransport())
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_withdrawal_with_required_params(self, mock_request):
         """Test withdrawal with required parameters only"""
         # Arrange
@@ -49,7 +45,7 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.WITHDRAWAL_COIN, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_withdrawal_with_all_params(self, mock_request):
         """Test withdrawal with all parameters provided"""
         # Arrange
@@ -81,7 +77,7 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.WITHDRAWAL_COIN, expected_params)
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_withdrawal_with_toAddrType_okx_account(self, mock_request):
         """Test withdrawal with toAddrType for OKX account"""
         # Arrange
@@ -101,7 +97,7 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
         call_args = mock_request.call_args[0][2]
         self.assertEqual(call_args['toAddrType'], '1')
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_withdrawal_with_toAddrType_external(self, mock_request):
         """Test withdrawal with toAddrType for external address"""
         # Arrange
@@ -127,14 +123,9 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.funding_api = FundingAPI(
-            api_key='test_key',
-            api_secret_key='test_secret',
-            passphrase='test_pass',
-            flag='0'
-        )
+        self.funding_api = FundingAPI(FakeTransport())
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_get_withdrawal_history_with_no_params(self, mock_request):
         """Test get_withdrawal_history with no parameters"""
         # Arrange
@@ -149,7 +140,7 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
         self.assertNotIn('toAddrType', call_args)
         self.assertEqual(result, mock_response)
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_get_withdrawal_history_with_toAddrType(self, mock_request):
         """Test get_withdrawal_history with toAddrType parameter"""
         # Arrange
@@ -167,7 +158,7 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
         self.assertEqual(call_args['ccy'], 'USDT')
         self.assertEqual(call_args['toAddrType'], '1')
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_get_withdrawal_history_with_all_params(self, mock_request):
         """Test get_withdrawal_history with all parameters"""
         # Arrange
@@ -203,7 +194,7 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.GET_WITHDRAWAL_HISTORY, expected_params)
 
-    @patch.object(FundingAPI, '_request_with_params')
+    @patch.object(FundingAPI, 'request')
     def test_get_withdrawal_history_filter_by_state(self, mock_request):
         """Test get_withdrawal_history filtering by state"""
         # Arrange

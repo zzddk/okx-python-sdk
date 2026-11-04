@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 from okx import pagination
 from okx.okxclient import OkxClient
 
-MOCK_CLIENT_INIT = 'okx.okxclient.Client.__init__'
+from .fakes import FakeTransport
 
 
 def _page(*ids):
@@ -90,8 +90,7 @@ class TestPaginateWalk(unittest.TestCase):
 
 class TestClientPaginate(unittest.TestCase):
     def _client(self):
-        with patch(MOCK_CLIENT_INIT):
-            return OkxClient()
+        return OkxClient(transport=FakeTransport())
 
     def test_missing_cursor_fails_at_the_call_site(self):
         client = self._client()
@@ -118,6 +117,6 @@ class TestClientPaginate(unittest.TestCase):
     def test_pagination_goes_through_the_retry_layer(self):
         """Each page is a normal _request call, so retries and limits apply."""
         client = self._client()
-        with patch.object(client, '_request', return_value=_page()) as request:
-            list(client.paginate(lambda **kw: client._request('GET', '/x', kw), cursor='billId'))
+        with patch.object(client, 'request', return_value=_page()) as request:
+            list(client.paginate(lambda **kw: client.request('GET', '/x', kw), cursor='billId'))
         self.assertTrue(request.called)

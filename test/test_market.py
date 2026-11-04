@@ -13,12 +13,13 @@ BLOCK_TRADES = '/api/v5/market/block-trades'#need to add
 '''
 
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class MarketAPITest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.MarketApi = MarketData.MarketAPI(api_key, api_secret_key, passphrase, flag=flag)
+        self.MarketApi = MarketData.MarketAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
     '''
     
     def test_index_component(self):

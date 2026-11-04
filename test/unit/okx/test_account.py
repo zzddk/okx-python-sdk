@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Account import AccountAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Test constants
 IDX_VOL_NEGATIVE_5_PERCENT = '-0.05'
@@ -27,14 +28,9 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         self.api_key = _STUB_ID
         self.api_secret = _STUB_SIGN
         self.passphrase = _STUB_PHRASE
-        self.account_api = AccountAPI(
-            api_key=self.api_key,
-            api_secret_key=self.api_secret,
-            passphrase=self.passphrase,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_all_parameters(self, mock_request):
         """Test position_builder with all parameters provided"""
         # Arrange
@@ -77,7 +73,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_idxVol_only(self, mock_request):
         """Test position_builder with only idxVol parameter"""
         # Arrange
@@ -98,7 +94,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_negative_idxVol(self, mock_request):
         """Test position_builder with negative idxVol (price decrease)"""
         # Arrange
@@ -119,7 +115,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_no_parameters(self, mock_request):
         """Test position_builder with no parameters (all None)"""
         # Arrange
@@ -138,7 +134,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, {})
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_simulated_positions(self, mock_request):
         """Test position_builder with simulated positions and assets"""
         # Arrange
@@ -179,7 +175,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_greeks_type_pa(self, mock_request):
         """Test position_builder with greeksType PA"""
         # Arrange
@@ -193,7 +189,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'greeksType': 'PA'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_greeks_type_bs(self, mock_request):
         """Test position_builder with greeksType BS"""
         # Arrange
@@ -207,7 +203,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'greeksType': 'BS'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_includes_real_positions(self, mock_request):
         """Test position_builder with inclRealPosAndEq=True"""
         # Arrange
@@ -227,7 +223,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_excludes_real_positions(self, mock_request):
         """Test position_builder with inclRealPosAndEq=False (only virtual positions)"""
         # Arrange
@@ -249,7 +245,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_account_level(self, mock_request):
         """Test position_builder with specific account level"""
         # Arrange
@@ -263,7 +259,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'acctLv': '3'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_with_leverage(self, mock_request):
         """Test position_builder with leverage parameter"""
         # Arrange
@@ -277,7 +273,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'lever': '10'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_extreme_volatility_positive(self, mock_request):
         """Test position_builder with maximum positive volatility"""
         # Arrange
@@ -291,7 +287,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'idxVol': '1'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_extreme_volatility_negative(self, mock_request):
         """Test position_builder with maximum negative volatility"""
         # Arrange
@@ -305,7 +301,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {'idxVol': '-0.99'}
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_position_builder_complex_scenario(self, mock_request):
         """Test position_builder with a complex realistic scenario"""
         # Arrange
@@ -360,14 +356,9 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_none_parameters_are_excluded(self, mock_request):
         """Test that None parameters are not included in the request"""
         # Arrange
@@ -393,7 +384,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_false_value_for_inclRealPosAndEq_is_included(self, mock_request):
         """Test that False value for inclRealPosAndEq is included (not treated as None)"""
         # Arrange
@@ -409,7 +400,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_empty_lists_are_included(self, mock_request):
         """Test that empty lists are included in the request"""
         # Arrange
@@ -429,7 +420,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_zero_idxVol_is_included(self, mock_request):
         """Test that zero idxVol is included (represents no volatility change)"""
         # Arrange
@@ -451,14 +442,9 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_with_all_params(self, mock_request):
         """Test set_auto_earn with all parameters provided"""
         # Arrange
@@ -481,7 +467,7 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.SET_AUTO_EARN, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_turn_on_action(self, mock_request):
         """Test set_auto_earn with turn_on action"""
         # Arrange
@@ -503,7 +489,7 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.SET_AUTO_EARN, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_turn_off_action(self, mock_request):
         """Test set_auto_earn with turn_off action"""
         # Arrange
@@ -525,7 +511,7 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.SET_AUTO_EARN, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_with_required_params_only(self, mock_request):
         """Test set_auto_earn with required parameters only (ccy, action)"""
         # Arrange
@@ -542,7 +528,7 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.POST, c.SET_AUTO_EARN, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_different_currencies(self, mock_request):
         """Test set_auto_earn with different currencies"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -567,14 +553,9 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_order_size_with_required_params(self, mock_request):
         """Test get_max_order_size with required parameters only"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -594,7 +575,7 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
         mock_request.assert_called_once_with(c.GET, c.MAX_TRADE_SIZE, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_order_size_with_tradeQuoteCcy(self, mock_request):
         """Test get_max_order_size with tradeQuoteCcy parameter for Unified USD Orderbook"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -615,7 +596,7 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_TRADE_SIZE, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_order_size_without_tradeQuoteCcy(self, mock_request):
         """Test get_max_order_size without tradeQuoteCcy (should not include in params)"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -635,14 +616,9 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_avail_size_with_required_params(self, mock_request):
         """Test get_max_avail_size with required parameters only"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -664,7 +640,7 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
         mock_request.assert_called_once_with(c.GET, c.MAX_AVAIL_SIZE, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_avail_size_with_tradeQuoteCcy(self, mock_request):
         """Test get_max_avail_size with tradeQuoteCcy parameter for Unified USD Orderbook"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -687,7 +663,7 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.MAX_AVAIL_SIZE, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_max_avail_size_without_tradeQuoteCcy(self, mock_request):
         """Test get_max_avail_size without tradeQuoteCcy (should not include in params)"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -707,14 +683,9 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_account_bills_default_no_args_backward_compatible(self, mock_request):
         """Existing callers with no args still produce empty begin/end (no-op change)"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -730,7 +701,7 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         mock_request.assert_called_once_with(c.GET, c.BILLS_DETAIL, expected_params)
         self.assertEqual(result, mock_response)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_account_bills_with_begin_end(self, mock_request):
         """begin/end land in the params dict when provided"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -747,7 +718,7 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         }
         mock_request.assert_called_once_with(c.GET, c.BILLS_DETAIL, expected_params)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_account_bills_positional_backward_compatible(self, mock_request):
         """Legacy positional callers (up to limit) still bind correctly"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -764,7 +735,7 @@ class TestAccountAPIGetAccountBills(unittest.TestCase):
         self.assertEqual(call_args['begin'], None)
         self.assertEqual(call_args['end'], None)
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_get_account_bills_mirrors_archive_param_keys(self, mock_request):
         """get_account_bills param keys match get_account_bills_archive (GH#141 symmetry)"""
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
@@ -783,25 +754,20 @@ class TestAccountAPIGlpPerformance(unittest.TestCase):
     """Unit tests for GLP performance methods (TD 0.4.4 items #2-3)"""
 
     def setUp(self):
-        self.account_api = AccountAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.account_api = AccountAPI(FakeTransport())
 
     def test_glp_constant_paths(self):
         self.assertEqual(c.GLP_HISTORICAL_PERFORMANCE, '/api/v5/users/glp/historicalperformance')
         self.assertEqual(c.GLP_TODAY_PERFORMANCE, '/api/v5/users/glp/todayperformance')
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_glp_historical_performance_required_only(self, mock_request):
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
         self.account_api.get_glp_historical_performance(program='SPOT')
         mock_request.assert_called_once_with(
             c.GET, c.GLP_HISTORICAL_PERFORMANCE, {'program': 'SPOT'})
 
-    @patch.object(AccountAPI, '_request_with_params')
+    @patch.object(AccountAPI, 'request')
     def test_glp_historical_performance_with_all_params(self, mock_request):
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
         self.account_api.get_glp_historical_performance(
@@ -810,7 +776,7 @@ class TestAccountAPIGlpPerformance(unittest.TestCase):
             c.GET, c.GLP_HISTORICAL_PERFORMANCE,
             {'program': 'PERP', 'begin': '1', 'end': '2', 'limit': '100'})
 
-    @patch.object(AccountAPI, '_request_without_params')
+    @patch.object(AccountAPI, 'request')
     def test_glp_today_performance(self, mock_request):
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
         self.account_api.get_glp_today_performance()

@@ -10,7 +10,7 @@ class CopyTradingAPI(OkxClient):
         params = {
             'instId': instId
         }
-        return self._request_with_params(GET, GET_EXISTING_LEADING_POSITIONS, params)
+        return self.request(GET, GET_EXISTING_LEADING_POSITIONS, params)
 
     # Get leading position history
     def get_leading_position_history(self, instId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
@@ -20,7 +20,7 @@ class CopyTradingAPI(OkxClient):
             'before': before,
             'limit': limit
         }
-        return self._request_with_params(GET, GET_LEADING_POSITIONS_HISTORY, params)
+        return self.request(GET, GET_LEADING_POSITIONS_HISTORY, params)
 
     # Place leading stop order
     def place_leading_stop_order(self, subPosId: Any = None, tpTriggerPx: Any = None, slTriggerPx: Any = None, tpTriggerPxType: Any = None,
@@ -32,25 +32,25 @@ class CopyTradingAPI(OkxClient):
             'tpTriggerPxType': tpTriggerPxType,
             'slTriggerPxType': slTriggerPxType
         }
-        return self._request_with_params(POST, PLACE_LEADING_STOP_ORDER, params)
+        return self.request(POST, PLACE_LEADING_STOP_ORDER, params)
 
     # Close leading position
     def close_leading_position(self, subPosId: Any = None) -> Dict[str, Any]:
         params = {
             'subPosId': subPosId
         }
-        return self._request_with_params(POST, CLOSE_LEADING_POSITIONS, params)
+        return self.request(POST, CLOSE_LEADING_POSITIONS, params)
 
     # Get leading instruments
     def get_leading_instruments(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, GET_LEADING_POSITIONS)
+        return self.request(GET, GET_LEADING_POSITIONS)
 
     # Amend leading instruments
     def amend_leading_instruments(self, instId: Any = None) -> Dict[str, Any]:
         params = {
             'instId': instId
         }
-        return self._request_with_params(POST, AMEND_EXISTING_LEADING_POSITIONS, params)
+        return self.request(POST, AMEND_EXISTING_LEADING_POSITIONS, params)
 
     # Get profit sharing details
     def get_profit_sharing_details(self, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
@@ -59,12 +59,12 @@ class CopyTradingAPI(OkxClient):
             'before': before,
             'limit': limit
         }
-        return self._request_with_params(GET, GET_PROFIT_SHARING_DETAILS, params)
+        return self.request(GET, GET_PROFIT_SHARING_DETAILS, params)
 
     # Get total profit sharing
     def get_total_profit_sharing(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, GET_TOTAL_PROFIT_SHARING)
+        return self.request(GET, GET_TOTAL_PROFIT_SHARING)
 
     # Get unrealized profit sharing details
     def get_unrealized_profit_sharing_details(self) -> Dict[str, Any]:
-        return self._request_without_params(GET, GET_UNREALIZED_PROFIT_SHARING_DETAILS)
+        return self.request(GET, GET_UNREALIZED_PROFIT_SHARING_DETAILS)

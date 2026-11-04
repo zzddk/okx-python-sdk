@@ -1,12 +1,13 @@
 import unittest
 from okx import Convert
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class ConvertTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.ConvertAPI = Convert.ConvertAPI(api_key, api_secret_key, passphrase, flag=flag)
+        self.ConvertAPI = Convert.ConvertAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
     '''
     
     def test_get_currencies(self):

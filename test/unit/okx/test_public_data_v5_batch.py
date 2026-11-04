@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 from okx.PublicData import PublicAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Placeholder client identifiers — every request is mocked; not real credentials.
 _STUB_ID = 'test_key'
@@ -14,15 +15,15 @@ _STUB_PHRASE = 'test_pass'
 
 class TestGetAnnouncements(unittest.TestCase):
     def setUp(self):
-        self.api = PublicAPI(api_key=_STUB_ID, api_secret_key=_STUB_SIGN, passphrase=_STUB_PHRASE, flag='0')
+        self.api = PublicAPI(FakeTransport())
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_announcements_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_announcements()
         mock_request.assert_called_once_with(c.GET, c.ANNOUNCEMENTS, {'annType': None, 'page': None})
 
-    @patch.object(PublicAPI, '_request_with_params')
+    @patch.object(PublicAPI, 'request')
     def test_get_announcements_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_announcements(annType='announcements-latest-announcements', page='2')

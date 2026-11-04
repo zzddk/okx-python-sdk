@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 from okx.DualInvest import DualInvestAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Placeholder client identifiers — every request is mocked; not real credentials.
 _STUB_ID = 'test_key'
@@ -14,11 +15,11 @@ _STUB_PHRASE = 'test_pass'
 
 class _Base(unittest.TestCase):
     def setUp(self):
-        self.api = DualInvestAPI(api_key=_STUB_ID, api_secret_key=_STUB_SIGN, passphrase=_STUB_PHRASE, flag='0')
+        self.api = DualInvestAPI(FakeTransport())
 
 
 class TestDualInvestNoParamGets(_Base):
-    @patch.object(DualInvestAPI, '_request_without_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_get_currency_pairs(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_currency_pairs()
@@ -26,7 +27,7 @@ class TestDualInvestNoParamGets(_Base):
 
 
 class TestDualInvestParamMethods(_Base):
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_get_product_info(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_product_info(baseCcy='BTC', quoteCcy='USDT', optType='call')
@@ -34,7 +35,7 @@ class TestDualInvestParamMethods(_Base):
             c.GET, c.DUAL_INVEST_PRODUCT_INFO,
             {'baseCcy': 'BTC', 'quoteCcy': 'USDT', 'optType': 'call'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_request_quote(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.request_quote(productId='p1', notionalSz='100', notionalCcy='USDT')
@@ -42,34 +43,34 @@ class TestDualInvestParamMethods(_Base):
             c.POST, c.DUAL_INVEST_REQUEST_QUOTE,
             {'productId': 'p1', 'notionalSz': '100', 'notionalCcy': 'USDT'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_trade(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.trade(quoteId='q1')
         mock_request.assert_called_once_with(
             c.POST, c.DUAL_INVEST_TRADE, {'quoteId': 'q1'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_request_redeem_quote(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.request_redeem_quote(ordId='o1')
         mock_request.assert_called_once_with(
             c.POST, c.DUAL_INVEST_REQUEST_REDEEM_QUOTE, {'ordId': 'o1'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_redeem(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.redeem(ordId='o1', quoteId='q1')
         mock_request.assert_called_once_with(
             c.POST, c.DUAL_INVEST_REDEEM, {'ordId': 'o1', 'quoteId': 'q1'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_get_order_state(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_order_state(ordId='o1')
         mock_request.assert_called_once_with(c.GET, c.DUAL_INVEST_ORDER_STATE, {'ordId': 'o1'})
 
-    @patch.object(DualInvestAPI, '_request_with_params')
+    @patch.object(DualInvestAPI, 'request')
     def test_get_order_history(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_order_history(ordId='o1', productId='p1', state='filled', limit='10')

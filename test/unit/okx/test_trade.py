@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Trade import TradeAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Test constants
 SAMPLE_ORDERS = [{'instId': 'BTC-USDT', 'algoId': '590xxxx'}]
@@ -24,14 +25,9 @@ class TestTradeAPICancelAlgoOrder(unittest.TestCase):
 
     def setUp(self):
         """Set up test fixtures"""
-        self.trade_api = TradeAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0'
-        )
+        self.trade_api = TradeAPI(FakeTransport())
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_cancel_algo_order_positional(self, mock_request):
         """New name: positional caller binds to orders_data (backward compatible)"""
         mock_response = {'code': '0', 'msg': '', 'data': []}
@@ -42,7 +38,7 @@ class TestTradeAPICancelAlgoOrder(unittest.TestCase):
         mock_request.assert_called_once_with(c.POST, c.CANCEL_ALGOS, SAMPLE_ORDERS)
         self.assertEqual(result, mock_response)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_cancel_algo_order_orders_data_keyword(self, mock_request):
         """orders_data keyword works"""
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
@@ -51,7 +47,7 @@ class TestTradeAPICancelAlgoOrder(unittest.TestCase):
 
         mock_request.assert_called_once_with(c.POST, c.CANCEL_ALGOS, SAMPLE_ORDERS)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_cancel_algo_order_params_keyword_alias(self, mock_request):
         """Legacy params= keyword still resolves via the deprecated alias (GH#115)"""
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
@@ -60,7 +56,7 @@ class TestTradeAPICancelAlgoOrder(unittest.TestCase):
 
         mock_request.assert_called_once_with(c.POST, c.CANCEL_ALGOS, SAMPLE_ORDERS)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_cancel_algo_order_orders_data_takes_precedence(self, mock_request):
         """When both provided, orders_data wins over the legacy alias"""
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}

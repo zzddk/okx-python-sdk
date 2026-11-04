@@ -1,13 +1,14 @@
 import unittest
 from okx import CopyTrading
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class CopyTradingTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.StackingAPI = CopyTrading.CopyTradingAPI(api_key, api_secret_key, passphrase,
-                                                      flag=flag)
+        self.StackingAPI = CopyTrading.CopyTradingAPI(
+            Transport(api_key, api_secret_key, passphrase, flag=flag))
 
     # def test_get_existing_leading_positions(self):
     #     print(self.StackingAPI.get_existing_leading_positions(instId='DOGE-USDT-SWAP'))

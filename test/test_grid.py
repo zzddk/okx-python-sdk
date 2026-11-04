@@ -2,12 +2,13 @@
 import unittest
 from okx import Grid
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class GridTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.GridAPI = Grid.GridAPI(api_key, api_secret_key, passphrase, flag=flag, debug=False)
+        self.GridAPI = Grid.GridAPI(Transport(api_key, api_secret_key, passphrase, flag=flag, debug=False))
     """
     GRID_COMPUTE_MARGIN_BALANCE = '/api/v5/tradingBot/grid/compute-margin-balance'
     GRID_MARGIN_BALANCE = '/api/v5/tradingBot/grid/margin-balance'

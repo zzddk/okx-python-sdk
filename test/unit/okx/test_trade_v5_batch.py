@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 from okx.Trade import TradeAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Placeholder client identifiers — every request is mocked (see @patch.object),
 # so these dummy strings are never signed or transmitted; not real credentials.
@@ -21,13 +22,13 @@ _REQUIRED_PLACE_ORDER = dict(instId='BTC-USDT', tdMode='cash', side='buy', ordTy
 
 class _Base(unittest.TestCase):
     def setUp(self):
-        self.api = TradeAPI(api_key=_STUB_ID, api_secret_key=_STUB_SIGN, passphrase=_STUB_PHRASE, flag='0')
+        self.api = TradeAPI(FakeTransport())
 
 
 class TestPlaceOrderNewParams(_Base):
     """#3 isElpTakerAccess, #5 instIdCode on place_order"""
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_place_order_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_order(**_REQUIRED_PLACE_ORDER)
@@ -37,14 +38,14 @@ class TestPlaceOrderNewParams(_Base):
         self.assertNotIn('tradeQuoteCcy', params)
         self.assertIn('attachAlgoOrds', params)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_place_order_isElpTakerAccess_written_when_set(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_order(**_REQUIRED_PLACE_ORDER, isElpTakerAccess=True)
         params = mock_request.call_args[0][2]
         self.assertEqual(params['isElpTakerAccess'], True)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_place_order_instIdCode_written_when_set(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_order(**_REQUIRED_PLACE_ORDER, instIdCode='123')
@@ -56,7 +57,7 @@ class TestPlaceOrderNewParams(_Base):
 class TestPlaceAlgoOrderNewParams(_Base):
     """#1 advanceOrdType, #5 tpTriggerRatio/slTriggerRatio on place_algo_order"""
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_algo_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_algo_order(instId='BTC-USDT', tdMode='cash', side='buy', ordType='conditional', sz='1')
@@ -65,7 +66,7 @@ class TestPlaceAlgoOrderNewParams(_Base):
         self.assertNotIn('tpTriggerRatio', params)
         self.assertNotIn('slTriggerRatio', params)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_algo_advanceOrdType_written_when_set(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_algo_order(instId='BTC-USDT', tdMode='cash', side='buy',
@@ -74,7 +75,7 @@ class TestPlaceAlgoOrderNewParams(_Base):
         self.assertEqual(params['advanceOrdType'], 'fok')
         self.assertEqual(mock_request.call_args[0][1], c.PLACE_ALGO_ORDER)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_algo_trigger_ratios_written_when_set(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_algo_order(instId='BTC-USDT', tdMode='cash', side='buy', ordType='oco',
@@ -87,7 +88,7 @@ class TestPlaceAlgoOrderNewParams(_Base):
 class TestAmendOrderNewParams(_Base):
     """#5 newTpTriggerRatio/newSlTriggerRatio on amend_order"""
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_amend_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.amend_order(instId='BTC-USDT', ordId='1')
@@ -95,7 +96,7 @@ class TestAmendOrderNewParams(_Base):
         self.assertNotIn('newTpTriggerRatio', params)
         self.assertNotIn('newSlTriggerRatio', params)
 
-    @patch.object(TradeAPI, '_request_with_params')
+    @patch.object(TradeAPI, 'request')
     def test_amend_trigger_ratios_written_when_set(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.amend_order(instId='BTC-USDT', ordId='1',

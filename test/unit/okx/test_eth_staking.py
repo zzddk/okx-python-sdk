@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 from okx.Finance.EthStaking import EthStakingAPI
 from okx import consts as c
+from .fakes import FakeTransport
 
 # Placeholder client identifiers for constructing the API client in unit tests.
 # Every request is mocked (see @patch.object below), so these dummy strings are
@@ -17,12 +18,7 @@ _STUB_PHRASE = 'test_pass'
 
 class TestEthCancelRedeem(unittest.TestCase):
     def setUp(self):
-        self.api = EthStakingAPI(
-            api_key=_STUB_ID,
-            api_secret_key=_STUB_SIGN,
-            passphrase=_STUB_PHRASE,
-            flag='0',
-        )
+        self.api = EthStakingAPI(FakeTransport())
 
     def test_cancel_redeem_constant_path(self):
         # constant targets the official cancel-redeem endpoint
@@ -31,14 +27,14 @@ class TestEthCancelRedeem(unittest.TestCase):
             '/api/v5/finance/staking-defi/eth/cancel-redeem',
         )
 
-    @patch.object(EthStakingAPI, '_request_with_params')
+    @patch.object(EthStakingAPI, 'request')
     def test_eth_cancel_redeem_builds_request(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.eth_cancel_redeem(ordId='1234567890')
         mock_request.assert_called_once_with(
             c.POST, c.STACK_ETH_CANCEL_REDEEM, {'ordId': '1234567890'})
 
-    @patch.object(EthStakingAPI, '_request_with_params')
+    @patch.object(EthStakingAPI, 'request')
     def test_eth_cancel_redeem_default_ordid(self, mock_request):
         # ordId defaults to None: the key is omitted from the request body
         mock_request.return_value = {'code': '0'}

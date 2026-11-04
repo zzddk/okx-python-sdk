@@ -6,16 +6,19 @@ retry loop stays readable. Unknown paths are never throttled.
 
 import threading
 import time
-from typing import Dict, Hashable, Tuple
+from typing import Callable, Dict, Hashable, Tuple
 
 
 class RateLimiter:
     """At most `count` calls per `window` seconds for each request path."""
 
-    def __init__(self, limits: Dict[Hashable, Tuple[int, float]]) -> None:
+    def __init__(self, limits: Dict[Hashable, Tuple[int, float]],
+                 sleep: Callable[[float], None] = time.sleep) -> None:
         self._limits = dict(limits)
         self._calls: Dict[Hashable, list] = {}
         self._lock = threading.Lock()
+        # Injectable so tests can assert the wait without spending it.
+        self._sleep = sleep
 
     def acquire(self, path: Hashable) -> None:
         """Block until a slot for `path` is free, then record the call."""
@@ -33,4 +36,4 @@ class RateLimiter:
                     return
                 wait = window - (now - recent[0])
             # Sleep outside the lock so other paths are not blocked by this one.
-            time.sleep(max(wait, 0.001))
+            self._sleep(max(wait, 0.001))

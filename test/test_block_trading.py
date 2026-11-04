@@ -2,12 +2,13 @@
 import unittest
 from okx import BlockTrading
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class BlockTradingTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.BlockTradingAPI = BlockTrading.BlockTradingAPI(api_key, api_secret_key, passphrase, flag=flag)
+        self.BlockTradingAPI = BlockTrading.BlockTradingAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
 
     """
     def test_get_counter_parties(self):

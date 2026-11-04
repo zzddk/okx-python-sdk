@@ -5,10 +5,10 @@ import logging
 
 import pytest
 
-from okx import okxclient, utils
+from okx import transport, utils
 
 
-@pytest.mark.parametrize("module", [okxclient, utils])
+@pytest.mark.parametrize("module", [transport, utils])
 def test_sdk_loggers_are_stdlib(module):
     assert isinstance(module.logger, logging.Logger)
 
@@ -21,7 +21,7 @@ def test_sdk_records_reach_an_application_handler():
     previous_level = sdk_logger.level
     sdk_logger.setLevel(logging.DEBUG)
     try:
-        okxclient.logger.debug("visible-sdk-record")
+        transport.logger.debug("visible-sdk-record")
     finally:
         sdk_logger.removeHandler(handler)
         sdk_logger.setLevel(previous_level)

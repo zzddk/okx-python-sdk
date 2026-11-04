@@ -2,12 +2,13 @@ import unittest
 
 from okx import Trade
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class TradeTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.tradeApi = Trade.TradeAPI(api_key, api_secret_key, passphrase, flag=flag)
+        self.tradeApi = Trade.TradeAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
 
     # # """
     # def test_place_order(self):

@@ -1,12 +1,13 @@
 import unittest
 from okx.Finance import FlexibleLoan
 from test.config import get_api_credentials
+from okx.transport import Transport
 
 
 class FlexibleLoanTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.FlexibleLoanAPI = FlexibleLoan.FlexibleLoanAPI(api_key, api_secret_key, passphrase, flag=flag)
+        self.FlexibleLoanAPI = FlexibleLoan.FlexibleLoanAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
 
     def test_borrow_currencies(self):
         print(self.FlexibleLoanAPI.borrow_currencies())

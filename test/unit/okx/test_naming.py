@@ -9,6 +9,8 @@ from okx.Account import AccountAPI
 from okx.PublicData import PublicAPI
 from okx.SubAccount import SubAccountAPI
 
+from .fakes import FakeTransport
+
 RENAMED_CONSTANTS = {
     "ACEEPT": "ACCEPT",
     "ACTIVSTE_OPTION": "ACTIVATE_OPTION",
@@ -49,8 +51,8 @@ def test_renamed_method_has_no_alias(cls, old, new):
 
 
 def test_get_instruments_sends_uly_not_ugly():
-    api = AccountAPI(api_key="k", api_secret_key="s", passphrase="p", flag="0")
-    with patch.object(AccountAPI, "_request_with_params") as mock_request:
+    api = AccountAPI(FakeTransport())
+    with patch.object(AccountAPI, "request") as mock_request:
         mock_request.return_value = {"code": "0"}
         api.get_instruments(instType="SWAP", uly="BTC-USDT")
 
