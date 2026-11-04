@@ -1,5 +1,3 @@
-import json
-
 from typing import Any, Dict
 
 from .okxclient import OkxClient

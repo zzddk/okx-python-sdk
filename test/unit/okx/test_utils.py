@@ -52,3 +52,7 @@ def test_drop_none_params_keeps_empty_strings():
 def test_drop_none_params_passes_lists_through():
     orders = [{"instId": "BTC-USDT"}]
     assert drop_none_params(orders) == orders
+
+
+def test_drop_none_params_turns_none_into_an_empty_body():
+    assert drop_none_params(None) == {}

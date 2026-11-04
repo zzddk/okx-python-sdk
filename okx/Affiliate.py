@@ -3,7 +3,6 @@ from typing import Any, Dict
 from okx.okxclient import OkxClient
 from okx.consts import (
     GET,
-    _NO_CREDENTIAL,
     AFFILIATE_TVB_INVITEE_DETAIL,
     AFFILIATE_TVB_INVITEE_LIST,
     AFFILIATE_TVB_LINK_LIST,

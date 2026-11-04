@@ -64,6 +64,8 @@ def parse_params_to_str(params: Dict[str, Any]) -> str:
 
 def drop_none_params(params: Any) -> Any:
     """Drop top-level None values before serializing a JSON request body."""
+    if params is None:
+        return {}
     if isinstance(params, dict):
         return {key: value for key, value in params.items() if value is not None}
     return params

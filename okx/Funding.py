@@ -7,11 +7,6 @@ from .consts import *
 class FundingAPI(OkxClient):
 
 
-    # Get Non Tradable Assets
-    def get_non_tradable_assets(self, ccy: str = None) -> Dict[str, Any]:
-        params = {'ccy': ccy}
-        return self._request_with_params(GET, NON_TRADABLE_ASSETS, params)
-
     # Get Deposit Address
     def get_deposit_address(self, ccy: Any) -> Dict[str, Any]:
         params = {'ccy': ccy}
@@ -85,7 +80,7 @@ class FundingAPI(OkxClient):
         return self._request_with_params(POST, CANCEL_WITHDRAWAL, params)
 
     #POST /api/v5/asset/convert-dust-assets
-    def convert_dust_assets(self,ccy: Any = []) -> Dict[str, Any]:
+    def convert_dust_assets(self, ccy: Any = None) -> Dict[str, Any]:
         params = {
             'ccy':ccy
         }

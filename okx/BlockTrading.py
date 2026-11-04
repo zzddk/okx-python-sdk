@@ -81,7 +81,7 @@ class BlockTradingAPI(OkxClient):
     def reset_mmp(self) -> Dict[str, Any]:
         return self._request_without_params(POST, MMP_RESET)
 
-    def set_marker_instrument(self,params: Any = []) -> Dict[str, Any]:
+    def set_marker_instrument(self, params: Any = None) -> Dict[str, Any]:
 
         return self._request_with_params(POST, MAKER_INSTRUMENT_SETTING, params)
 

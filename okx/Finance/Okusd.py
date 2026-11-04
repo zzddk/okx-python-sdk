@@ -3,7 +3,6 @@ from typing import Any, Dict
 from okx.okxclient import OkxClient
 from okx.consts import (
     GET,
-    _NO_CREDENTIAL,
     OKUSD_ACCOUNT,
     OKUSD_RATE_HISTORY,
     OKUSD_SUBSCRIBE_HISTORY,

@@ -1,7 +1,5 @@
 import unittest
 
-from loguru import logger
-
 from okx import Account
 from test.config import get_api_credentials
 
