@@ -6,7 +6,7 @@ from test.config import get_api_credentials
 class SubAccountTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.SubAccountApi = SubAccount.SubAccountAPI(api_key, api_secret_key, passphrase, use_server_time=False, flag=flag)
+        self.SubAccountApi = SubAccount.SubAccountAPI(api_key, api_secret_key, passphrase, flag=flag)
     '''
     ENTRUST_SUBACCOUNT_LIST = '/api/v5/users/entrust-subaccount-list' #need to add
     SET_TRANSFER_OUT = '/api/v5/users/subaccount/set-transfer-out' #need to add

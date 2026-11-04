@@ -21,5 +21,3 @@ POST = "POST"
 # Unset sentinel for credential args — lets public endpoints work without keys.
 # Never signed or transmitted as a real key/secret/passphrase.
 _NO_CREDENTIAL = '-1'
-
-SERVER_TIMESTAMP_URL = '/api/v5/public/time'

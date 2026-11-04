@@ -6,7 +6,7 @@ from test.config import get_api_credentials
 class EthStakingTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.StackingAPI = EthStaking.EthStakingAPI(api_key, api_secret_key, passphrase, use_server_time=False, flag=flag)
+        self.StackingAPI = EthStaking.EthStakingAPI(api_key, api_secret_key, passphrase, flag=flag)
 
     def test_eth_product_info(self):
         print(self.StackingAPI.eth_product_info())

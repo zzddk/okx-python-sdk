@@ -9,7 +9,8 @@ Breaking release. This is the only window in the 0.4/0.5 line for public-API cha
 ### Changed
 - Failed requests raise `OkxAPIException` by default when the HTTP status is `>= 400` or the response `code` is not `'0'`. The exception exposes `code`, `message`, `status_code` and the original `response`; network failures still surface as the underlying `httpx` exception. Pass `raise_on_error=False` to return the payload dict exactly as 0.4.x did.
 - All 22 `*API` classes now inherit `OkxClient.__init__`; the duplicated subclass constructors are gone. Adding a client-wide option no longer means editing 22 files.
-- The base constructor's `domain` parameter is now `base_api`, matching `OkxClient`. The positional slot is unchanged, so positional construction keeps working; `domain=` keyword calls must switch to `base_api=`.
+- The base constructor's `domain` parameter is now `base_api`, matching `OkxClient`. `domain=` keyword calls must switch to `base_api=`.
+- `use_server_time` is removed from every constructor; the fourth positional argument is now `flag`. The parameter had been a silent no-op since 0.4.x, so sync the system clock (for example with NTP) if timestamp drift matters.
 - The REST layer logs through the standard `logging` module (`okx.okxclient`, `okx.utils`), matching the WebSocket layer. Application handlers receive SDK records; a `NullHandler` on the `okx` logger keeps unconfigured apps quiet.
 - `okx.websocket.WsUtils.getServerTime` uses the already-required `httpx` instead of `requests`.
 - Empty-value semantics are unified: `None` is the only "not supplied" marker, and an explicit `''` is sent as a real parameter. Every optional REST argument now defaults to `None` instead of `''`. GET query values that are lists or dicts are JSON-encoded; POST bodies drop top-level `None` values. `TradeAPI.place_algo_order(attachAlgoOrds=...)` no longer defaults to a shared mutable empty list.
@@ -49,6 +50,7 @@ No aliases are kept; update call sites using this table.
 
 ### Removed
 - `loguru` and `requests` are no longer runtime dependencies; `requirements.txt` lists only `httpx[http2]`, `websockets` and `certifi`.
+- `consts.SERVER_TIMESTAMP_URL` (duplicate of `consts.SYSTEM_TIME`, only used by the removed server-time path).
 
 ## [0.4.5]
 

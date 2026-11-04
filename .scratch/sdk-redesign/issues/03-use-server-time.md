@@ -18,3 +18,7 @@ Release: 0.5.0
 ## Comments
 
 - 2026-11-05: 0.4.5 keeps the parameter and replaces the default-hidden `DeprecationWarning` with a visible `UserWarning`. Removal is deferred to 0.5.0 because deleting a constructor argument breaks callers.
+
+## Comments
+
+- 2026-11-05: done in 0.5.0 by removal. `use_server_time` is gone from `OkxClient.__init__` (and therefore from all 22 API classes); passing it now raises `TypeError`. Positional callers shift `flag` into the fourth slot, which is called out in the CHANGELOG. Removed the now-unused `SERVER_TIMESTAMP_URL` constant and updated integration tests and example notebooks.

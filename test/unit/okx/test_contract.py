@@ -25,9 +25,8 @@ from okx import consts
 OKX_ROOT = pathlib.Path(okx.__file__).parent
 
 # Constants that are intentionally not dispatched by an *API method:
-# - SERVER_TIMESTAMP_URL has no API-method binding (server-time correction is not implemented).
 # - LIQUIDATION_ORDERS has no binding yet (tracked separately).
-_CONSTS_WITHOUT_API_METHOD = {"SERVER_TIMESTAMP_URL", "LIQUIDATION_ORDERS"}
+_CONSTS_WITHOUT_API_METHOD = {"LIQUIDATION_ORDERS"}
 
 _ENDPOINT_PATHS = {
     value

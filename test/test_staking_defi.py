@@ -6,7 +6,7 @@ from test.config import get_api_credentials
 class StakingDefiTest(unittest.TestCase):
     def setUp(self):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
-        self.StackingAPI = StakingDefi.StakingDefiAPI(api_key, api_secret_key, passphrase, use_server_time=False,
+        self.StackingAPI = StakingDefi.StakingDefiAPI(api_key, api_secret_key, passphrase,
                                                       flag=flag)
 
     def test_get_offers(self):

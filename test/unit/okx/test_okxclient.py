@@ -5,7 +5,6 @@ Mirrors the structure: okx/okxclient.py -> test/unit/okx/test_okxclient.py
 """
 import json
 import unittest
-import warnings
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -55,20 +54,15 @@ class TestOkxClientInit(unittest.TestCase):
             self.assertEqual(client.flag, '0')
             self.assertTrue(client.debug)
 
-    def test_use_server_time_warns_that_it_has_no_effect(self):
-        """The deprecated parameter stays accepted but no longer fails silently"""
+    def test_removed_use_server_time_is_rejected(self):
+        """The dead parameter is gone instead of silently accepted"""
         with patch(MOCK_CLIENT_INIT) as mock_init:
             mock_init.return_value = None
 
             from okx.okxclient import OkxClient
 
-            with warnings.catch_warnings(record=True) as caught:
-                warnings.simplefilter("always")
+            with self.assertRaises(TypeError):
                 OkxClient(use_server_time=True)
-
-        self.assertEqual(len(caught), 1)
-        self.assertIs(caught[0].category, UserWarning)
-        self.assertIn("has no effect", str(caught[0].message))
 
 
 class TestOkxClientHttpxCompatibility(unittest.TestCase):
@@ -233,7 +227,7 @@ class TestSubclassConstructor(unittest.TestCase):
             mock_init.return_value = None
             from okx.Trade import TradeAPI
 
-            api = TradeAPI('k', 's', 'p', False, '0')
+            api = TradeAPI('k', 's', 'p', '0')
 
         self.assertEqual(api.API_KEY, 'k')
         self.assertEqual(api.API_SECRET_KEY, 's')

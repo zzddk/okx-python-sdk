@@ -1,6 +1,5 @@
 import json
 import logging
-import warnings
 from typing import Any, Dict, Optional
 
 from httpx import Client
@@ -14,8 +13,8 @@ logger = logging.getLogger(__name__)
 class OkxClient(Client):
 
     def __init__(self, api_key: str = c._NO_CREDENTIAL, api_secret_key: str = c._NO_CREDENTIAL,
-                 passphrase: str = c._NO_CREDENTIAL, use_server_time: Optional[bool] = None,
-                 flag: str = '1', base_api: str = c.API_URL, debug: bool = False,
+                 passphrase: str = c._NO_CREDENTIAL, flag: str = '1',
+                 base_api: str = c.API_URL, debug: bool = False,
                  proxy: Optional[str] = None, client: Optional["OkxClient"] = None,
                  raise_on_error: bool = True) -> None:
         # Compatible with different versions of httpx
@@ -47,12 +46,6 @@ class OkxClient(Client):
             self.debug = debug
             self.domain = base_api
             self.raise_on_error = raise_on_error
-        if use_server_time:
-            warnings.warn(
-                "use_server_time has no effect and will be removed in 0.5.0.",
-                UserWarning,
-                stacklevel=2,
-            )
 
     def _request(self, method: Any, request_path: Any, params: Any) -> Dict[str, Any]:
         if self._client is not None:
