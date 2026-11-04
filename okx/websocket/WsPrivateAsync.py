@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from okx import consts
+from okx.transport import Transport
 from okx.websocket.WsBaseAsync import Callback, WsBaseAsync
 
 
@@ -12,26 +13,37 @@ class WsPrivateAsync(WsBaseAsync):
     _LOGIN_REQUIRED = True
 
     @classmethod
-    def from_client(
+    def from_transport(
         cls,
-        client: Any,
+        transport: Transport,
         url: Optional[str] = None,
         debug: Optional[bool] = None,
     ) -> "WsPrivateAsync":
-        """Build from an existing REST client, matching its credentials and environment.
+        """Build from the `Transport` that configures the REST side.
 
-        `flag='1'` on the REST client means demo trading, so the demo host is
-        used automatically — the two layers cannot end up in different
-        environments by accident.
+        Credentials, environment and proxy are shared: `flag='1'` on the
+        transport means demo trading, so the demo host and `transport.proxy`
+        are picked up automatically. `debug` falls back to the transport's
+        value unless given explicitly.
+
+        Only `transport.proxy` is inherited. `Transport(http=...)` turning off
+        environment-proxy detection is a REST rule and does not extend here:
+        with no proxy set, the WebSocket still follows the environment.
         """
+        if not isinstance(transport, Transport):
+            raise TypeError(
+                "transport must be an okx.transport.Transport instance, "
+                f"got {type(transport).__name__}"
+            )
         if url is None:
-            url = consts.WS_PRIVATE_DEMO_URL if str(client.flag) == '1' else consts.WS_PRIVATE_URL
+            url = consts.WS_PRIVATE_DEMO_URL if str(transport.flag) == '1' else consts.WS_PRIVATE_URL
         return cls(
-            apiKey=client.API_KEY,
-            passphrase=client.PASSPHRASE,
-            secretKey=client.API_SECRET_KEY,
+            apiKey=transport.API_KEY,
+            passphrase=transport.PASSPHRASE,
+            secretKey=transport.API_SECRET_KEY,
             url=url,
-            debug=client.debug if debug is None else debug,
+            debug=transport.debug if debug is None else debug,
+            proxy=transport.proxy,
         )
 
     def __init__(

@@ -136,11 +136,12 @@ from okx import Account
 from okx.transport import Transport
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
-rest = Account.AccountAPI(Transport(api_key, secret, passphrase, flag="1"))  # demo
-ws = WsPrivateAsync.from_client(rest)                             # demo host, same credentials
+transport = Transport(api_key, secret, passphrase, flag="1")  # demo
+rest = Account.AccountAPI(transport)
+ws = WsPrivateAsync.from_transport(transport)                  # demo host, same credentials and proxy
 ```
 
-`flag="1"` on the REST client selects the demo WebSocket host automatically, so the two layers cannot end up in different environments. Use `WsPublicAsync.from_client(rest, channel="business")` for the business channel.
+`flag="1"` on the transport selects the demo WebSocket host automatically, and `proxy=` is inherited too, so the two layers cannot end up in different environments. Use `WsPublicAsync.from_transport(transport, channel="business")` for the business channel.
 
 A callback may be a plain function or an `async def`; a coroutine is awaited, so it does not block the event loop. Callbacks run one message at a time in arrival order, and a callback that runs longer than `ping_timeout` delays heartbeat processing — hand long work to `asyncio.create_task`. Exceptions are logged and the next message is still delivered — a failing callback cannot end the stream.
 
@@ -152,8 +153,8 @@ from okx.websocket.WsPrivateAsync import WsPrivateAsync
 async def on_message(message: str) -> None:
     print(message)
 
-async def main(rest):
-    ws = WsPrivateAsync.from_client(rest)
+async def main(transport):
+    ws = WsPrivateAsync.from_transport(transport)
     task = await ws.start()                               # connect + start the supervisor
     await ws.subscribe([{"channel": "account"}], on_message)
     await asyncio.sleep(60)

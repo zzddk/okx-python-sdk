@@ -46,6 +46,23 @@ class TestTransportProxy(unittest.TestCase):
             {'http://': TEST_PROXY_URL, 'https://': TEST_PROXY_URL},
         )
 
+    def test_proxy_is_readable_on_the_transport(self):
+        """WS inherits the REST proxy from here, so the value stays on the object."""
+        with patch(MOCK_HTTP_CLIENT_INIT, return_value=None):
+            transport = Transport(proxy=TEST_PROXY_URL)
+        self.assertEqual(transport.proxy, TEST_PROXY_URL)
+
+    def test_no_proxy_is_none(self):
+        with patch(MOCK_HTTP_CLIENT_INIT, return_value=None):
+            transport = Transport()
+        self.assertIsNone(transport.proxy)
+
+    def test_proxy_is_recorded_when_an_http_transport_is_injected(self):
+        transport = Transport(http=httpx.MockTransport(
+            lambda request: httpx.Response(200, json={'code': '0'})
+        ), proxy=TEST_PROXY_URL)
+        self.assertEqual(transport.proxy, TEST_PROXY_URL)
+
     def test_old_httpx_without_proxy_retries_without_proxies(self):
         with patch(MOCK_HTTP_CLIENT_INIT,
                    side_effect=[TypeError("unexpected keyword argument 'proxy'"), None]) as init:

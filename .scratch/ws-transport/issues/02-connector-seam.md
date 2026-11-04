@@ -1,7 +1,8 @@
 # WS 连接接缝：WebSocketConnector 取代 WebSocketFactory
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.11.0
+Done in: 0.11.0
 
 ## 为什么
 

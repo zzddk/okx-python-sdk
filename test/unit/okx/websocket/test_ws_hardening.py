@@ -1,7 +1,7 @@
 """
 Unit tests for the WebSocket correctness fixes
 
-Mirrors: okx/websocket/WsUtils.py, WebSocketFactory.py, Ws*Async.login
+Mirrors: okx/websocket/WsUtils.py, Ws*Async.login
 """
 import asyncio
 import json
@@ -9,7 +9,6 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from okx.websocket import WsUtils
-from okx.websocket.WebSocketFactory import WebSocketFactory
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
@@ -34,27 +33,16 @@ class TestIsNotBlankStr(unittest.TestCase):
             WsUtils.checkSocketParams([{"channel": "   "}], {}, {})
 
 
-class TestFactoryPropagatesErrors(unittest.TestCase):
-    def test_connect_error_is_raised_not_swallowed(self):
-        factory = WebSocketFactory('wss://example.com')
-        with patch('okx.websocket.WebSocketFactory.websockets.connect',
-                   new=AsyncMock(side_effect=OSError('no route to host'))):
-            with self.assertRaises(OSError):
-                asyncio.run(factory.connect())
-
-
 class _LoginSubject:
     """Build a client with a mocked socket, without touching the network."""
 
     def public(self, **kwargs):
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            return WsPublicAsync(apiKey='k', passphrase='p', secretKey='s',
-                                 url='wss://example.com', **kwargs)
+        return WsPublicAsync(apiKey='k', passphrase='p', secretKey='s',
+                             url='wss://example.com', **kwargs)
 
     def private(self, **kwargs):
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            return WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                                  url='wss://example.com', **kwargs)
+        return WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
+                              url='wss://example.com', **kwargs)
 
 
 class TestLoginAck(unittest.TestCase):

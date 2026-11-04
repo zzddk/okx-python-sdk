@@ -14,10 +14,8 @@ from okx.websocket.WsPublicAsync import WsPublicAsync
 
 # Test constants
 TEST_WS_URL = 'wss://test.example.com'
-MOCK_WS_FACTORY = 'okx.websocket.WsBaseAsync.WebSocketFactory'
 
 # Placeholder client identifiers for constructing the websocket client in unit
-# tests. The WebSocketFactory is mocked, so these dummy strings are never signed
 # or sent over a real connection — they are not real credentials.
 _STUB_ID = "test_api_key"
 _STUB_SIGN = "test_secret_key"
@@ -29,46 +27,42 @@ class TestWsPublicAsyncInit(unittest.TestCase):
 
     def test_init_with_url(self):
         """Test initialization with url parameter"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory') as mock_factory:
-            ws = WsPublicAsync(url=TEST_WS_URL)
+        ws = WsPublicAsync(url=TEST_WS_URL)
 
-            self.assertEqual(ws.url, TEST_WS_URL)
-            self.assertEqual(ws.apiKey, '')
-            self.assertEqual(ws.passphrase, '')
-            self.assertEqual(ws.secretKey, '')
-            self.assertFalse(ws.debug)
-            self.assertFalse(ws.isLoggedIn)
+        self.assertEqual(ws.url, TEST_WS_URL)
+        self.assertEqual(ws.apiKey, '')
+        self.assertEqual(ws.passphrase, '')
+        self.assertEqual(ws.secretKey, '')
+        self.assertFalse(ws.debug)
+        self.assertFalse(ws.isLoggedIn)
 
     def test_init_with_credentials(self):
         """Test initialization with all credentials for business channel"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(
-                url=TEST_WS_URL,
-                apiKey=_STUB_ID,
-                passphrase=_STUB_PHRASE,
-                secretKey=_STUB_SIGN
-            )
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(
+            url=TEST_WS_URL,
+            apiKey=_STUB_ID,
+            passphrase=_STUB_PHRASE,
+            secretKey=_STUB_SIGN
+        )
 
-            self.assertEqual(ws.apiKey, _STUB_ID)
-            self.assertEqual(ws.passphrase, _STUB_PHRASE)
-            self.assertEqual(ws.secretKey, _STUB_SIGN)
+        self.assertEqual(ws.apiKey, _STUB_ID)
+        self.assertEqual(ws.passphrase, _STUB_PHRASE)
+        self.assertEqual(ws.secretKey, _STUB_SIGN)
 
     def test_init_with_debug_enabled(self):
         """Test initialization with debug mode enabled"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL, debug=True)
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL, debug=True)
 
-            self.assertTrue(ws.debug)
+        self.assertTrue(ws.debug)
 
     def test_init_with_debug_disabled(self):
         """Test initialization with debug mode disabled (default)"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL, debug=False)
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL, debug=False)
 
-            self.assertFalse(ws.debug)
+        self.assertFalse(ws.debug)
 
 
 class TestWsPublicAsyncLogin(unittest.TestCase):
@@ -76,47 +70,45 @@ class TestWsPublicAsyncLogin(unittest.TestCase):
 
     def test_login_without_credentials_raises_error(self):
         """Test that login raises ValueError when credentials are missing"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
 
-            async def run_test():
-                with self.assertRaises(ValueError) as context:
-                    await ws.login()
-                self.assertIn("apiKey, secretKey and passphrase are required for login", str(context.exception))
+        async def run_test():
+            with self.assertRaises(ValueError) as context:
+                await ws.login()
+            self.assertIn("apiKey, secretKey and passphrase are required for login", str(context.exception))
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
-    def test_login_with_credentials_success(self):
+    @patch('okx.websocket.WsBaseAsync.WsUtils.initLoginParams')
+    def test_login_with_credentials_success(self, mock_init_login):
         """Test successful login with valid credentials"""
-        with patch(MOCK_WS_FACTORY) as mock_factory, \
-             patch('okx.websocket.WsBaseAsync.WsUtils.initLoginParams') as mock_init_login:
 
-            mock_init_login.return_value = '{"op":"login","args":[...]}'
+        mock_init_login.return_value = '{"op":"login","args":[...]}'
 
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(
-                url=TEST_WS_URL,
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(
+            url=TEST_WS_URL,
+            apiKey=_STUB_ID,
+            passphrase=_STUB_PHRASE,
+            secretKey=_STUB_SIGN
+        )
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+
+        async def run_test():
+            result = await ws.login()
+            self.assertTrue(result)
+            self.assertTrue(ws.isLoggedIn)
+            mock_init_login.assert_called_once_with(
                 apiKey=_STUB_ID,
                 passphrase=_STUB_PHRASE,
                 secretKey=_STUB_SIGN
             )
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+            mock_websocket.send.assert_called_once()
 
-            async def run_test():
-                result = await ws.login()
-                self.assertTrue(result)
-                self.assertTrue(ws.isLoggedIn)
-                mock_init_login.assert_called_once_with(
-                    apiKey=_STUB_ID,
-                    passphrase=_STUB_PHRASE,
-                    secretKey=_STUB_SIGN
-                )
-                mock_websocket.send.assert_called_once()
-
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
 
 class TestWsPublicAsyncSubscribe(unittest.TestCase):
@@ -124,72 +116,69 @@ class TestWsPublicAsyncSubscribe(unittest.TestCase):
 
     def test_subscribe_without_id(self):
         """Test subscribe without id parameter"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            params = [{"channel": "tickers", "instId": "BTC-USDT"}]
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.subscribe(params, callback)
-                self.assertEqual(ws.callback, callback)
-                mock_websocket.send.assert_called_once()
-                
-                # Verify the payload
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "subscribe")
-                self.assertEqual(payload["args"], params)
-                self.assertNotIn("id", payload)
+        async def run_test():
+            await ws.subscribe(params, callback)
+            self.assertEqual(ws.callback, callback)
+            mock_websocket.send.assert_called_once()
 
-            asyncio.run(run_test())
+            # Verify the payload
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "subscribe")
+            self.assertEqual(payload["args"], params)
+            self.assertNotIn("id", payload)
+
+        asyncio.run(run_test())
 
     def test_subscribe_with_id(self):
         """Test subscribe with id parameter"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            params = [{"channel": "tickers", "instId": "BTC-USDT"}]
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.subscribe(params, callback, id="sub001")
+        async def run_test():
+            await ws.subscribe(params, callback, id="sub001")
 
-                # Verify the payload includes id
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "subscribe")
-                self.assertEqual(payload["args"], params)
-                self.assertEqual(payload["id"], "sub001")
+            # Verify the payload includes id
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "subscribe")
+            self.assertEqual(payload["args"], params)
+            self.assertEqual(payload["id"], "sub001")
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
     def test_subscribe_with_multiple_channels(self):
         """Test subscribe with multiple channels"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            params = [
-                {"channel": "tickers", "instId": "BTC-USDT"},
-                {"channel": "tickers", "instId": "ETH-USDT"}
-            ]
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        params = [
+            {"channel": "tickers", "instId": "BTC-USDT"},
+            {"channel": "tickers", "instId": "ETH-USDT"}
+        ]
 
-            async def run_test():
-                await ws.subscribe(params, callback, id="multi001")
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(len(payload["args"]), 2)
-                self.assertEqual(payload["id"], "multi001")
+        async def run_test():
+            await ws.subscribe(params, callback, id="multi001")
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(len(payload["args"]), 2)
+            self.assertEqual(payload["id"], "multi001")
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
 
 class TestWsPublicAsyncUnsubscribe(unittest.TestCase):
@@ -197,42 +186,40 @@ class TestWsPublicAsyncUnsubscribe(unittest.TestCase):
 
     def test_unsubscribe_without_id(self):
         """Test unsubscribe without id parameter"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            params = [{"channel": "tickers", "instId": "BTC-USDT"}]
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.unsubscribe(params, callback)
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "unsubscribe")
-                self.assertEqual(payload["args"], params)
-                self.assertNotIn("id", payload)
+        async def run_test():
+            await ws.unsubscribe(params, callback)
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "unsubscribe")
+            self.assertEqual(payload["args"], params)
+            self.assertNotIn("id", payload)
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
     def test_unsubscribe_with_id(self):
         """Test unsubscribe with id parameter"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            params = [{"channel": "tickers", "instId": "BTC-USDT"}]
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.unsubscribe(params, callback, id="unsub001")
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "unsubscribe")
-                self.assertEqual(payload["id"], "unsub001")
+        async def run_test():
+            await ws.unsubscribe(params, callback, id="unsub001")
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "unsubscribe")
+            self.assertEqual(payload["id"], "unsub001")
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
 
 class TestWsPublicAsyncSend(unittest.TestCase):
@@ -240,117 +227,108 @@ class TestWsPublicAsyncSend(unittest.TestCase):
 
     def test_send_without_id(self):
         """Test generic send method without id"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            callback = MagicMock()
-            args = [{"instId": "BTC-USDT"}]
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        callback = MagicMock()
+        args = [{"instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.send("custom_op", args, callback=callback)
-                self.assertEqual(ws.callback, callback)
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "custom_op")
-                self.assertEqual(payload["args"], args)
-                self.assertNotIn("id", payload)
+        async def run_test():
+            await ws.send("custom_op", args, callback=callback)
+            self.assertEqual(ws.callback, callback)
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "custom_op")
+            self.assertEqual(payload["args"], args)
+            self.assertNotIn("id", payload)
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
     def test_send_with_id(self):
         """Test generic send method with id"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            args = [{"instId": "BTC-USDT"}]
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        args = [{"instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.send("custom_op", args, id="send001")
-                call_args = mock_websocket.send.call_args[0][0]
-                payload = json.loads(call_args)
-                self.assertEqual(payload["op"], "custom_op")
-                self.assertEqual(payload["id"], "send001")
+        async def run_test():
+            await ws.send("custom_op", args, id="send001")
+            call_args = mock_websocket.send.call_args[0][0]
+            payload = json.loads(call_args)
+            self.assertEqual(payload["op"], "custom_op")
+            self.assertEqual(payload["id"], "send001")
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
     def test_send_without_callback(self):
         """Test send method without callback (preserves existing callback)"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            existing_callback = MagicMock()
-            ws.callback = existing_callback
-            args = [{"instId": "BTC-USDT"}]
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        existing_callback = MagicMock()
+        ws.callback = existing_callback
+        args = [{"instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.send("custom_op", args)
-                # Callback should remain unchanged
-                self.assertEqual(ws.callback, existing_callback)
+        async def run_test():
+            await ws.send("custom_op", args)
+            # Callback should remain unchanged
+            self.assertEqual(ws.callback, existing_callback)
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
     def test_send_with_new_callback_replaces_existing(self):
         """Test send method with new callback replaces existing callback"""
-        with patch(MOCK_WS_FACTORY):
-            from okx.websocket.WsPublicAsync import WsPublicAsync
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            mock_websocket = AsyncMock()
-            ws.websocket = mock_websocket
-            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
-            old_callback = MagicMock()
-            new_callback = MagicMock()
-            ws.callback = old_callback
-            args = [{"instId": "BTC-USDT"}]
+        from okx.websocket.WsPublicAsync import WsPublicAsync
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        mock_websocket = AsyncMock()
+        ws.websocket = mock_websocket
+        mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
+        old_callback = MagicMock()
+        new_callback = MagicMock()
+        ws.callback = old_callback
+        args = [{"instId": "BTC-USDT"}]
 
-            async def run_test():
-                await ws.send("custom_op", args, callback=new_callback)
-                self.assertEqual(ws.callback, new_callback)
+        async def run_test():
+            await ws.send("custom_op", args, callback=new_callback)
+            self.assertEqual(ws.callback, new_callback)
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
 
 class TestWsPublicAsyncStartStop(unittest.TestCase):
     """Unit tests for WsPublicAsync start and stop methods"""
 
     def test_stop(self):
-        """Test stop method closes the factory"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory') as mock_factory_class:
-            mock_factory_instance = MagicMock()
-            mock_factory_instance.close = AsyncMock()
-            mock_factory_class.return_value = mock_factory_instance
+        """stop() closes the one socket the client holds"""
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        socket = AsyncMock()
+        ws.websocket = socket
 
-            ws = WsPublicAsync(url=TEST_WS_URL)
+        asyncio.run(ws.stop())
 
-            async def run_test():
-                await ws.stop()
-                mock_factory_instance.close.assert_called_once()
-
-            asyncio.run(run_test())
+        socket.close.assert_awaited_once()
+        self.assertIsNone(ws.websocket)
 
     def test_start_returns_task(self):
         """start() returns the supervisor task so the caller can retain/await it"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
+        ws = WsPublicAsync(url=TEST_WS_URL)
 
-            async def run_test():
-                ws.connect = AsyncMock()
-                ws.consume = AsyncMock()
-                ws.ping_interval = 0
-                ws.reconnect = False
-                task = await ws.start()
-                self.assertIsInstance(task, asyncio.Task)
-                await task
+        async def run_test():
+            ws.connect = AsyncMock()
+            ws.consume = AsyncMock()
+            ws.ping_interval = 0
+            ws.reconnect = False
+            task = await ws.start()
+            self.assertIsInstance(task, asyncio.Task)
+            await task
 
-            asyncio.run(run_test())
+        asyncio.run(run_test())
 
 
 class _RaisingAsyncIterator:
@@ -376,53 +354,51 @@ class TestWsPublicAsyncConsumeErrorPropagation(unittest.TestCase):
         """A dropped socket reaches the callback as an error event and re-raises"""
         from websockets.exceptions import ConnectionClosedError
 
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            received = []
-            ws.callback = received.append
-            exc = ConnectionClosedError(None, None)
-            ws.websocket = _RaisingAsyncIterator(exc, messages=['{"data": "ok"}'])
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        received = []
+        ws.callback = received.append
+        exc = ConnectionClosedError(None, None)
+        ws.websocket = _RaisingAsyncIterator(exc, messages=['{"data": "ok"}'])
 
-            async def run_test():
-                with self.assertRaises(ConnectionClosedError):
-                    await ws.consume()
+        async def run_test():
+            with self.assertRaises(ConnectionClosedError):
+                await ws.consume()
 
-            with patch('okx.websocket.WsBaseAsync.logger.error') as mock_log_error:
-                asyncio.run(run_test())
-                mock_log_error.assert_called_once()
+        with patch('okx.websocket.WsBaseAsync.logger.error') as mock_log_error:
+            asyncio.run(run_test())
+            mock_log_error.assert_called_once()
 
-            # Normal message delivered first, then the injected error event
-            self.assertEqual(received[0], '{"data": "ok"}')
-            error_payload = json.loads(received[1])
-            self.assertEqual(error_payload["event"], "error")
-            self.assertEqual(error_payload["code"], "ConnClosed")
+        # Normal message delivered first, then the injected error event
+        self.assertEqual(received[0], '{"data": "ok"}')
+        error_payload = json.loads(received[1])
+        self.assertEqual(error_payload["event"], "error")
+        self.assertEqual(error_payload["code"], "ConnClosed")
 
     def test_consume_happy_path_unchanged(self):
         """Normal messages still reach the callback with no error event"""
-        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
-            ws = WsPublicAsync(url=TEST_WS_URL)
-            received = []
-            ws.callback = received.append
+        ws = WsPublicAsync(url=TEST_WS_URL)
+        received = []
+        ws.callback = received.append
 
-            class _CleanIterator:
-                def __init__(self, messages):
-                    self._messages = list(messages)
+        class _CleanIterator:
+            def __init__(self, messages):
+                self._messages = list(messages)
 
-                def __aiter__(self):
-                    return self
+            def __aiter__(self):
+                return self
 
-                async def __anext__(self):
-                    if self._messages:
-                        return self._messages.pop(0)
-                    raise StopAsyncIteration
+            async def __anext__(self):
+                if self._messages:
+                    return self._messages.pop(0)
+                raise StopAsyncIteration
 
-            ws.websocket = _CleanIterator(['a', 'b'])
+        ws.websocket = _CleanIterator(['a', 'b'])
 
-            async def run_test():
-                await ws.consume()
+        async def run_test():
+            await ws.consume()
 
-            asyncio.run(run_test())
-            self.assertEqual(received, ['a', 'b'])
+        asyncio.run(run_test())
+        self.assertEqual(received, ['a', 'b'])
 
 
 if __name__ == '__main__':

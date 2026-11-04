@@ -51,6 +51,7 @@ class Transport:
         self.flag = flag
         self.debug = debug
         self.domain = base_api
+        self.proxy = proxy
         self.raise_on_error = raise_on_error
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff

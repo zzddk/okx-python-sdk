@@ -14,6 +14,9 @@ from websockets.exceptions import ConnectionClosedError
 
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
+from okx.websocket.connector import WebSocketConnector
+
+from .fakes import FakeConnector
 
 URL = 'wss://example.com'
 ACK = '{"event":"login","code":"0"}'
@@ -280,6 +283,24 @@ class _IdleSocket:
         self.closed = True
 
 
+class TestConnectorChoice(unittest.TestCase):
+    def test_injected_connector_wins_over_proxy_without_raising(self):
+        """`connector` wins over `proxy`, the same rule as Transport(proxy=, http=)."""
+        async def run():
+            connector = FakeConnector(_Socket())
+            ws = _public(proxy='http://127.0.0.1:1', connector=connector)
+            await ws.connect()
+            return ws, connector
+
+        ws, connector = asyncio.run(run())
+        self.assertIs(ws._connector, connector)
+        self.assertEqual(connector.urls, [URL])
+
+    def test_default_connector_is_built_from_the_proxy(self):
+        ws = _public(proxy='http://127.0.0.1:8080')
+        self.assertIsInstance(ws._connector, WebSocketConnector)
+
+
 class TestStopFromCallback(unittest.TestCase):
     def test_stop_inside_a_callback_completes(self):
         async def run():
@@ -303,9 +324,9 @@ class TestStopFromCallback(unittest.TestCase):
 class TestReconnect(unittest.TestCase):
     def test_reconnects_and_replays_subscriptions(self):
         async def run():
-            ws = _public(reconnect_backoff=0, ping_interval=0)
             first, second = _DroppingSocket(), _IdleSocket()
-            ws.factory.connect = AsyncMock(side_effect=[first, second])
+            ws = _public(reconnect_backoff=0, ping_interval=0,
+                         connector=FakeConnector(first, second))
 
             await ws.start()
             await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], None)

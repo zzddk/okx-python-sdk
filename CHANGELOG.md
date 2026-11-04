@@ -2,6 +2,43 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.11.0]
+
+Breaking release for the WebSocket connection seam (ADR-0007, ADR-0008).
+
+### Changed
+- `WsPrivateAsync` and `WsPublicAsync` are built with
+  `from_transport(transport)` instead of `from_client(client)`. The argument
+  must be an `okx.transport.Transport`; credentials, `flag`, `debug` and
+  `proxy` all come from it.
+- WebSocket connections go through an injectable `WebSocketConnector`
+  (`okx/websocket/connector.py`). Both clients accept `connector=` and
+  `proxy=`; when both are given the connector wins, as
+  `Transport(proxy=, http=)` does.
+- `Transport` keeps `proxy` on the object, so the WebSocket layer can inherit
+  the REST proxy.
+
+### Removed
+- `okx.websocket.WebSocketFactory.WebSocketFactory`. To open connections
+  yourself, pass `connector=` with an object that has
+  `async connect(url) -> Connection` and returns the socket without keeping
+  a copy (`WsBaseAsync.websocket` stays the only holder).
+
+### Fixed
+- A WebSocket proxy is never silently downgraded to a direct connection: when
+  the installed `websockets` does not accept `proxy=` (it arrived in 15.0),
+  `connect()` raises before opening anything. When no proxy is configured the
+  argument is not passed at all, so `websockets` keeps its own environment
+  detection.
+
+### Migration
+
+| Before | After |
+| --- | --- |
+| `WsPrivateAsync.from_client(rest_api)` | `WsPrivateAsync.from_transport(transport)` |
+| `WsPublicAsync.from_client(rest_api, channel="business")` | `WsPublicAsync.from_transport(transport, channel="business")` |
+| `WebSocketFactory(url)` | `WsPrivateAsync(..., connector=YourConnector())` |
+
 ## [0.10.0]
 
 Breaking release, the batch ADR-0004 reserved for the REST transport (ADR-0006).

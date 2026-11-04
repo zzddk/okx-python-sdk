@@ -1,7 +1,8 @@
 # Transport 保留 proxy
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.10.1
+Done in: 0.11.0
 
 ## 为什么
 

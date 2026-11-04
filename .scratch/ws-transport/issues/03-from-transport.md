@@ -1,7 +1,8 @@
 # from_client 改名 from_transport
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.11.0
+Done in: 0.11.0
 
 ## 为什么
 

@@ -32,7 +32,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from okx.websocket import WsUtils
-from okx.websocket.WebSocketFactory import WebSocketFactory
+from okx.websocket.connector import WebSocketConnector
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,11 @@ class WsBaseAsync:
     Subclasses only supply a constructor (and, for the private client, the
     order-entry helpers). `_LOGIN_REQUIRED` selects whether subscribing
     authenticates first, which is what `WsPrivateAsync` always did.
+
+    The socket is opened by `connector`; when it is omitted a
+    `WebSocketConnector` is built with `proxy`. Supplying both keeps the
+    connector and ignores `proxy`, the same rule as
+    `Transport(proxy=, http=)`.
     """
 
     _LOGIN_REQUIRED = False
@@ -67,6 +72,8 @@ class WsBaseAsync:
         reconnect: bool = True,
         reconnect_backoff: float = DEFAULT_RECONNECT_BACKOFF,
         reconnect_max_backoff: float = DEFAULT_RECONNECT_MAX_BACKOFF,
+        proxy: Optional[str] = None,
+        connector: Optional[WebSocketConnector] = None,
     ) -> None:
         self.url = url
         self.apiKey = apiKey
@@ -79,7 +86,7 @@ class WsBaseAsync:
         self.subscriptions: Dict[str, Dict[str, Any]] = {}
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
-        self.factory = WebSocketFactory(url)
+        self._connector = connector if connector is not None else WebSocketConnector(proxy=proxy)
         self.websocket: Any = None
         self.isLoggedIn = False
 
@@ -106,7 +113,7 @@ class WsBaseAsync:
     # ------------------------------------------------------------------ start/stop
 
     async def connect(self) -> None:
-        self.websocket = await self.factory.connect()
+        self.websocket = await self._connector.connect(self.url)
 
     async def start(self) -> asyncio.Task:
         """Connect and start the reader, heartbeat and reconnect supervisor.
@@ -462,5 +469,3 @@ class WsBaseAsync:
         if websocket is not None:
             with suppress(Exception):
                 await websocket.close()
-        with suppress(Exception):
-            await self.factory.close()
