@@ -3,7 +3,7 @@ import hmac
 import json
 import time
 
-import requests
+import httpx
 
 
 def initLoginParams(useServerTime: bool, apiKey, passphrase, secretKey):
@@ -67,7 +67,7 @@ def checkSocketParams(args: list, channelArgs, channelParamMap):
 
 def getServerTime():
     url = "https://www.okx.com/api/v5/public/time"
-    response = requests.get(url)
+    response = httpx.get(url)
     if response.status_code == 200:
         return response.json()['data'][0]['ts']
     else:

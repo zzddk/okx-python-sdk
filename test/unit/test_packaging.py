@@ -27,10 +27,8 @@ _DEV_PACKAGES = (
 )
 _RUNTIME_PACKAGES = (
     "httpx",
-    "requests",
     "websockets",
     "certifi",
-    "loguru",
 )
 
 
@@ -101,10 +99,10 @@ class TestPackagingInstallRequires(unittest.TestCase):
                 msg=f"runtime package '{pkg}' missing from install_requires: {self.install_requires}",
             )
 
-    def test_exactly_five_runtime_deps(self):
+    def test_exactly_three_runtime_deps(self):
         self.assertEqual(
-            len(self.install_requires), 5,
-            msg=f"expected exactly 5 runtime deps, got: {self.install_requires}",
+            len(self.install_requires), 3,
+            msg=f"expected exactly 3 runtime deps, got: {self.install_requires}",
         )
 
 

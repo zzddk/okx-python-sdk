@@ -2,12 +2,13 @@ import base64
 import datetime
 import hmac
 import json
+import logging
 from typing import Any, Dict
 from urllib.parse import urlencode
 
-from loguru import logger
-
 from . import consts as c
+
+logger = logging.getLogger(__name__)
 
 
 def sign(message: str, secretKey: str) -> bytes:

@@ -1,12 +1,14 @@
 import json
+import logging
 import warnings
 from typing import Any, Dict, Optional
 
 from httpx import Client
-from loguru import logger
 
 from . import consts as c
 from . import utils
+
+logger = logging.getLogger(__name__)
 
 
 class OkxClient(Client):

@@ -9,7 +9,9 @@ Breaking release. This is the only window in the 0.4/0.5 line for public-API cha
 ### Changed
 - All 22 `*API` classes now inherit `OkxClient.__init__`; the duplicated subclass constructors are gone. Adding a client-wide option no longer means editing 22 files.
 - The base constructor's `domain` parameter is now `base_api`, matching `OkxClient`. The positional slot is unchanged, so positional construction keeps working; `domain=` keyword calls must switch to `base_api=`.
-- Empty-value semantics are unified: `None` is the only "not supplied" marker, and an explicit `''` is sent as a real parameter. Every optional REST argument now defaults to `None` instead of `''`. GET query values that are lists or dicts are JSON-encoded; POST bodies drop top-level `None` values.
+- The REST layer logs through the standard `logging` module (`okx.okxclient`, `okx.utils`), matching the WebSocket layer. Application handlers receive SDK records; a `NullHandler` on the `okx` logger keeps unconfigured apps quiet.
+- `okx.websocket.WsUtils.getServerTime` uses the already-required `httpx` instead of `requests`.
+- Empty-value semantics are unified: `None` is the only "not supplied" marker, and an explicit `''` is sent as a real parameter. Every optional REST argument now defaults to `None` instead of `''`. GET query values that are lists or dicts are JSON-encoded; POST bodies drop top-level `None` values. `TradeAPI.place_algo_order(attachAlgoOrds=...)` no longer defaults to a shared mutable empty list.
 - `okx.consts` is now a package (`okx/consts/http.py` plus one module per product under `okx/consts/endpoints/`). `from okx import consts`, `consts.ACCOUNT_INFO` and `from okx.consts import *` are unchanged. A constant name declared in two modules now raises `ImportError` at import time instead of silently shadowing.
 
 ### Renamed
@@ -43,6 +45,9 @@ No aliases are kept; update call sites using this table.
 ### Added
 - Type annotations on every public REST method (parameters and `-> Dict[str, Any]`), plus `okx/py.typed` shipped with the package. Type checkers and IDEs now treat the SDK as typed.
 - `client=` on every REST API class. Pass an existing `OkxClient` to route requests through its connection pool and reuse its credentials.
+
+### Removed
+- `loguru` and `requests` are no longer runtime dependencies; `requirements.txt` lists only `httpx[http2]`, `websockets` and `certifi`.
 
 ## [0.4.5]
 
