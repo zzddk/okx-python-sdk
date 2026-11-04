@@ -1,6 +1,7 @@
 # WS 代理支持
 
-Status: needs-triage
+Status: wontfix
+Superseded by: `.scratch/ws-transport/issues/01`（Transport 保留 proxy）、`02`（连接接缝）、`03`（from_transport 继承代理）
 
 ## 为什么
 
@@ -13,3 +14,7 @@ Status: needs-triage
 ## 完成标准
 
 `WsPrivateAsync.from_client(client)` 能继承 REST client 的 `proxy`。
+
+## Comments
+
+2026-11-05 — 拆进 `.scratch/ws-transport/`。这条验收标准在旧代码上无法实现：`Transport.__init__` 把 `proxy` 交给 `_make_http` 后就不保留（`okx/transport.py:44,58`），所以没有可继承的来源。新验收线见 `ws-transport/spec.md`。
