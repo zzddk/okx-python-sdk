@@ -15,7 +15,8 @@ Make sure you update often and check the [Changelog](https://www.okx.com/docs-v5
 - Implementation of all Rest API endpoints.
 - Private and Public Websocket implementation
 - Testnet support 
-- Websocket handling with reconnection and multiplexed connections
+- Private and Public WebSocket channels, with login acknowledgement checked before subscribing
+- Automatic reconnection and heartbeats are **not** implemented yet — see `.scratch/ws-hardening/`
 
 ### Quick start
 #### Prerequisites

@@ -103,6 +103,7 @@ class TestWsPublicAsyncLogin(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
 
             async def run_test():
                 result = await ws.login()
@@ -129,6 +130,7 @@ class TestWsPublicAsyncSubscribe(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
@@ -152,6 +154,7 @@ class TestWsPublicAsyncSubscribe(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
@@ -173,6 +176,7 @@ class TestWsPublicAsyncSubscribe(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [
                 {"channel": "tickers", "instId": "BTC-USDT"},
@@ -198,6 +202,7 @@ class TestWsPublicAsyncUnsubscribe(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
@@ -217,6 +222,7 @@ class TestWsPublicAsyncUnsubscribe(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "tickers", "instId": "BTC-USDT"}]
 
@@ -240,6 +246,7 @@ class TestWsPublicAsyncSend(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             args = [{"instId": "BTC-USDT"}]
 
@@ -261,6 +268,7 @@ class TestWsPublicAsyncSend(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             args = [{"instId": "BTC-USDT"}]
 
             async def run_test():
@@ -279,6 +287,7 @@ class TestWsPublicAsyncSend(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             existing_callback = MagicMock()
             ws.callback = existing_callback
             args = [{"instId": "BTC-USDT"}]
@@ -297,6 +306,7 @@ class TestWsPublicAsyncSend(unittest.TestCase):
             ws = WsPublicAsync(url=TEST_WS_URL)
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             old_callback = MagicMock()
             new_callback = MagicMock()
             ws.callback = old_callback

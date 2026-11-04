@@ -117,6 +117,7 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "account", "ccy": "BTC"}]
 
@@ -148,6 +149,7 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "account", "ccy": "BTC"}]
 
@@ -176,6 +178,7 @@ class TestWsPrivateAsyncUnsubscribe(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "account", "ccy": "BTC"}]
 
@@ -200,6 +203,7 @@ class TestWsPrivateAsyncUnsubscribe(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             params = [{"channel": "account", "ccy": "BTC"}]
 
@@ -228,6 +232,7 @@ class TestWsPrivateAsyncSend(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             callback = MagicMock()
             args = [{"instId": "BTC-USDT"}]
 
@@ -254,6 +259,7 @@ class TestWsPrivateAsyncSend(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             args = [{"instId": "BTC-USDT"}]
 
             async def run_test():
@@ -281,6 +287,7 @@ class TestWsPrivateAsyncOrderMethods(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
             return ws, mock_websocket
 
     def test_place_order_sends_correct_payload(self):
@@ -551,6 +558,7 @@ class TestWsPrivateAsyncLogin(unittest.TestCase):
             )
             mock_websocket = AsyncMock()
             ws.websocket = mock_websocket
+            mock_websocket.recv = AsyncMock(return_value='{"event":"login","code":"0"}')
 
             async def run_test():
                 result = await ws.login()

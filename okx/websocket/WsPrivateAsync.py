@@ -68,11 +68,43 @@ class WsPrivateAsync:
                 self.callback(json.dumps({"event": "error", "code": "ConnClosed", "msg": str(e)}))
             raise
 
+    async def _await_login_ack(self, timeout: float = 10.0) -> None:
+        """Wait for the server's login response and surface a rejection.
+
+        Frames that are not the login ack are handed to the callback so no
+        message is lost. A timeout means the server never answered, which is
+        just as unusable as a rejection.
+        """
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            try:
+                message = await asyncio.wait_for(self.websocket.recv(), timeout=remaining)
+            except asyncio.TimeoutError:
+                raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            payload = None
+            if isinstance(message, (str, bytes)):
+                try:
+                    payload = json.loads(message)
+                except ValueError:
+                    payload = None
+            if isinstance(payload, dict) and payload.get('event') == 'login':
+                if str(payload.get('code', '0')) != '0':
+                    raise ConnectionError(
+                        f"login rejected: code={payload.get('code')} msg={payload.get('msg')}"
+                    )
+                return
+            if self.callback:
+                self.callback(message)
+
     async def subscribe(self, params: list, callback, id: str = None):
         self.callback = callback
 
+        # login() waits for the server's ack, so no blind delay here.
         logRes = await self.login()
-        await asyncio.sleep(5)
         if logRes:
             payload_dict = {
                 "op": "subscribe",
@@ -86,7 +118,7 @@ class WsPrivateAsync:
             await self.websocket.send(payload)
         # await self.consume()
 
-    async def login(self):
+    async def login(self, timeout: float = 10.0):
         loginPayload = WsUtils.initLoginParams(
             useServerTime=self.useServerTime,
             apiKey=self.apiKey,
@@ -96,6 +128,7 @@ class WsPrivateAsync:
         if self.debug:
             logger.debug(f"login: {loginPayload}")
         await self.websocket.send(loginPayload)
+        await self._await_login_ack(timeout)
         return True
 
     async def unsubscribe(self, params: list, callback, id: str = None):

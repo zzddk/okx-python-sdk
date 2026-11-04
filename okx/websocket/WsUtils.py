@@ -20,7 +20,7 @@ def initLoginParams(useServerTime: bool, apiKey, passphrase, secretKey):
 
 
 def isNotBlankStr(param: str) -> bool:
-    return param is not None and isinstance(param, str) and (~param.isspace())
+    return isinstance(param, str) and param.strip() != ""
 
 
 def getParamKey(arg: dict) -> str:
@@ -46,7 +46,7 @@ def initSubscribeSet(arg: dict) -> set:
 def checkSocketParams(args: list, channelArgs, channelParamMap):
     for arg in args:
         channel = arg['channel'].strip()
-        if ~isNotBlankStr(channel):
+        if not isNotBlankStr(channel):
             raise ValueError("channel must not none")
         argSet = channelParamMap.get(channel, set())
         argKey = getParamKey(arg)

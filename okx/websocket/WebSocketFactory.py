@@ -18,11 +18,13 @@ class WebSocketFactory:
         ssl_context.load_verify_locations(certifi.where())
         try:
             self.websocket = await websockets.connect(self.url, ssl=ssl_context)
-            logger.info("WebSocket connection established.")
-            return self.websocket
         except Exception as e:
+            # Swallowing this left callers iterating None, losing the real
+            # cause (certificate, proxy, DNS). Let it surface instead.
             logger.error(f"Error connecting to WebSocket: {e}")
-            return None
+            raise
+        logger.info("WebSocket connection established.")
+        return self.websocket
 
     async def close(self):
         if self.websocket:

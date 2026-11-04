@@ -2,6 +2,19 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.8.1]
+
+Defect-fix release.
+
+### Fixed
+- `WsUtils.isNotBlankStr` used `~param.isspace()`, a bitwise NOT that returns `-2` or `-1` — both truthy. The helper therefore never reported a blank string, and `checkSocketParams` never rejected an empty channel. It now strips and compares.
+- `WebSocketFactory.connect` swallowed every exception and returned `None`; callers then iterated `None` and lost the real cause (certificate, proxy, DNS). The original exception is now raised.
+- `WsPublicAsync.login` set `isLoggedIn = True` without reading the server's response, so a wrong passphrase looked like success and every later subscription silently went nowhere. Both classes now wait for the `login` acknowledgement, raise `ConnectionError` on a non-zero code, raise `TimeoutError` after `timeout` seconds (default 10), and hand non-login frames to the callback.
+- `WsPrivateAsync.subscribe` no longer sleeps five seconds after login — the acknowledgement makes that guess unnecessary.
+
+### Changed
+- README no longer claims WebSocket reconnection and multiplexed connections; neither existed.
+
 ## [0.8.0]
 
 Feature release. Existing constructor calls keep working; `url` now has a default.
