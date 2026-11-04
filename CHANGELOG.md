@@ -2,6 +2,37 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.12.0]
+
+Breaking release for WebSocket message routing (ADR-0009).
+
+### Changed
+- A message is delivered to the callback registered for its `arg`, so two
+  channels on one connection no longer steal each other's messages. An
+  acknowledgement without `arg` (an order response) is matched by its `id`.
+  The table lives in `okx/websocket/subscriptions.py` (`Subscriptions`).
+- `WsBaseAsync.callback` is now only the fallback for messages that match
+  neither a subscription nor a request. It stays readable and writable and is
+  deprecated; it is removed before 1.0.
+- `WsBaseAsync.subscriptions` is a read-only view derived from the routing
+  table. Assigning to it raises `AttributeError`.
+- A callback passed with an `id` to `send()`/the order helpers answers that
+  request once. Without an `id` it still becomes the fallback.
+
+### Removed
+- `WsUtils.checkSocketParams`, `WsUtils.initSubscribeSet`,
+  `WsUtils.getParamKey` and `WsUtils.isNotBlankStr`. They had no production
+  callers and `getParamKey` could collide across channels; routing is now
+  `Subscriptions`' job.
+
+### Migration
+
+| Before | After |
+| --- | --- |
+| `ws.callback = f` for a single channel | `await ws.subscribe(params, f)` |
+| `ws.subscribe(a, fa); ws.subscribe(b, fb)` — `fb` got everything | each channel now reaches its own callback |
+| `ws.subscriptions = {...}` | `await ws.subscribe(...)`; the view is read-only |
+
 ## [0.11.0]
 
 Breaking release for the WebSocket connection seam (ADR-0007, ADR-0008).

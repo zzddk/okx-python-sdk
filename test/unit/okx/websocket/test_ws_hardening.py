@@ -8,29 +8,11 @@ import json
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from okx.websocket import WsUtils
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
 ACK = '{"event":"login","code":"0"}'
 REJECT = '{"event":"login","code":"60009","msg":"Login failed"}'
-
-
-class TestIsNotBlankStr(unittest.TestCase):
-    def test_blank_strings_are_blank(self):
-        self.assertFalse(WsUtils.isNotBlankStr(""))
-        self.assertFalse(WsUtils.isNotBlankStr("   "))
-
-    def test_non_strings_are_blank(self):
-        self.assertFalse(WsUtils.isNotBlankStr(None))
-        self.assertFalse(WsUtils.isNotBlankStr(123))
-
-    def test_real_value_is_not_blank(self):
-        self.assertTrue(WsUtils.isNotBlankStr("trades"))
-
-    def test_check_socket_params_rejects_blank_channel(self):
-        with self.assertRaises(ValueError):
-            WsUtils.checkSocketParams([{"channel": "   "}], {}, {})
 
 
 class _LoginSubject:

@@ -126,7 +126,10 @@ class TestWsPublicAsyncSubscribe(unittest.TestCase):
 
         async def run_test():
             await ws.subscribe(params, callback)
-            self.assertEqual(ws.callback, callback)
+            # The callback belongs to this arg; the fallback is untouched.
+            self.assertIsNone(ws.callback)
+            await ws._handle_message(json.dumps({"arg": params[0], "data": []}))
+            callback.assert_called_once()
             mock_websocket.send.assert_called_once()
 
             # Verify the payload

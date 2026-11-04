@@ -8,7 +8,7 @@ import asyncio
 import json
 import unittest
 from contextlib import suppress
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from websockets.exceptions import ConnectionClosedError
 
@@ -109,6 +109,96 @@ class TestCallbackContract(unittest.TestCase):
         self.assertEqual(seen, [])
 
 
+class TestMessageRouting(unittest.TestCase):
+    """Which callback receives a message: arg, then fallback."""
+
+    def test_two_channels_reach_their_own_callbacks(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            tickers, books = [], []
+            await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], tickers.append)
+            await ws.subscribe([{'channel': 'books', 'instId': 'BTC-USDT'}], books.append)
+            await ws._handle_message(json.dumps({'arg': {'channel': 'tickers', 'instId': 'BTC-USDT'}, 'data': ['t']}))
+            await ws._handle_message(json.dumps({'arg': {'channel': 'books', 'instId': 'BTC-USDT'}, 'data': ['b']}))
+            return tickers, books
+
+        tickers, books = asyncio.run(run())
+        self.assertEqual([json.loads(m)['data'] for m in tickers], [['t']])
+        self.assertEqual([json.loads(m)['data'] for m in books], [['b']])
+
+    def test_unmatched_message_falls_back_to_callback(self):
+        async def run():
+            ws = _public()
+            seen = []
+            ws.callback = seen.append
+            frame = json.dumps({'arg': {'channel': 'unknown'}, 'data': []})
+            await ws._handle_message(frame)
+            return seen, frame
+
+        seen, frame = asyncio.run(run())
+        self.assertEqual(seen, [frame])
+
+    def test_subscription_without_callback_falls_back(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            seen = []
+            ws.callback = seen.append
+            params = [{'channel': 'tickers', 'instId': 'BTC-USDT'}]
+            await ws.subscribe(params, None)
+            await ws._handle_message(json.dumps({'arg': params[0], 'data': []}))
+            return seen
+
+        self.assertEqual(len(asyncio.run(run())), 1)
+
+    def test_unmatched_message_without_a_fallback_is_dropped(self):
+        async def run():
+            ws = _public()
+            await ws._handle_message('{"arg": {"channel": "unknown"}}')
+
+        asyncio.run(run())
+
+
+class TestRequestRouting(unittest.TestCase):
+    """One-shot responses are matched by id, not by arg."""
+
+    def _private(self):
+        ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
+                            url=URL, ping_interval=0)
+        ws.websocket = AsyncMock()
+        ws.websocket.recv = AsyncMock(return_value=ACK)
+        return ws
+
+    def test_order_ack_goes_to_the_request_callback_once(self):
+        async def run():
+            ws = self._private()
+            fallback, routed = [], []
+            ws.callback = fallback.append
+            await ws.place_order([{'instId': 'BTC-USDT'}], callback=routed.append, id='o1')
+            ack = json.dumps({'id': 'o1', 'op': 'order', 'data': []})
+            await ws._handle_message(ack)
+            await ws._handle_message(ack)
+            return routed, fallback, ack
+
+        routed, fallback, ack = asyncio.run(run())
+        self.assertEqual(len(routed), 1)
+        self.assertEqual(fallback, [ack])
+
+    def test_callback_without_an_id_becomes_the_fallback(self):
+        async def run():
+            ws = self._private()
+            received = []
+            callback = received.append
+            await ws.place_order([{'instId': 'BTC-USDT'}], callback=callback)
+            await ws._handle_message(json.dumps({'op': 'order', 'data': []}))
+            return ws, callback, received
+
+        ws, callback, received = asyncio.run(run())
+        self.assertIs(ws.callback, callback)
+        self.assertEqual(len(received), 1)
+
+
 class TestHeartbeat(unittest.TestCase):
     def test_ping_is_sent_and_missing_pong_closes_the_socket(self):
         async def run():
@@ -202,14 +292,28 @@ class TestSubscriptionRegistry(unittest.TestCase):
 
         asyncio.run(run())
 
-    def test_send_records_a_subscription(self):
+    def test_subscriptions_view_is_derived_from_the_table(self):
+        ws = _public()
+        arg = {'channel': 'tickers', 'instId': 'BTC-USDT'}
+        ws._subs.add([arg])
+
+        self.assertEqual(ws.subscriptions, {json.dumps(arg, sort_keys=True): arg})
+
+    def test_subscriptions_view_rejects_assignment(self):
+        ws = _public()
+
+        with self.assertRaises(AttributeError):
+            ws.subscriptions = {}
+
+    def test_generic_send_leaves_the_subscription_table_alone(self):
+        """Only subscribe()/unsubscribe() own the table; send() is generic."""
         async def run():
             ws = _public()
             ws.websocket = AsyncMock()
             await ws.send('subscribe', [{'channel': 'tickers', 'instId': 'BTC-USDT'}])
             return ws.subscriptions
 
-        self.assertEqual(len(asyncio.run(run())), 1)
+        self.assertEqual(asyncio.run(run()), {})
 
 
 class TestSessionRestore(unittest.TestCase):
@@ -217,10 +321,10 @@ class TestSessionRestore(unittest.TestCase):
         async def run():
             ws = _public()
             ws.websocket = AsyncMock()
-            ws.subscriptions = {
-                'a': {'channel': 'tickers', 'instId': 'BTC-USDT'},
-                'b': {'channel': 'books', 'instId': 'ETH-USDT'},
-            }
+            ws._subs.add([
+                {'channel': 'tickers', 'instId': 'BTC-USDT'},
+                {'channel': 'books', 'instId': 'ETH-USDT'},
+            ])
             await ws._restore_session()
             return [json.loads(call.args[0]) for call in ws.websocket.send.await_args_list]
 
@@ -234,13 +338,35 @@ class TestSessionRestore(unittest.TestCase):
                                 url=URL, ping_interval=0)
             ws.websocket = AsyncMock()
             ws.websocket.recv = AsyncMock(return_value=ACK)
-            ws.subscriptions = {'a': {'channel': 'account'}}
+            ws._subs.add([{'channel': 'account'}])
             await ws._restore_session()
             return ws, [json.loads(call.args[0]) for call in ws.websocket.send.await_args_list]
 
         ws, payloads = asyncio.run(run())
         self.assertTrue(ws.isLoggedIn)
         self.assertEqual([p['op'] for p in payloads], ['login', 'subscribe'])
+
+    def test_restore_session_forgets_pending_requests(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            ws._subs.add_request('o1', MagicMock())
+            await ws._restore_session()
+            return ws
+
+        ws = asyncio.run(run())
+        self.assertIsNone(ws._subs.take({'id': 'o1'}))
+
+    def test_stop_forgets_pending_requests(self):
+        async def run():
+            ws = _public(ping_interval=0)
+            ws.websocket = AsyncMock()
+            ws._subs.add_request('o1', MagicMock())
+            await ws.stop()
+            return ws
+
+        ws = asyncio.run(run())
+        self.assertIsNone(ws._subs.take({'id': 'o1'}))
 
 
 class _DroppingSocket:
@@ -328,13 +454,16 @@ class TestReconnect(unittest.TestCase):
             ws = _public(reconnect_backoff=0, ping_interval=0,
                          connector=FakeConnector(first, second))
 
+            tickers = {'channel': 'tickers', 'instId': 'BTC-USDT'}
+            books = {'channel': 'books', 'instId': 'ETH-USDT'}
             await ws.start()
-            await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], None)
+            await ws.subscribe([tickers], None)
+            await ws.subscribe([books], None)
             first.drop.set()
 
             loop = asyncio.get_running_loop()
             deadline = loop.time() + 2
-            while 'subscribe' not in [json.loads(p)['op'] for p in second.sent]:
+            while len([p for p in second.sent if json.loads(p)['op'] == 'subscribe']) < 2:
                 if loop.time() > deadline:
                     raise AssertionError(f'no resubscribe after reconnect: {second.sent}')
                 await asyncio.sleep(0.01)
@@ -344,7 +473,11 @@ class TestReconnect(unittest.TestCase):
 
         first, second = asyncio.run(run())
         self.assertTrue(first.closed)
-        self.assertEqual(json.loads(second.sent[0])['op'], 'subscribe')
+        self.assertEqual(
+            [json.loads(p)['args'] for p in second.sent],
+            [[{'channel': 'tickers', 'instId': 'BTC-USDT'}],
+             [{'channel': 'books', 'instId': 'ETH-USDT'}]],
+        )
 
     def test_reconnect_disabled_surfaces_the_connection_error(self):
         async def run():

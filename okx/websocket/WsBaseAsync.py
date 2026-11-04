@@ -5,8 +5,14 @@ private trading helpers. Everything that keeps a connection alive — the read
 loop, the heartbeat, reconnect and subscription replay — lives here so it is
 written once.
 
-Callback contract
------------------
+Routing and callbacks
+----------------------
+A message is delivered to the callback registered for its `arg`; an
+acknowledgement without `arg` (such as an order response) is matched by its
+`id`. Only a message that matches neither reaches `callback`, which is a
+deprecated fallback kept until 1.0. The table itself lives in
+`okx.websocket.subscriptions`.
+
 A callback may be a plain function or an `async def`. A coroutine is awaited,
 so it never blocks the event loop; a plain function is called inline (kept for
 callers written against 0.8 and earlier). Either way an exception raised by the
@@ -27,17 +33,17 @@ import inspect
 import json
 import logging
 from contextlib import suppress
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from okx.websocket import WsUtils
 from okx.websocket.connector import WebSocketConnector
+from okx.websocket.subscriptions import Callback, Subscriptions
 
 logger = logging.getLogger(__name__)
 
 Message = Union[str, bytes]
-Callback = Callable[[Message], Any]
 
 DEFAULT_PING_INTERVAL = 25.0
 DEFAULT_PING_TIMEOUT = 10.0
@@ -81,9 +87,11 @@ class WsBaseAsync:
         self.secretKey = secretKey
         self.debug = debug
 
+        # Deprecated fallback: messages that match no subscription or request
+        # are delivered here. Assigning still works; new code should pass the
+        # callback to subscribe() instead. Removed before 1.0.
         self.callback: Optional[Callback] = None
-        # arg key -> the exact argument dict, so a reconnect can replay it.
-        self.subscriptions: Dict[str, Dict[str, Any]] = {}
+        self._subs = Subscriptions()
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self._connector = connector if connector is not None else WebSocketConnector(proxy=proxy)
@@ -109,6 +117,16 @@ class WsBaseAsync:
 
         if debug:
             logger.setLevel(logging.DEBUG)
+
+    @property
+    def subscriptions(self) -> Dict[str, Dict[str, Any]]:
+        """Deprecated read-only view of the subscribed args, keyed like replay.
+
+        Derived from `_subs` on every read, so there is no second copy of the
+        state. Assigning raises `AttributeError`; subscribe() and
+        unsubscribe() are the supported way to change it. Removed before 1.0.
+        """
+        return {json.dumps(arg, sort_keys=True): arg for arg in self._subs.replay()}
 
     # ------------------------------------------------------------------ start/stop
 
@@ -150,6 +168,7 @@ class WsBaseAsync:
                 await task
         await self._stop_heartbeat()
         await self._close_socket()
+        self._subs.drop_requests()
         self.isLoggedIn = False
 
     def stop_sync(self) -> None:
@@ -196,10 +215,17 @@ class WsBaseAsync:
                 else:
                     waiter.set_result(None)
             return
-        await self._emit(message)
+        await self._deliver(message, payload)
 
-    async def _emit(self, message: Message) -> None:
-        callback = self.callback
+    async def _deliver(self, message: Message, payload: Any) -> None:
+        callback = self._subs.take(payload)
+        if callback is None:
+            callback = self.callback
+        await self._emit(message, callback)
+
+    async def _emit(self, message: Message, callback: Optional[Callback] = None) -> None:
+        if callback is None:
+            callback = self.callback
         if callback is None:
             return
         try:
@@ -314,7 +340,15 @@ class WsBaseAsync:
         callback: Optional[Callback] = None,
         id: Optional[str] = None,
     ) -> None:
-        await self.send("subscribe", params, callback, id)
+        """Subscribe and route messages for these args to `callback`.
+
+        The table is updated before the frame goes out: if the send fails the
+        subscription is still replayed on the next connection, which is the
+        safe direction.
+        """
+        self._subs.add(params, callback)
+        await self._ensure_login()
+        await self._send_payload("subscribe", params, id)
 
     async def unsubscribe(
         self,
@@ -322,7 +356,10 @@ class WsBaseAsync:
         callback: Optional[Callback] = None,
         id: Optional[str] = None,
     ) -> None:
-        await self.send("unsubscribe", params, callback, id)
+        """Unsubscribe; messages for these args fall back to `callback`."""
+        self._subs.remove(params)
+        await self._ensure_login()
+        await self._send_payload("unsubscribe", params, id)
 
     async def send(
         self,
@@ -331,12 +368,20 @@ class WsBaseAsync:
         callback: Optional[Callback] = None,
         id: Optional[str] = None,
     ) -> None:
-        """Send a generic operation and keep the subscription registry in sync."""
+        """Send a generic operation.
+
+        A callback with an `id` is remembered for that one response; without
+        an `id` there is nothing to correlate it with, so it becomes the
+        fallback and keeps the 0.11 behaviour. subscribe() and unsubscribe()
+        are the entries that maintain the subscription table.
+        """
         if callback is not None:
-            self.callback = callback
+            if id is not None:
+                self._subs.add_request(id, callback)
+            else:
+                self.callback = callback
         await self._ensure_login()
         await self._send_payload(op, args, id)
-        self._record(op, args)
 
     async def _send_payload(
         self,
@@ -354,26 +399,13 @@ class WsBaseAsync:
             logger.debug("send: %s", payload)
         await self.websocket.send(payload)
 
-    def _record(self, op: str, args: List[Dict[str, Any]]) -> None:
-        if op == "subscribe":
-            for arg in args:
-                if isinstance(arg, dict):
-                    self.subscriptions[self._arg_key(arg)] = dict(arg)
-        elif op == "unsubscribe":
-            for arg in args:
-                if isinstance(arg, dict):
-                    self.subscriptions.pop(self._arg_key(arg), None)
-
-    @staticmethod
-    def _arg_key(arg: Dict[str, Any]) -> str:
-        return json.dumps(arg, sort_keys=True)
-
-    async def _resubscribe(self) -> None:
-        if not self.subscriptions:
+    async def _replay(self) -> None:
+        args = self._subs.replay()
+        if not args:
             return
-        for arg in list(self.subscriptions.values()):
+        for arg in args:
             await self._send_payload("subscribe", [arg], None)
-        logger.info("Resubscribed to %d channel(s)", len(self.subscriptions))
+        logger.info("Resubscribed to %d channel(s)", len(args))
 
     # ------------------------------------------------------------------ lifecycle
 
@@ -425,9 +457,11 @@ class WsBaseAsync:
 
     async def _restore_session(self) -> None:
         self.isLoggedIn = False
+        # Replies to requests made on the old connection will never arrive.
+        self._subs.drop_requests()
         if self._should_login and self._has_credentials():
             await self.login()
-        await self._resubscribe()
+        await self._replay()
 
     async def _heartbeat_loop(self) -> None:
         if not self.ping_interval or self.ping_interval <= 0:

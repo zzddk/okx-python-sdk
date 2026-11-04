@@ -77,7 +77,10 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
 
         async def run_test():
             await ws.subscribe(params, callback)
-            self.assertEqual(ws.callback, callback)
+            # The callback belongs to this arg; the fallback is untouched.
+            self.assertIsNone(ws.callback)
+            await ws._handle_message(json.dumps({"arg": params[0], "data": []}))
+            callback.assert_called_once()
             # Second call should be the subscribe (first is login)
             subscribe_call = mock_websocket.send.call_args_list[1]
             payload = json.loads(subscribe_call[0][0])
@@ -252,7 +255,10 @@ class TestWsPrivateAsyncOrderMethods(unittest.TestCase):
 
         async def run_test():
             await ws.place_order(order_args, callback=callback, id="order001")
-            self.assertEqual(ws.callback, callback)
+            # An order acknowledgement carries no arg; its id finds the callback.
+            self.assertIsNone(ws.callback)
+            await ws._handle_message(json.dumps({"id": "order001", "op": "order", "data": []}))
+            callback.assert_called_once()
             call_args = mock_websocket.send.call_args[0][0]
             payload = json.loads(call_args)
             self.assertEqual(payload["op"], "order")
