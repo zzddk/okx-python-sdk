@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from httpx import Client
 
 from . import consts as c
-from . import utils
+from . import exceptions, utils
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,8 @@ class OkxClient(Client):
     def __init__(self, api_key: str = c._NO_CREDENTIAL, api_secret_key: str = c._NO_CREDENTIAL,
                  passphrase: str = c._NO_CREDENTIAL, use_server_time: Optional[bool] = None,
                  flag: str = '1', base_api: str = c.API_URL, debug: bool = False,
-                 proxy: Optional[str] = None, client: Optional["OkxClient"] = None) -> None:
+                 proxy: Optional[str] = None, client: Optional["OkxClient"] = None,
+                 raise_on_error: bool = True) -> None:
         # Compatible with different versions of httpx
         # New versions (0.24.0+) use proxy, older versions use proxies
         try:
@@ -37,6 +38,7 @@ class OkxClient(Client):
             self.flag = client.flag
             self.debug = client.debug
             self.domain = client.domain
+            self.raise_on_error = client.raise_on_error
         else:
             self.API_KEY = api_key
             self.API_SECRET_KEY = api_secret_key
@@ -44,6 +46,7 @@ class OkxClient(Client):
             self.flag = flag
             self.debug = debug
             self.domain = base_api
+            self.raise_on_error = raise_on_error
         if use_server_time:
             warnings.warn(
                 "use_server_time has no effect and will be removed in 0.5.0.",
@@ -58,7 +61,7 @@ class OkxClient(Client):
             request_path = request_path + utils.parse_params_to_str(params)
         timestamp = utils.get_timestamp()
         body = json.dumps(utils.drop_none_params(params)) if method == c.POST else ""
-        if self.API_KEY != '-1':
+        if self.API_KEY != c._NO_CREDENTIAL:
             sign = utils.sign(utils.pre_hash(timestamp, method, request_path, str(body), self.debug), self.API_SECRET_KEY)
             header = utils.get_header(self.API_KEY, sign, timestamp, self.PASSPHRASE, self.flag, self.debug)
         else:
@@ -72,7 +75,22 @@ class OkxClient(Client):
             response = self.get(request_path, headers=header)
         elif method == c.POST:
             response = self.post(request_path, data=body, headers=header)
-        return response.json()
+        try:
+            payload = response.json()
+        except ValueError:
+            if self.raise_on_error and response.status_code >= 400:
+                raise exceptions.OkxAPIException(response)
+            raise
+        if self.raise_on_error:
+            self._raise_for_error(response, payload)
+        return payload
+
+    @staticmethod
+    def _raise_for_error(response: Any, payload: Any) -> None:
+        if response.status_code >= 400:
+            raise exceptions.OkxAPIException(response, payload)
+        if isinstance(payload, dict) and str(payload.get('code', '0')) != '0':
+            raise exceptions.OkxAPIException(response, payload)
 
     def _request_without_params(self, method: Any, request_path: Any) -> Dict[str, Any]:
         return self._request(method, request_path, {})

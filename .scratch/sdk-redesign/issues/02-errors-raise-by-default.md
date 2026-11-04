@@ -18,3 +18,7 @@ HTTP ≥ 400 或 `code != '0'` 时抛 `OkxAPIException`，构造时带 `code` / 
 ## Comments
 
 - 2026-11-05: moved from 0.4.5 to 0.5.0. Raising by default changes caller-visible behaviour, so users on `~=0.4` would receive it in a patch release. The implementation is specified and ready; it ships with the other breaking changes.
+
+## Comments
+
+- 2026-11-05: implemented in 0.5.0. `OkxAPIException` now accepts a pre-parsed payload and always exposes `code`/`message`/`status_code`/`response`; `_request` raises on HTTP `>= 400` or non-`'0'` code, and `raise_on_error=False` returns the payload unchanged. Network errors are not wrapped. Unit tests cover success, business rejection, HTTP error, non-JSON error bodies, opt-out, and network propagation.

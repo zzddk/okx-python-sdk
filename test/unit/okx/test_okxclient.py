@@ -8,6 +8,10 @@ import unittest
 import warnings
 from unittest.mock import MagicMock, patch
 
+import httpx
+
+from okx import exceptions
+
 # Test constants
 MOCK_CLIENT_INIT = 'okx.okxclient.Client.__init__'
 TEST_PROXY_URL = 'http://proxy.example.com:8080'
@@ -189,7 +193,7 @@ class TestOkxClientRequest(unittest.TestCase):
     def test_post_body_omits_none_params(self):
         """Only None means "not supplied" in a JSON body."""
         with patch.object(self.client, 'post') as mock_post:
-            mock_post.return_value.json.return_value = {'code': '0'}
+            mock_post.return_value = _mock_response({'code': '0'})
 
             result = self.client._request(
                 'POST', TEST_API_ENDPOINT, {'instId': 'BTC-USDT', 'sz': None, 'px': ''}
@@ -202,7 +206,7 @@ class TestOkxClientRequest(unittest.TestCase):
     def test_get_query_keeps_explicit_empty_string(self):
         """An explicit '' is a value, not an absent parameter."""
         with patch.object(self.client, 'get') as mock_get:
-            mock_get.return_value.json.return_value = {'code': '0'}
+            mock_get.return_value = _mock_response({'code': '0'})
 
             self.client._request('GET', TEST_API_ENDPOINT, {'instId': '', 'uly': None})
 
@@ -262,6 +266,94 @@ class TestSubclassConstructor(unittest.TestCase):
 
         shared._request.assert_called_once_with('GET', TEST_API_ENDPOINT, {})
         self.assertEqual(result, {'code': '0'})
+
+
+def _mock_response(payload, status_code=200):
+    response = MagicMock()
+    response.status_code = status_code
+    response.json.return_value = payload
+    response.text = str(payload)
+    return response
+
+
+class TestOkxClientErrorHandling(unittest.TestCase):
+    """Business and HTTP errors raise OkxAPIException by default."""
+
+    def setUp(self):
+        with patch('okx.okxclient.Client.__init__') as mock_init:
+            mock_init.return_value = None
+            from okx.okxclient import OkxClient
+            self.client = OkxClient()
+
+    def test_success_response_is_returned(self):
+        payload = {'code': '0', 'data': []}
+        with patch.object(self.client, 'get', return_value=_mock_response(payload)):
+            self.assertEqual(
+                self.client._request_with_params('GET', '/api/v5/test', {}), payload
+            )
+
+    def test_business_error_raises_with_code_and_message(self):
+        payload = {'code': '51000', 'msg': 'Order rejected'}
+        with patch.object(self.client, 'get', return_value=_mock_response(payload)):
+            with self.assertRaises(exceptions.OkxAPIException) as ctx:
+                self.client._request_with_params('GET', '/api/v5/test', {})
+
+        error = ctx.exception
+        self.assertEqual(error.code, '51000')
+        self.assertEqual(error.message, 'Order rejected')
+        self.assertEqual(error.status_code, 200)
+        self.assertIsNotNone(error.response)
+
+    def test_http_error_raises_with_status_code(self):
+        payload = {'code': '50011', 'msg': 'Rate limit'}
+        with patch.object(
+            self.client, 'get', return_value=_mock_response(payload, status_code=500)
+        ):
+            with self.assertRaises(exceptions.OkxAPIException) as ctx:
+                self.client._request_with_params('GET', '/api/v5/test', {})
+
+        self.assertEqual(ctx.exception.status_code, 500)
+        self.assertEqual(ctx.exception.code, '50011')
+
+    def test_raise_on_error_false_returns_payload_unchanged(self):
+        payload = {'code': '51000', 'msg': 'Order rejected'}
+        with patch('okx.okxclient.Client.__init__') as mock_init:
+            mock_init.return_value = None
+            from okx.okxclient import OkxClient
+            client = OkxClient(raise_on_error=False)
+
+        with patch.object(client, 'get', return_value=_mock_response(payload, status_code=500)):
+            self.assertEqual(
+                client._request_with_params('GET', '/api/v5/test', {}), payload
+            )
+
+    def test_network_errors_are_not_wrapped(self):
+        with patch.object(self.client, 'get', side_effect=httpx.ConnectError('boom')):
+            with self.assertRaises(httpx.ConnectError):
+                self.client._request_with_params('GET', '/api/v5/test', {})
+
+    def test_http_error_with_non_json_body_raises_okx_exception(self):
+        response = MagicMock()
+        response.status_code = 502
+        response.text = '<html>bad gateway</html>'
+        response.json.side_effect = ValueError('not json')
+
+        with patch.object(self.client, 'get', return_value=response):
+            with self.assertRaises(exceptions.OkxAPIException) as ctx:
+                self.client._request_with_params('GET', '/api/v5/test', {})
+
+        self.assertEqual(ctx.exception.status_code, 502)
+        self.assertIn('bad gateway', ctx.exception.message)
+
+    def test_200_non_json_body_still_raises_value_error(self):
+        response = MagicMock()
+        response.status_code = 200
+        response.text = 'not json'
+        response.json.side_effect = ValueError('not json')
+
+        with patch.object(self.client, 'get', return_value=response):
+            with self.assertRaises(ValueError):
+                self.client._request_with_params('GET', '/api/v5/test', {})
 
 
 if __name__ == '__main__':

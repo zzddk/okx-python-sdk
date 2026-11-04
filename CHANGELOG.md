@@ -7,6 +7,7 @@ All notable changes to `python-okx` are documented in this file.
 Breaking release. This is the only window in the 0.4/0.5 line for public-API changes, so nothing renamed here keeps a compatibility alias (see ADR-0001). The "Renamed" table below is the complete migration list.
 
 ### Changed
+- Failed requests raise `OkxAPIException` by default when the HTTP status is `>= 400` or the response `code` is not `'0'`. The exception exposes `code`, `message`, `status_code` and the original `response`; network failures still surface as the underlying `httpx` exception. Pass `raise_on_error=False` to return the payload dict exactly as 0.4.x did.
 - All 22 `*API` classes now inherit `OkxClient.__init__`; the duplicated subclass constructors are gone. Adding a client-wide option no longer means editing 22 files.
 - The base constructor's `domain` parameter is now `base_api`, matching `OkxClient`. The positional slot is unchanged, so positional construction keeps working; `domain=` keyword calls must switch to `base_api=`.
 - The REST layer logs through the standard `logging` module (`okx.okxclient`, `okx.utils`), matching the WebSocket layer. Application handlers receive SDK records; a `NullHandler` on the `okx` logger keeps unconfigured apps quiet.
