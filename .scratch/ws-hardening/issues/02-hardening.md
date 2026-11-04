@@ -1,7 +1,8 @@
 # WS 加固：心跳、重连、重订阅、回调解耦、去重复
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.9.0
+Done in: 0.9.0
 
 ## 为什么
 
@@ -20,3 +21,7 @@ Release: 0.9.0
 - 断网后能自行恢复，且恢复后订阅仍然有效（有测试）。
 - 回调抛异常时连接不断，异常被记录并继续消费。
 - 两个类不再逐字重复。
+
+## Comments
+
+- 2026-11-05: Implemented for 0.9.0. Callback contract: a coroutine callback is awaited, a plain function is still called inline (ADR-0005). The shared lifecycle lives in `okx/websocket/WsBaseAsync.py`; `WsPublicAsync` and `WsPrivateAsync` are thin subclasses. Heartbeat, exponential-backoff reconnect, subscription replay and callback isolation are covered by `test/unit/okx/websocket/test_ws_session.py`.

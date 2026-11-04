@@ -1,0 +1,467 @@
+"""Shared WebSocket session lifecycle.
+
+`WsPublicAsync` and `WsPrivateAsync` differ only in their constructors and the
+private trading helpers. Everything that keeps a connection alive — the read
+loop, the heartbeat, reconnect and subscription replay — lives here so it is
+written once.
+
+Callback contract
+-----------------
+A callback may be a plain function or an `async def`. A coroutine is awaited,
+so it never blocks the event loop; a plain function is called inline (kept for
+callers written against 0.8 and earlier). Either way an exception raised by the
+callback is logged and the next message is still delivered — a broken callback
+cannot end the stream.
+
+Protocol frames
+---------------
+The server answers a text `ping` with `pong`. Pong frames are consumed by the
+heartbeat machinery and are not handed to the callback. A missing pong makes
+the connection count as dead, which triggers a reconnect.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import inspect
+import json
+import logging
+from contextlib import suppress
+from typing import Any, Callable, Dict, List, Optional, Union
+
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError
+
+from okx.websocket import WsUtils
+from okx.websocket.WebSocketFactory import WebSocketFactory
+
+logger = logging.getLogger(__name__)
+
+Message = Union[str, bytes]
+Callback = Callable[[Message], Any]
+
+DEFAULT_PING_INTERVAL = 25.0
+DEFAULT_PING_TIMEOUT = 10.0
+DEFAULT_RECONNECT_BACKOFF = 1.0
+DEFAULT_RECONNECT_MAX_BACKOFF = 60.0
+
+
+class WsBaseAsync:
+    """One OKX WebSocket session with heartbeat, reconnect and replay.
+
+    Subclasses only supply a constructor (and, for the private client, the
+    order-entry helpers). `_LOGIN_REQUIRED` selects whether subscribing
+    authenticates first, which is what `WsPrivateAsync` always did.
+    """
+
+    _LOGIN_REQUIRED = False
+
+    def __init__(
+        self,
+        url: str,
+        apiKey: str = '',
+        passphrase: str = '',
+        secretKey: str = '',
+        debug: bool = False,
+        ping_interval: Optional[float] = DEFAULT_PING_INTERVAL,
+        ping_timeout: float = DEFAULT_PING_TIMEOUT,
+        reconnect: bool = True,
+        reconnect_backoff: float = DEFAULT_RECONNECT_BACKOFF,
+        reconnect_max_backoff: float = DEFAULT_RECONNECT_MAX_BACKOFF,
+    ) -> None:
+        self.url = url
+        self.apiKey = apiKey
+        self.passphrase = passphrase
+        self.secretKey = secretKey
+        self.debug = debug
+
+        self.callback: Optional[Callback] = None
+        # arg key -> the exact argument dict, so a reconnect can replay it.
+        self.subscriptions: Dict[str, Dict[str, Any]] = {}
+
+        self.loop: Optional[asyncio.AbstractEventLoop] = None
+        self.factory = WebSocketFactory(url)
+        self.websocket: Any = None
+        self.isLoggedIn = False
+
+        self.ping_interval = ping_interval
+        self.ping_timeout = ping_timeout
+        self.reconnect = reconnect
+        self.reconnect_backoff = reconnect_backoff
+        self.reconnect_max_backoff = reconnect_max_backoff
+
+        # Set from _LOGIN_REQUIRED, then latched on the first successful login
+        # so a public client that logged in for the business channel keeps
+        # logging in after a reconnect.
+        self._should_login = self._LOGIN_REQUIRED
+        self._stopping = False
+        self._task: Optional[asyncio.Task] = None
+        self._consumer: Optional[asyncio.Task] = None
+        self._heartbeat: Optional[asyncio.Task] = None
+        self._pong: Optional[asyncio.Event] = None
+        self._login_waiter: Optional[asyncio.Future] = None
+
+        if debug:
+            logger.setLevel(logging.DEBUG)
+
+    # ------------------------------------------------------------------ start/stop
+
+    async def connect(self) -> None:
+        self.websocket = await self.factory.connect()
+
+    async def start(self) -> asyncio.Task:
+        """Connect and start the reader, heartbeat and reconnect supervisor.
+
+        The returned task is the supervisor. It stays alive across reconnects
+        and finishes only when `stop()` is called (or when `reconnect=False`
+        and the connection ends).
+        """
+        if self._task is not None and not self._task.done():
+            raise RuntimeError("WebSocket is already started")
+        self.loop = asyncio.get_running_loop()
+        self._stopping = False
+        self._pong = asyncio.Event()
+        if self.debug:
+            logger.debug("Connecting to WebSocket...")
+        else:
+            logger.info("Connecting to WebSocket...")
+        await self.connect()
+        self._start_connection_tasks()
+        self._task = asyncio.create_task(self._supervise())
+        return self._task
+
+    async def stop(self) -> None:
+        """Stop the supervisor, the heartbeat and the socket. Idempotent."""
+        self._stopping = True
+        current = asyncio.current_task()
+        task = self._task
+        self._task = None
+        # A callback may call stop() from inside consume(); cancelling the
+        # supervisor then would cancel the very task awaiting us.
+        if task is not None and task is not current and current is not self._consumer:
+            task.cancel()
+            with suppress(asyncio.CancelledError, Exception):
+                await task
+        await self._stop_heartbeat()
+        await self._close_socket()
+        self.isLoggedIn = False
+
+    def stop_sync(self) -> None:
+        if self.loop is None:
+            raise RuntimeError("stop_sync() requires a prior start(); no event loop has been captured")
+        if self.loop.is_running():
+            future = asyncio.run_coroutine_threadsafe(self.stop(), self.loop)
+            future.result(timeout=10)
+        else:
+            self.loop.run_until_complete(self.stop())
+
+    # ------------------------------------------------------------------ read loop
+
+    async def consume(self) -> None:
+        """Read frames from the current socket until it closes.
+
+        A closed connection raises `ConnectionClosedError` after the callback
+        has been told; the supervisor catches it and reconnects.
+        """
+        if self.websocket is None:
+            raise RuntimeError("connect() must be called before consume()")
+        try:
+            async for message in self.websocket:
+                await self._handle_message(message)
+        except ConnectionClosedError as exc:
+            logger.error("WebSocket connection closed: %s", exc)
+            await self._emit_error("ConnClosed", str(exc))
+            raise
+
+    async def _handle_message(self, message: Message) -> None:
+        if self.debug:
+            logger.debug("Received message: {%s}", message)
+        if message == "pong":
+            if self._pong is not None:
+                self._pong.set()
+            return
+        payload = self._parse(message)
+        if isinstance(payload, dict) and payload.get("event") == "login":
+            waiter = self._login_waiter
+            if waiter is not None and not waiter.done():
+                rejection = self._login_rejection(payload)
+                if rejection is not None:
+                    waiter.set_exception(rejection)
+                else:
+                    waiter.set_result(None)
+            return
+        await self._emit(message)
+
+    async def _emit(self, message: Message) -> None:
+        callback = self.callback
+        if callback is None:
+            return
+        try:
+            result = callback(message)
+            if inspect.isawaitable(result):
+                await result
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("WebSocket callback failed; dropping the message and continuing")
+
+    async def _emit_error(self, code: str, msg: str) -> None:
+        await self._emit(json.dumps({"event": "error", "code": code, "msg": msg}))
+
+    @staticmethod
+    def _parse(message: Message) -> Any:
+        if not isinstance(message, (str, bytes)):
+            return None
+        try:
+            return json.loads(message)
+        except ValueError:
+            return None
+
+    # ------------------------------------------------------------------ auth
+
+    async def login(self, timeout: float = 10.0) -> bool:
+        """Authenticate the connection and wait for the server's acknowledgement.
+
+        When the reader is already running the acknowledgement is delivered by
+        it (a second `recv()` there would collide); otherwise this method reads
+        the socket itself, which is what happens during a reconnect.
+        """
+        if self.isLoggedIn:
+            return True
+        if not self._has_credentials():
+            raise ValueError("apiKey, secretKey and passphrase are required for login")
+        if self.websocket is None:
+            raise RuntimeError("start() must be called before login()")
+
+        payload = WsUtils.initLoginParams(
+            useServerTime=False,
+            apiKey=self.apiKey,
+            passphrase=self.passphrase,
+            secretKey=self.secretKey,
+        )
+        if self.debug:
+            logger.debug("login: %s", payload)
+
+        waiter: Optional[asyncio.Future] = None
+        if self._consuming():
+            waiter = asyncio.get_running_loop().create_future()
+            self._login_waiter = waiter
+        try:
+            await self.websocket.send(payload)
+            if waiter is not None:
+                try:
+                    await asyncio.wait_for(waiter, timeout)
+                except asyncio.TimeoutError:
+                    raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            else:
+                await self._read_login_ack(timeout)
+        except BaseException:
+            self.isLoggedIn = False
+            raise
+        finally:
+            self._login_waiter = None
+        self.isLoggedIn = True
+        self._should_login = True
+        return True
+
+    async def _read_login_ack(self, timeout: float) -> None:
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        while True:
+            remaining = deadline - loop.time()
+            if remaining <= 0:
+                raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            try:
+                message = await asyncio.wait_for(self.websocket.recv(), timeout=remaining)
+            except asyncio.TimeoutError:
+                raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            payload = self._parse(message)
+            if isinstance(payload, dict) and payload.get("event") == "login":
+                rejection = self._login_rejection(payload)
+                if rejection is not None:
+                    raise rejection
+                return
+            await self._emit(message)
+
+    @staticmethod
+    def _login_rejection(payload: Dict[str, Any]) -> Optional[ConnectionError]:
+        if str(payload.get("code", "0")) != "0":
+            return ConnectionError(
+                f"login rejected: code={payload.get('code')} msg={payload.get('msg')}"
+            )
+        return None
+
+    def _consuming(self) -> bool:
+        return self._consumer is not None and not self._consumer.done()
+
+    def _has_credentials(self) -> bool:
+        return bool(self.apiKey and self.passphrase and self.secretKey)
+
+    async def _ensure_login(self) -> None:
+        if self._should_login and not self.isLoggedIn and self._has_credentials():
+            await self.login()
+
+    # ------------------------------------------------------------------ operations
+
+    async def subscribe(
+        self,
+        params: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        await self.send("subscribe", params, callback, id)
+
+    async def unsubscribe(
+        self,
+        params: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        await self.send("unsubscribe", params, callback, id)
+
+    async def send(
+        self,
+        op: str,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Send a generic operation and keep the subscription registry in sync."""
+        if callback is not None:
+            self.callback = callback
+        await self._ensure_login()
+        await self._send_payload(op, args, id)
+        self._record(op, args)
+
+    async def _send_payload(
+        self,
+        op: str,
+        args: List[Dict[str, Any]],
+        id: Optional[str],
+    ) -> None:
+        if self.websocket is None:
+            raise RuntimeError("not connected: call start() first")
+        payload_dict: Dict[str, Any] = {"op": op, "args": args}
+        if id is not None:
+            payload_dict["id"] = id
+        payload = json.dumps(payload_dict)
+        if self.debug:
+            logger.debug("send: %s", payload)
+        await self.websocket.send(payload)
+
+    def _record(self, op: str, args: List[Dict[str, Any]]) -> None:
+        if op == "subscribe":
+            for arg in args:
+                if isinstance(arg, dict):
+                    self.subscriptions[self._arg_key(arg)] = dict(arg)
+        elif op == "unsubscribe":
+            for arg in args:
+                if isinstance(arg, dict):
+                    self.subscriptions.pop(self._arg_key(arg), None)
+
+    @staticmethod
+    def _arg_key(arg: Dict[str, Any]) -> str:
+        return json.dumps(arg, sort_keys=True)
+
+    async def _resubscribe(self) -> None:
+        if not self.subscriptions:
+            return
+        for arg in list(self.subscriptions.values()):
+            await self._send_payload("subscribe", [arg], None)
+        logger.info("Resubscribed to %d channel(s)", len(self.subscriptions))
+
+    # ------------------------------------------------------------------ lifecycle
+
+    def _start_connection_tasks(self) -> None:
+        self._consumer = asyncio.create_task(self.consume())
+        self._heartbeat = asyncio.create_task(self._heartbeat_loop())
+
+    async def _supervise(self) -> None:
+        while True:
+            error: Optional[BaseException] = None
+            try:
+                await self._consumer
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                error = exc
+                logger.warning("WebSocket stream ended: %s", exc)
+            finally:
+                await self._stop_heartbeat()
+
+            if self._stopping:
+                return
+            if not self.reconnect:
+                if error is not None:
+                    raise error
+                return
+
+            logger.info("Reconnecting WebSocket...")
+            await self._reconnect()
+            if self._stopping:
+                return
+            self._start_connection_tasks()
+
+    async def _reconnect(self) -> None:
+        delay = self.reconnect_backoff
+        while not self._stopping:
+            try:
+                await self._close_socket()
+                await self.connect()
+                await self._restore_session()
+                return
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                logger.warning("Reconnect failed: %s; retrying in %.1fs", exc, delay)
+                await self._close_socket()
+                await asyncio.sleep(delay)
+                delay = min(delay * 2, self.reconnect_max_backoff)
+
+    async def _restore_session(self) -> None:
+        self.isLoggedIn = False
+        if self._should_login and self._has_credentials():
+            await self.login()
+        await self._resubscribe()
+
+    async def _heartbeat_loop(self) -> None:
+        if not self.ping_interval or self.ping_interval <= 0:
+            return
+        pong = self._pong
+        while not self._stopping:
+            await asyncio.sleep(self.ping_interval)
+            if self._stopping or self.websocket is None or pong is None:
+                return
+            pong.clear()
+            try:
+                await self.websocket.send("ping")
+            except ConnectionClosed:
+                return
+            try:
+                await asyncio.wait_for(pong.wait(), timeout=self.ping_timeout)
+            except asyncio.TimeoutError:
+                # Close from here but do not call the user's callback: consume()
+                # may be inside it, and callbacks are promised to run one at a
+                # time in arrival order. The read loop will finish (or raise
+                # ConnectionClosed) and the supervisor will reconnect.
+                logger.warning("No pong within %.1fs; treating the connection as dead", self.ping_timeout)
+                await self._close_socket()
+                return
+
+    async def _stop_heartbeat(self) -> None:
+        task = self._heartbeat
+        self._heartbeat = None
+        if task is None:
+            return
+        if not task.done():
+            task.cancel()
+        with suppress(asyncio.CancelledError, Exception):
+            await task
+
+    async def _close_socket(self) -> None:
+        websocket = self.websocket
+        self.websocket = None
+        if websocket is not None:
+            with suppress(Exception):
+                await websocket.close()
+        with suppress(Exception):
+            await self.factory.close()

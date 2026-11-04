@@ -2,6 +2,57 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.9.0]
+
+Breaking release, the batch ADR-0004 reserved for the WebSocket layer. The REST
+API is untouched.
+
+### Changed
+- WebSocket callbacks may now be `async def`; a coroutine returned by the
+  callback is awaited, so it does not block the event loop. Plain functions are
+  still called inline, so existing callbacks keep working — but a coroutine is
+  no longer leaked un-awaited.
+- An exception raised by a callback is logged and the next message is still
+  delivered. A failing callback no longer ends `consume()`.
+- `start()` returns the supervisor task (read loop + heartbeat + reconnect)
+  instead of the read loop. It stays alive across connection drops and ends when
+  `stop()` cancels it. `reconnect=False` keeps the pre-0.9 shape: the task
+  surfaces the connection error and ends.
+- `WsPrivateAsync.subscribe()` no longer logs in on every call. The client
+  authenticates once per connection, on the first subscribe or order, and again
+  after a reconnect.
+- `subscriptions` is now a mapping of the exact argument dictionaries instead of
+  a never-read set. It is the source of truth for resubscription.
+- `consume()` reads one connection; a drop reconnects instead of ending the
+  stream.
+- `pong` frames are consumed by the heartbeat and are not passed to the
+  callback. Because callbacks are awaited in the read loop, one that runs longer
+  than `ping_timeout` delays pong handling and can trigger a reconnect; offload
+  long work to a task inside the callback.
+
+### Added
+- Heartbeat: a text `ping` every 25 seconds (`ping_interval`) with a `pong`
+  required within 10 seconds (`ping_timeout`). A missing pong closes the socket
+  and triggers a reconnect.
+- Reconnect with exponential backoff (`reconnect_backoff`, 1s doubling to
+  `reconnect_max_backoff`, 60s) and automatic replay of every recorded
+  subscription, for both the public and the private client.
+- `WsBaseAsync`, the shared session implementation. `WsPublicAsync` and
+  `WsPrivateAsync` are now thin subclasses; their public methods did not change.
+- Type annotations across `okx.websocket`.
+
+### Migration
+- Await the value of `start()` as the supervisor: it now ends at `stop()`
+  rather than when the socket drops. Pass `reconnect=False` to have it end (and
+  raise) on a drop, as before.
+- `ws.subscriptions` is a `dict` keyed by the JSON form of each channel
+  argument. It was never populated before 0.9, so code that read it was reading
+  an empty set.
+- Calling `start()` on a client that is already started raises `RuntimeError`
+  instead of silently running a second read loop.
+- Subscribing while a reconnect is in progress raises `RuntimeError` because
+  there is no socket to send on; retry after the session is back.
+
 ## [0.8.1]
 
 Defect-fix release.

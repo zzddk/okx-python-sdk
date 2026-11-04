@@ -1,12 +1,22 @@
+"""WebSocket helpers: authentication payloads and channel validation."""
+
+from __future__ import annotations
+
 import base64
 import hmac
 import json
 import time
+from typing import Any, Dict, List, Optional, Set
 
 import httpx
 
 
-def initLoginParams(useServerTime: bool, apiKey, passphrase, secretKey):
+def initLoginParams(
+    useServerTime: bool,
+    apiKey: str,
+    passphrase: str,
+    secretKey: str,
+) -> str:
     timestamp = getLocalTime()
     if useServerTime:
         timestamp = getServerTime()
@@ -19,11 +29,11 @@ def initLoginParams(useServerTime: bool, apiKey, passphrase, secretKey):
     return json.dumps(payload)
 
 
-def isNotBlankStr(param: str) -> bool:
+def isNotBlankStr(param: Any) -> bool:
     return isinstance(param, str) and param.strip() != ""
 
 
-def getParamKey(arg: dict) -> str:
+def getParamKey(arg: Dict[str, Any]) -> str:
     s = ""
     for k in arg:
         if k == 'channel':
@@ -32,8 +42,8 @@ def getParamKey(arg: dict) -> str:
     return s
 
 
-def initSubscribeSet(arg: dict) -> set:
-    paramsSet = set()
+def initSubscribeSet(arg: Optional[Dict[str, Any]]) -> Set[str]:
+    paramsSet: Set[str] = set()
     if arg is None:
         return paramsSet
     elif isinstance(arg, dict):
@@ -43,7 +53,11 @@ def initSubscribeSet(arg: dict) -> set:
         raise ValueError("arg must dict")
 
 
-def checkSocketParams(args: list, channelArgs, channelParamMap):
+def checkSocketParams(
+    args: List[Dict[str, Any]],
+    channelArgs: Dict[str, List[Dict[str, Any]]],
+    channelParamMap: Dict[str, Set[str]],
+) -> None:
     for arg in args:
         channel = arg['channel'].strip()
         if not isNotBlankStr(channel):
@@ -65,7 +79,7 @@ def checkSocketParams(args: list, channelArgs, channelParamMap):
         channelArgs[channel].append(p)
 
 
-def getServerTime():
+def getServerTime() -> str:
     url = "https://www.okx.com/api/v5/public/time"
     response = httpx.get(url)
     if response.status_code == 200:
@@ -74,5 +88,5 @@ def getServerTime():
         return ""
 
 
-def getLocalTime():
+def getLocalTime() -> int:
     return int(time.time())

@@ -16,7 +16,7 @@ Make sure you update often and check the [Changelog](https://www.okx.com/docs-v5
 - Private and Public Websocket implementation
 - Testnet support 
 - Private and Public WebSocket channels, with login acknowledgement checked before subscribing
-- Automatic reconnection and heartbeats are **not** implemented yet — see `.scratch/ws-hardening/`
+- WebSocket heartbeats (25s `ping`), automatic reconnection with exponential backoff, and automatic resubscription
 
 ### Quick start
 #### Prerequisites
@@ -113,13 +113,33 @@ Endpoints default to the live host; pass `url=` for anything else. To share the 
 
 ```python
 from okx import Account
-from okx.websocket import WsPrivateAsync
+from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
 rest = Account.AccountAPI(api_key, secret, passphrase, flag="1")  # demo
 ws = WsPrivateAsync.from_client(rest)                             # demo host, same credentials
 ```
 
 `flag="1"` on the REST client selects the demo WebSocket host automatically, so the two layers cannot end up in different environments. Use `WsPublicAsync.from_client(rest, channel="business")` for the business channel.
+
+A callback may be a plain function or an `async def`; a coroutine is awaited, so it does not block the event loop. Callbacks run one message at a time in arrival order, and a callback that runs longer than `ping_timeout` delays heartbeat processing — hand long work to `asyncio.create_task`. Exceptions are logged and the next message is still delivered — a failing callback cannot end the stream.
+
+```python
+import asyncio
+
+from okx.websocket.WsPrivateAsync import WsPrivateAsync
+
+async def on_message(message: str) -> None:
+    print(message)
+
+async def main(rest):
+    ws = WsPrivateAsync.from_client(rest)
+    task = await ws.start()                               # connect + start the supervisor
+    await ws.subscribe([{"channel": "account"}], on_message)
+    await asyncio.sleep(60)
+    await ws.stop()                                       # also cancels the supervisor
+```
+
+The client sends a `ping` every 25 seconds and treats a missing `pong` as a dead connection. After a drop it reconnects with exponential backoff (1s doubling to 60s) and replays every subscription it knows about. Tune it with `ping_interval`, `ping_timeout`, `reconnect`, `reconnect_backoff` and `reconnect_max_backoff`; pass `reconnect=False` to keep the pre-0.9 behaviour where the returned task surfaces the connection error instead of retrying. Pong frames are handled by the heartbeat and are not passed to the callback.
 
 ### Development Setup
 

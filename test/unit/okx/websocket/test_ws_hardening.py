@@ -47,12 +47,12 @@ class _LoginSubject:
     """Build a client with a mocked socket, without touching the network."""
 
     def public(self, **kwargs):
-        with patch('okx.websocket.WsPublicAsync.WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             return WsPublicAsync(apiKey='k', passphrase='p', secretKey='s',
                                  url='wss://example.com', **kwargs)
 
     def private(self, **kwargs):
-        with patch('okx.websocket.WsPrivateAsync.WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             return WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
                                   url='wss://example.com', **kwargs)
 
@@ -100,6 +100,6 @@ class TestLoginAck(unittest.TestCase):
     def test_private_subscribe_does_not_sleep_after_the_ack(self):
         ws = self._ws(WsPrivateAsync)
         ws.websocket.recv = AsyncMock(return_value=ACK)
-        with patch('okx.websocket.WsPrivateAsync.WsUtils.initLoginParams', return_value='{"op":"login"}'):
+        with patch('okx.websocket.WsBaseAsync.WsUtils.initLoginParams', return_value='{"op":"login"}'):
             asyncio.run(ws.subscribe([{'channel': 'account'}], MagicMock()))
         self.assertEqual(ws.websocket.send.call_count, 2)

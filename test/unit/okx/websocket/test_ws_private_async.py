@@ -15,7 +15,7 @@ from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
 # Test constants
 TEST_WS_URL = 'wss://test.example.com'
-MOCK_WS_FACTORY = 'okx.websocket.WsPrivateAsync.WebSocketFactory'
+MOCK_WS_FACTORY = 'okx.websocket.WsBaseAsync.WebSocketFactory'
 
 # Placeholder client identifiers for constructing the websocket client in unit
 # tests. The WebSocketFactory is mocked, so these dummy strings are never signed
@@ -30,7 +30,7 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
 
     def test_init_with_required_params(self):
         """Test initialization with required parameters"""
-        with patch.object(ws_private_module, 'WebSocketFactory') as mock_factory:
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory') as mock_factory:
             ws = WsPrivateAsync(
                 apiKey=_STUB_ID,
                 passphrase=_STUB_PHRASE,
@@ -103,9 +103,9 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
 
     def test_subscribe_sends_correct_payload(self):
         """Test subscribe sends correct payload after login"""
-        with patch.object(ws_private_module, 'WebSocketFactory'), \
-             patch.object(ws_private_module, 'WsUtils') as mock_ws_utils, \
-             patch.object(ws_private_module.asyncio, 'sleep', new_callable=AsyncMock):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'), \
+             patch('okx.websocket.WsBaseAsync.WsUtils') as mock_ws_utils, \
+             patch('okx.websocket.WsBaseAsync.asyncio.sleep', new_callable=AsyncMock):
             
             mock_ws_utils.initLoginParams.return_value = '{"op":"login"}'
 
@@ -135,9 +135,9 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
 
     def test_subscribe_with_id(self):
         """Test subscribe with id parameter"""
-        with patch.object(ws_private_module, 'WebSocketFactory'), \
-             patch.object(ws_private_module, 'WsUtils') as mock_ws_utils, \
-             patch.object(ws_private_module.asyncio, 'sleep', new_callable=AsyncMock):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'), \
+             patch('okx.websocket.WsBaseAsync.WsUtils') as mock_ws_utils, \
+             patch('okx.websocket.WsBaseAsync.asyncio.sleep', new_callable=AsyncMock):
 
             mock_ws_utils.initLoginParams.return_value = '{"op":"login"}'
 
@@ -169,7 +169,7 @@ class TestWsPrivateAsyncUnsubscribe(unittest.TestCase):
 
     def test_unsubscribe_sends_correct_payload(self):
         """Test unsubscribe sends correct payload"""
-        with patch.object(ws_private_module, 'WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             ws = WsPrivateAsync(
                 apiKey=_STUB_ID,
                 passphrase=_STUB_PHRASE,
@@ -194,7 +194,7 @@ class TestWsPrivateAsyncUnsubscribe(unittest.TestCase):
 
     def test_unsubscribe_with_id(self):
         """Test unsubscribe with id parameter"""
-        with patch.object(ws_private_module, 'WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             ws = WsPrivateAsync(
                 apiKey=_STUB_ID,
                 passphrase=_STUB_PHRASE,
@@ -545,8 +545,8 @@ class TestWsPrivateAsyncLogin(unittest.TestCase):
 
     def test_login_calls_init_login_params(self):
         """Test login calls WsUtils.initLoginParams with correct parameters"""
-        with patch.object(ws_private_module, 'WebSocketFactory'), \
-             patch.object(ws_private_module, 'WsUtils') as mock_ws_utils:
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'), \
+             patch('okx.websocket.WsBaseAsync.WsUtils') as mock_ws_utils:
             
             mock_ws_utils.initLoginParams.return_value = '{"op":"login","args":[...]}'
 
@@ -578,7 +578,7 @@ class TestWsPrivateAsyncStartStop(unittest.TestCase):
 
     def test_stop(self):
         """Test stop method closes the factory"""
-        with patch.object(ws_private_module, 'WebSocketFactory') as mock_factory_class:
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory') as mock_factory_class:
             mock_factory_instance = MagicMock()
             mock_factory_instance.close = AsyncMock()
             mock_factory_class.return_value = mock_factory_instance
@@ -597,8 +597,8 @@ class TestWsPrivateAsyncStartStop(unittest.TestCase):
             asyncio.run(run_test())
 
     def test_start_returns_task(self):
-        """start() returns the consume task so the caller can retain/await it (GH#116)"""
-        with patch.object(ws_private_module, 'WebSocketFactory'):
+        """start() returns the supervisor task so the caller can retain/await it"""
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             ws = WsPrivateAsync(
                 apiKey=_STUB_ID,
                 passphrase=_STUB_PHRASE,
@@ -609,6 +609,8 @@ class TestWsPrivateAsyncStartStop(unittest.TestCase):
             async def run_test():
                 ws.connect = AsyncMock()
                 ws.consume = AsyncMock()
+                ws.ping_interval = 0
+                ws.reconnect = False
                 task = await ws.start()
                 self.assertIsInstance(task, asyncio.Task)
                 await task
@@ -647,7 +649,7 @@ class TestWsPrivateAsyncConsumeErrorPropagation(unittest.TestCase):
         """A dropped socket reaches the callback as an error event and re-raises"""
         from websockets.exceptions import ConnectionClosedError
 
-        with patch.object(ws_private_module, 'WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             ws = self._make_ws()
             received = []
             ws.callback = received.append
@@ -658,7 +660,7 @@ class TestWsPrivateAsyncConsumeErrorPropagation(unittest.TestCase):
                 with self.assertRaises(ConnectionClosedError):
                     await ws.consume()
 
-            with patch.object(ws_private_module.logger, 'error') as mock_log_error:
+            with patch('okx.websocket.WsBaseAsync.logger.error') as mock_log_error:
                 asyncio.run(run_test())
                 mock_log_error.assert_called_once()
 
@@ -669,7 +671,7 @@ class TestWsPrivateAsyncConsumeErrorPropagation(unittest.TestCase):
 
     def test_consume_happy_path_unchanged(self):
         """Normal messages still reach the callback with no error event"""
-        with patch.object(ws_private_module, 'WebSocketFactory'):
+        with patch('okx.websocket.WsBaseAsync.WebSocketFactory'):
             ws = self._make_ws()
             received = []
             ws.callback = received.append

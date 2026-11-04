@@ -1,20 +1,24 @@
-import asyncio
-import json
-import logging
-import warnings
+"""Private WebSocket client: account channels and order entry."""
 
-from websockets.exceptions import ConnectionClosedError
+from __future__ import annotations
+
+import warnings
+from typing import Any, Dict, List, Optional
 
 from okx import consts
-from okx.websocket import WsUtils
-from okx.websocket.WebSocketFactory import WebSocketFactory
-
-logger = logging.getLogger(__name__)
+from okx.websocket.WsBaseAsync import Callback, WsBaseAsync
 
 
-class WsPrivateAsync:
+class WsPrivateAsync(WsBaseAsync):
+    _LOGIN_REQUIRED = True
+
     @classmethod
-    def from_client(cls, client, url: str = None, debug: bool = None):
+    def from_client(
+        cls,
+        client: Any,
+        url: Optional[str] = None,
+        debug: Optional[bool] = None,
+    ) -> "WsPrivateAsync":
         """Build from an existing REST client, matching its credentials and environment.
 
         `flag='1'` on the REST client means demo trading, so the demo host is
@@ -31,237 +35,89 @@ class WsPrivateAsync:
             debug=client.debug if debug is None else debug,
         )
 
-    def __init__(self, apiKey, passphrase, secretKey, url=consts.WS_PRIVATE_URL, useServerTime=None, debug=False):
-        self.url = url
-        self.subscriptions = set()
-        self.callback = None
-        self.loop = None  # captured by start(); the loop must be running
-        self.factory = WebSocketFactory(url)
-        self.apiKey = apiKey
-        self.passphrase = passphrase
-        self.secretKey = secretKey
-        self.useServerTime = False
-        self.websocket = None
-        self.debug = debug
-
-        # Set log level
-        if debug:
-            logger.setLevel(logging.DEBUG)
-
-        # Deprecation warning for useServerTime parameter
+    def __init__(
+        self,
+        apiKey: str,
+        passphrase: str,
+        secretKey: str,
+        url: str = consts.WS_PRIVATE_URL,
+        useServerTime: Optional[bool] = None,
+        debug: bool = False,
+        **options: Any,
+    ) -> None:
         if useServerTime is not None:
             warnings.warn("useServerTime parameter is deprecated. Please remove it.", DeprecationWarning)
-
-    async def connect(self):
-        self.websocket = await self.factory.connect()
-
-    async def consume(self):
-        try:
-            async for message in self.websocket:
-                if self.debug:
-                    logger.debug("Received message: {%s}", message)
-                if self.callback:
-                    self.callback(message)
-        except ConnectionClosedError as e:
-            logger.error(f"WebSocket connection closed: {e}")
-            if self.callback:
-                self.callback(json.dumps({"event": "error", "code": "ConnClosed", "msg": str(e)}))
-            raise
-
-    async def _await_login_ack(self, timeout: float = 10.0) -> None:
-        """Wait for the server's login response and surface a rejection.
-
-        Frames that are not the login ack are handed to the callback so no
-        message is lost. A timeout means the server never answered, which is
-        just as unusable as a rejection.
-        """
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + timeout
-        while True:
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                raise TimeoutError(f"no login acknowledgement within {timeout}s")
-            try:
-                message = await asyncio.wait_for(self.websocket.recv(), timeout=remaining)
-            except asyncio.TimeoutError:
-                raise TimeoutError(f"no login acknowledgement within {timeout}s")
-            payload = None
-            if isinstance(message, (str, bytes)):
-                try:
-                    payload = json.loads(message)
-                except ValueError:
-                    payload = None
-            if isinstance(payload, dict) and payload.get('event') == 'login':
-                if str(payload.get('code', '0')) != '0':
-                    raise ConnectionError(
-                        f"login rejected: code={payload.get('code')} msg={payload.get('msg')}"
-                    )
-                return
-            if self.callback:
-                self.callback(message)
-
-    async def subscribe(self, params: list, callback, id: str = None):
-        self.callback = callback
-
-        # login() waits for the server's ack, so no blind delay here.
-        logRes = await self.login()
-        if logRes:
-            payload_dict = {
-                "op": "subscribe",
-                "args": params
-            }
-            if id is not None:
-                payload_dict["id"] = id
-            payload = json.dumps(payload_dict)
-            if self.debug:
-                logger.debug(f"subscribe: {payload}")
-            await self.websocket.send(payload)
-        # await self.consume()
-
-    async def login(self, timeout: float = 10.0):
-        loginPayload = WsUtils.initLoginParams(
-            useServerTime=self.useServerTime,
-            apiKey=self.apiKey,
-            passphrase=self.passphrase,
-            secretKey=self.secretKey
+        super().__init__(
+            url=url,
+            apiKey=apiKey,
+            passphrase=passphrase,
+            secretKey=secretKey,
+            debug=debug,
+            **options,
         )
-        if self.debug:
-            logger.debug(f"login: {loginPayload}")
-        await self.websocket.send(loginPayload)
-        await self._await_login_ack(timeout)
-        return True
+        # Kept for the deprecated argument's test surface until it is removed
+        # with the rest of the 0.9.0 breaking batch.
+        self.useServerTime = False
 
-    async def unsubscribe(self, params: list, callback, id: str = None):
-        self.callback = callback
-        payload_dict = {
-            "op": "unsubscribe",
-            "args": params
-        }
-        if id is not None:
-            payload_dict["id"] = id
-        payload = json.dumps(payload_dict)
-        if self.debug:
-            logger.debug(f"unsubscribe: {payload}")
-        else:
-            logger.info(f"unsubscribe: {payload}")
-        await self.websocket.send(payload)
+    async def place_order(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Place an order."""
+        await self.send("order", args, callback, id)
 
-    async def send(self, op: str, args: list, callback = None, id: str = None):
-        """
-        Generic send method
-        :param op: Operation type
-        :param args: Parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        payload_dict = {
-            "op": op,
-            "args": args
-        }
-        if id is not None:
-            payload_dict["id"] = id
-        payload = json.dumps(payload_dict)
-        if self.debug:
-            logger.debug(f"send: {payload}")
-        await self.websocket.send(payload)
+    async def batch_orders(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Place up to 20 orders in one request."""
+        await self.send("batch-orders", args, callback, id)
 
-    async def place_order(self, args: list, callback = None, id: str = None):
-        """
-        Place order
-        :param args: Order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("order", args, id=id)
+    async def cancel_order(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Cancel an order."""
+        await self.send("cancel-order", args, callback, id)
 
-    async def batch_orders(self, args: list, callback = None, id: str = None):
-        """
-        Batch place orders
-        :param args: Batch order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("batch-orders", args, id=id)
+    async def batch_cancel_orders(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Cancel up to 20 orders in one request."""
+        await self.send("batch-cancel-orders", args, callback, id)
 
-    async def cancel_order(self, args: list, callback = None, id: str = None):
-        """
-        Cancel order
-        :param args: Cancel order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("cancel-order", args, id=id)
+    async def amend_order(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Amend an order."""
+        await self.send("amend-order", args, callback, id)
 
-    async def batch_cancel_orders(self, args: list, callback = None, id: str = None):
-        """
-        Batch cancel orders
-        :param args: Batch cancel order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("batch-cancel-orders", args, id=id)
+    async def batch_amend_orders(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Amend up to 20 orders in one request."""
+        await self.send("batch-amend-orders", args, callback, id)
 
-    async def amend_order(self, args: list, callback = None, id: str = None):
-        """
-        Amend order
-        :param args: Amend order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("amend-order", args, id=id)
-
-    async def batch_amend_orders(self, args: list, callback = None, id: str = None):
-        """
-        Batch amend orders
-        :param args: Batch amend order parameter list
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("batch-amend-orders", args, id=id)
-
-    async def mass_cancel(self, args: list, callback = None, id: str = None):
-        """
-        Mass cancel orders
-        Note: This method is for /ws/v5/business channel, rate limit: 1 request/second
-        :param args: Cancel parameter list, contains instType and instFamily
-        :param callback: Callback function
-        :param id: Optional request ID
-        """
-        if callback:
-            self.callback = callback
-        await self.send("mass-cancel", args, id=id)
-
-    async def stop(self):
-        await self.factory.close()
-
-    async def start(self):
-        if self.debug:
-            logger.debug("Connecting to WebSocket...")
-        else:
-            logger.info("Connecting to WebSocket...")
-        await self.connect()
-        self.loop = asyncio.get_running_loop()
-        return asyncio.create_task(self.consume())
-
-    def stop_sync(self):
-        if self.loop is None:
-            raise RuntimeError("stop_sync() requires a prior start(); no event loop has been captured")
-        if self.loop.is_running():
-            future = asyncio.run_coroutine_threadsafe(self.stop(), self.loop)
-            future.result(timeout=10)
-        else:
-            self.loop.run_until_complete(self.stop())
+    async def mass_cancel(
+        self,
+        args: List[Dict[str, Any]],
+        callback: Optional[Callback] = None,
+        id: Optional[str] = None,
+    ) -> None:
+        """Mass cancel orders on the business channel (1 request/second)."""
+        await self.send("mass-cancel", args, callback, id)
