@@ -47,7 +47,7 @@ class PublicAPI(OkxClient):
     # Get Discount Rate And Interest-Free Quota
     def discount_interest_free_quota(self, ccy=''):
         params = {'ccy': ccy}
-        return self._request_with_params(GET, DICCOUNT_INTETEST_INFO, params)
+        return self._request_with_params(GET, DISCOUNT_INTEREST_INFO, params)
 
     # Get System Time
     def get_system_time(self):
@@ -103,8 +103,8 @@ class PublicAPI(OkxClient):
         }
         return self._request_with_params(GET, CONVERT_CONTRACT_COIN, params)
 
-    # Get option tickBands
-    def get_option_tickBands(self, instType='', instFamily=''):
+    # Get option tickbands
+    def get_option_tickbands(self, instType='', instFamily=''):
         params = {
             'instType': instType,
             'instFamily': instFamily

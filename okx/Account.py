@@ -97,8 +97,8 @@ class AccountAPI(OkxClient):
         return self._request_with_params(GET, GET_LEVERAGE, params)
 
     # Get instruments
-    def get_instruments(self, instType='', ugly='', instFamily='', instId=''):
-        params = {'instType': instType, 'ugly': ugly, 'instFamily': instFamily, 'instId': instId}
+    def get_instruments(self, instType='', uly='', instFamily='', instId=''):
+        params = {'instType': instType, 'uly': uly, 'instFamily': instFamily, 'instId': instId}
         return self._request_with_params(GET, GET_INSTRUMENTS, params)
 
     # Get the maximum loan of isolated MARGIN
@@ -196,27 +196,27 @@ class AccountAPI(OkxClient):
         return self._request_with_params(GET, GET_PM_LIMIT, params)
 
     # - Get VIP interest accrued data
-    def get_VIP_interest_accrued_data(self, ccy='', ordId='', after='', before='', limit=''):
+    def get_vip_interest_accrued_data(self, ccy='', ordId='', after='', before='', limit=''):
         params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, GET_VIP_INTEREST_ACCRUED_DATA, params)
 
     # - Get VIP interest deducted data
-    def get_VIP_interest_deducted_data(self, ccy='', ordId='', after='', before='', limit=''):
+    def get_vip_interest_deducted_data(self, ccy='', ordId='', after='', before='', limit=''):
         params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, GET_VIP_INTEREST_DEDUCTED_DATA, params)
 
     # - Get VIP loan order list
-    def get_VIP_loan_order_list(self, ordId='', state='', ccy='', after='', before='', limit=''):
+    def get_vip_loan_order_list(self, ordId='', state='', ccy='', after='', before='', limit=''):
         params = {'ordId': ordId, 'state': state, 'ccy': ccy, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, GET_VIP_LOAN_ORDER_LIST, params)
 
     # - Get VIP loan order detail
-    def get_VIP_loan_order_detail(self, ccy='', ordId='', after='', before='', limit=''):
+    def get_vip_loan_order_detail(self, ccy='', ordId='', after='', before='', limit=''):
         params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, GET_VIP_LOAN_ORDER_DETAIL, params)
 
     # - Set risk offset type
-    def set_risk_offset_typel(self, type=''):
+    def set_risk_offset_type(self, type=''):
         params = {'type': type}
         return self._request_with_params(POST, SET_RISK_OFFSET_TYPE, params)
 
@@ -236,7 +236,7 @@ class AccountAPI(OkxClient):
 
     # - Activate option
     def activate_option(self):
-        return self._request_without_params(POST, ACTIVSTE_OPTION)
+        return self._request_without_params(POST, ACTIVATE_OPTION)
 
     def get_fix_loan_borrowing_limit(self):
         return self._request_without_params(GET, BORROWING_LIMIT)

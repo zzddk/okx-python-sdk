@@ -9,7 +9,7 @@ class GridTest(unittest.TestCase):
         api_key, api_secret_key, passphrase, flag = get_api_credentials()
         self.GridAPI = Grid.GridAPI(api_key, api_secret_key, passphrase, use_server_time=False, flag=flag, debug=False)
     """
-    GRID_COMPUTE_MARIGIN_BALANCE = '/api/v5/tradingBot/grid/compute-margin-balance'
+    GRID_COMPUTE_MARGIN_BALANCE = '/api/v5/tradingBot/grid/compute-margin-balance'
     GRID_MARGIN_BALANCE = '/api/v5/tradingBot/grid/margin-balance'
     GRID_AI_PARAM = '/api/v5/tradingBot/grid/ai-param'
     

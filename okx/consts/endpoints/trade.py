@@ -1,6 +1,6 @@
 """Trade endpoint paths."""
 
-PLACR_ORDER = '/api/v5/trade/order'
+PLACE_ORDER = '/api/v5/trade/order'
 BATCH_ORDERS = '/api/v5/trade/batch-orders'
 CANCEL_ORDER = '/api/v5/trade/cancel-order'
 CANCEL_BATCH_ORDERS = '/api/v5/trade/cancel-batch-orders'

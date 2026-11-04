@@ -106,7 +106,7 @@ class FundingAPI(OkxClient):
     #Get deposit withdraw status
     def get_deposit_withdraw_status(self, wdId='', txId='', ccy='', to='', chain=''):
         params = {'wdId': wdId, 'txId': txId, 'ccy': ccy, 'to': to, 'chain': chain}
-        return self._request_with_params(GET, GET_DEPOSIT_WITHDrAW_STATUS, params)
+        return self._request_with_params(GET, GET_DEPOSIT_WITHDRAW_STATUS, params)
 
     #Get withdrawal history
     def get_withdrawal_history(self, ccy='', wdId='', clientId='', txId='', type='', state='', after='', before='', limit='', toAddrType=None):

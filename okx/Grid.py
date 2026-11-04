@@ -56,7 +56,7 @@ class GridAPI(OkxClient):
             'type': type,
             'amt': amt
         }
-        return self._request_with_params(POST, GRID_COMPUTE_MARIGIN_BALANCE, params)
+        return self._request_with_params(POST, GRID_COMPUTE_MARGIN_BALANCE, params)
 
     def grid_adjust_margin_balance(self, algoId='', type='', amt='', percent=''):
         params = {

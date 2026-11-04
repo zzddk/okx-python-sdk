@@ -54,7 +54,7 @@ class publicDataTest(unittest.TestCase):
     # def test_position_tier(self):
     #     print(self.publicDataApi.get_position_tiers('SWAP','cross',uly='ETH-USD'))
 
-    # def test_get_option_tickBands(self):
+    # def test_get_option_tickbands(self):
     #     print(self.publicDataApi.get_option_tick_bands(instType='OPTION'))
 
     # def test_get_option_trades(self):

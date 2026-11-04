@@ -9,7 +9,7 @@ class SubAccountTest(unittest.TestCase):
         self.SubAccountApi = SubAccount.SubAccountAPI(api_key, api_secret_key, passphrase, use_server_time=False, flag=flag)
     '''
     ENTRUST_SUBACCOUNT_LIST = '/api/v5/users/entrust-subaccount-list' #need to add
-    SET_TRSNSFER_OUT = '/api/v5/users/subaccount/set-transfer-out' #need to add
+    SET_TRANSFER_OUT = '/api/v5/users/subaccount/set-transfer-out' #need to add
     GET_ASSET_SUBACCOUNT_BALANCE = '/api/v5/asset/subaccount/balances' #need to add
     
     def test_set_permission_transfer_out(self):
@@ -30,21 +30,21 @@ class SubAccountTest(unittest.TestCase):
     def test_get_subaccount_bills(self):
         print(self.SubAccountApi.bills())
     def test_subaccount_transfer(self):
-        print(self.SubAccountApi.subAccount_transfer())
+        print(self.SubAccountApi.subaccount_transfer())
     def test_subaccount_transfer(self):
-        print(self.SubAccountApi.subAccount_transfer(ccy = 'BTC', amt = '1.0', froms= '18', to='18', fromSubAccount='zsynoaff02',toSubAccount = 'unitTest1298'))
+        print(self.SubAccountApi.subaccount_transfer(ccy = 'BTC', amt = '1.0', froms= '18', to='18', fromSubAccount='zsynoaff02',toSubAccount = 'unitTest1298'))
 
     '''
 
-    # def test_set_sub_accounts_VIP_loan(self):
-    #     print(self.SubAccountApi.set_sub_accounts_VIP_loan(enable='true',alloc=[{'subAcct':'coretrading7',
+    # def test_set_sub_accounts_vip_loan(self):
+    #     print(self.SubAccountApi.set_sub_accounts_vip_loan(enable='true',alloc=[{'subAcct':'coretrading7',
     #                                                                              'loanAlloc':'1'}]))
 
     def test_get_sub_account_borrow_interest_and_limit(self):
         print(self.SubAccountApi.get_sub_account_borrow_interest_and_limit(subAcct='coretrading7'))
 
-    # def test_get_history_of_managed_subAccount_transfer(self):
-    #     print(self.SubAccountApi.get_history_of_managed_subAccount_transfer())
+    # def test_get_history_of_managed_subaccount_transfer(self):
+    #     print(self.SubAccountApi.get_history_of_managed_subaccount_transfer())
 
 if __name__ == "__main__":
     unittest.main()

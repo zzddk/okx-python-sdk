@@ -96,20 +96,20 @@ class AccountTest(unittest.TestCase):
     # def test_simulated_margin(self):
     #     print(self.AccountAPI.get_simulated_margin())
 
-    # def test_get_VIP_interest_accrued_data(self):
-    #     print(self.AccountAPI.get_VIP_interest_accrued_data())
+    # def test_get_vip_interest_accrued_data(self):
+    #     print(self.AccountAPI.get_vip_interest_accrued_data())
 
-    # def test_get_VIP_interest_deducted_data(self):
-    #     print(self.AccountAPI.get_VIP_interest_deducted_data())
+    # def test_get_vip_interest_deducted_data(self):
+    #     print(self.AccountAPI.get_vip_interest_deducted_data())
 
-    # def test_get_VIP_loan_order_list(self):
-    #     print(self.AccountAPI.get_VIP_loan_order_list())
+    # def test_get_vip_loan_order_list(self):
+    #     print(self.AccountAPI.get_vip_loan_order_list())
 
-    # def test_get_VIP_loan_order_detail(self):
-    #     print(self.AccountAPI.get_VIP_loan_order_detail(ordId='1'))
+    # def test_get_vip_loan_order_detail(self):
+    #     print(self.AccountAPI.get_vip_loan_order_detail(ordId='1'))
 
-    # def test_set_risk_offset_typel(self):
-    #     print(self.AccountAPI.set_risk_offset_typel(type='1'))
+    # def test_set_risk_offset_type(self):
+    #     print(self.AccountAPI.set_risk_offset_type(type='1'))
     #
     # def test_set_auto_loan(self):
     #     print(self.AccountAPI.set_auto_loan())

@@ -50,7 +50,7 @@ class TestPlaceOrderNewParams(_Base):
         self.api.place_order(**_REQUIRED_PLACE_ORDER, instIdCode='123')
         params = mock_request.call_args[0][2]
         self.assertEqual(params['instIdCode'], '123')
-        self.assertEqual(mock_request.call_args[0][1], c.PLACR_ORDER)
+        self.assertEqual(mock_request.call_args[0][1], c.PLACE_ORDER)
 
 
 class TestPlaceAlgoOrderNewParams(_Base):

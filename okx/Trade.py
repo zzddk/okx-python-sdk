@@ -22,7 +22,7 @@ class TradeAPI(OkxClient):
         if instIdCode is not None:
             params['instIdCode'] = instIdCode
         params['attachAlgoOrds'] = attachAlgoOrds
-        return self._request_with_params(POST, PLACR_ORDER, params)
+        return self._request_with_params(POST, PLACE_ORDER, params)
 
     # Place Multiple Orders
     def place_multiple_orders(self, orders_data):

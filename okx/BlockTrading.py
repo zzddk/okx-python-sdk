@@ -31,7 +31,7 @@ class BlockTradingAPI(OkxClient):
 
     def cancel_all_rfqs(self):
         params = {}
-        return self._request_with_params(POST, CANCEL_ALL_RSQS, params)
+        return self._request_with_params(POST, CANCEL_ALL_RFQS, params)
 
     def execute_quote(self, rfqId='', quoteId='', legs=None):
         if legs is None:
@@ -81,8 +81,8 @@ class BlockTradingAPI(OkxClient):
 
     def set_marker_instrument(self,params = []):
 
-        return self._request_with_params(POST, MARKER_INSTRUMENT_SETTING, params)
+        return self._request_with_params(POST, MAKER_INSTRUMENT_SETTING, params)
 
     #Get Quote products
     def get_quote_products(self):
-        return self._request_without_params(GET, MARKER_INSTRUMENT_SETTING)
+        return self._request_without_params(GET, MAKER_INSTRUMENT_SETTING)

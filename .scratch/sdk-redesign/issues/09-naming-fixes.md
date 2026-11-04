@@ -14,3 +14,7 @@ Release: 0.5.0
 ## 完成标准
 
 CHANGELOG 里有「旧名 → 新名」对照表，覆盖每一处改动。
+
+## Comments
+
+- 2026-11-05: done in 0.5.0. Renamed the listed methods, kwargs and constants with no aliases; the CHANGELOG carries the full old-to-new table. Added `test/unit/okx/test_naming.py` so an accidental alias (or a lost rename) fails the suite.
