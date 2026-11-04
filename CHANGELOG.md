@@ -2,6 +2,20 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.6.0]
+
+Feature release, opt-in only: the defaults are unchanged, so upgrading changes no existing behaviour.
+
+### Added
+- `OkxClient` accepts `max_retries` (default `0`), `retry_backoff` (default `1.0` seconds, doubled per attempt) and `rate_limit` (default `False`).
+- Retries apply to GET requests, to POST requests that carry an idempotency key (`clOrdId`, `algoClOrdId` or `reqId`), and only when the failure is transient: `httpx.TransportError`, HTTP 429/5xx, or business codes `50001`, `50004`, `50011`, `50013`. A rejection such as `51000` is replayed never — see ADR-0003.
+- `rate_limit=True` throttles calls through `okx.consts.rate_limits.RATE_LIMITS`, a per-path `(requests, window_seconds)` table; paths missing from it are not throttled.
+- `okx.rate_limit.RateLimiter`: sliding-window limiter, usable on its own.
+
+### Notes
+- Every retry rebuilds the timestamp and signature, so an expired signature is never replayed.
+- Passing `client=` copies the retry and rate-limit settings from that client, including the shared limiter.
+
 ## [0.5.0]
 
 Breaking release. This is the only window in the 0.4/0.5 line for public-API changes, so nothing renamed here keeps a compatibility alias (see ADR-0001). The "Renamed" table below is the complete migration list.

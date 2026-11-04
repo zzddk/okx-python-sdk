@@ -77,6 +77,20 @@ account = Account.AccountAPI(
 )
 ```
 
+### Retries and rate limiting
+
+Both are off by default, so passing the new arguments is the only way to turn them on:
+
+```python
+from okx import Trade
+
+trade = Trade.TradeAPI(api_key, secret, passphrase, flag="0", max_retries=2, rate_limit=True)
+```
+
+Retries only replay requests that are safe to replay: every GET, and a POST only when it carries `clOrdId`, `algoClOrdId` or `reqId`. **Without one of those keys an order is never retried** — a retry would place it twice. Transient failures (network errors, HTTP 429/5xx, business codes 50001/50004/50011/50013) are retried with exponential backoff; a rejection such as a parameter error is returned immediately.
+
+`rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, which covers the endpoints with published limits. Endpoints missing from that table are not throttled.
+
 ### Development Setup
 
 For contributors or local development:
