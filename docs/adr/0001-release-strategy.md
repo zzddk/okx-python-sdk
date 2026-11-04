@@ -13,3 +13,4 @@ python-okx 已发布在 PyPI 并被外部依赖，但仓库里同时存在两类
 
 - 0.4.5 必须包含一层 contract 测试：遍历所有 `*API` 类的方法，断言 `(HTTP method, path)` 落在常量表内且常量名唯一。没有这层测试，同类覆盖缺陷仍会复发。
 - 0.5.0 需要一份迁移说明，而不是一句「breaking change」。
+- 2026-11-05 修订：默认抛异常（issue 02）与移除 `use_server_time`（issue 03）虽然也是缺陷，但都会改变调用方可见行为或签名，因此移到 0.5.0。0.4.5 保持返回 dict 的旧契约，只把无效的 `use_server_time` 从默认被忽略的 `DeprecationWarning` 改为可见的 `UserWarning`。

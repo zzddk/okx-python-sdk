@@ -115,7 +115,7 @@ BLOCK_TICKERS = '/api/v5/market/block-tickers'
 BLOCK_TICKER = '/api/v5/market/block-ticker'
 BLOCK_TRADES = '/api/v5/market/block-trades'
 GET_ORDER_LITE_BOOK = '/api/v5/market/books-lite'
-GET_OPTION_TRADES = '/api/v5/market/option/instrument-family-trades'
+MARKET_OPTION_TRADES = '/api/v5/market/option/instrument-family-trades'
 MARKET_BOOKS_RPI = '/api/v5/market/books-rpi'
 
 # Public Data

@@ -10,8 +10,12 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self._request_with_params(GET, COUNTERPARTIES, params)
 
-    def create_rfq(self, counterparties=[], anonymous='false', clRfqId='', tag='', allowPartialExecution='false',
-                   legs=[]):
+    def create_rfq(self, counterparties=None, anonymous='false', clRfqId='', tag='', allowPartialExecution='false',
+                   legs=None):
+        if counterparties is None:
+            counterparties = []
+        if legs is None:
+            legs = []
         params = {'counterparties': counterparties, 'anonymous': anonymous, 'clRfqId': clRfqId, 'tag': tag,
                   'allowPartialExecution': allowPartialExecution, 'legs': legs}
         return self._request_with_params(POST, CREATE_RFQ, params)
@@ -20,7 +24,11 @@ class BlockTradingAPI(OkxClient):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId}
         return self._request_with_params(POST, CANCEL_RFQ, params)
 
-    def cancel_batch_rfqs(self, rfqIds=[], clRfqIds=[]):
+    def cancel_batch_rfqs(self, rfqIds=None, clRfqIds=None):
+        if rfqIds is None:
+            rfqIds = []
+        if clRfqIds is None:
+            clRfqIds = []
         params = {'rfqIds': rfqIds, 'clRfqIds': clRfqIds}
         return self._request_with_params(POST, CANCEL_BATCH_RFQS, params)
 
@@ -28,11 +36,15 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self._request_with_params(POST, CANCEL_ALL_RSQS, params)
 
-    def execute_quote(self, rfqId='', quoteId='', legs=[]):
+    def execute_quote(self, rfqId='', quoteId='', legs=None):
+        if legs is None:
+            legs = []
         params = {'rfqId': rfqId, 'quoteId': quoteId, 'legs': legs}
         return self._request_with_params(POST, EXECUTE_QUOTE, params)
 
-    def create_quote(self, rfqId='', clQuoteId='', tag='', quoteSide='', legs=[], anonymous=False, expiresIn=''):
+    def create_quote(self, rfqId='', clQuoteId='', tag='', quoteSide='', legs=None, anonymous=False, expiresIn=''):
+        if legs is None:
+            legs = []
         params = {'rfqId': rfqId, 'clQuoteId': clQuoteId, 'tag': tag, 'quoteSide': quoteSide, 'legs': legs,
                   'anonymous': anonymous, 'expiresIn': expiresIn}
         return self._request_with_params(POST, CREATE_QUOTE, params)

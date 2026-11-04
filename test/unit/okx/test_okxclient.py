@@ -5,7 +5,7 @@ Mirrors the structure: okx/okxclient.py -> test/unit/okx/test_okxclient.py
 """
 import unittest
 import warnings
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Test constants
 MOCK_CLIENT_INIT = 'okx.okxclient.Client.__init__'
@@ -50,20 +50,20 @@ class TestOkxClientInit(unittest.TestCase):
             self.assertEqual(client.flag, '0')
             self.assertTrue(client.debug)
 
-    def test_init_with_deprecated_use_server_time_shows_warning(self):
-        """Test that using deprecated use_server_time parameter shows warning"""
+    def test_use_server_time_warns_that_it_has_no_effect(self):
+        """The deprecated parameter stays accepted but no longer fails silently"""
         with patch(MOCK_CLIENT_INIT) as mock_init:
             mock_init.return_value = None
-            
-            from okx.okxclient import OkxClient
-            
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                client = OkxClient(use_server_time=True)
 
-                self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[0].category, DeprecationWarning))
-                self.assertIn("use_server_time parameter is deprecated", str(w[0].message))
+            from okx.okxclient import OkxClient
+
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                OkxClient(use_server_time=True)
+
+        self.assertEqual(len(caught), 1)
+        self.assertIs(caught[0].category, UserWarning)
+        self.assertIn("has no effect", str(caught[0].message))
 
 
 class TestOkxClientHttpxCompatibility(unittest.TestCase):

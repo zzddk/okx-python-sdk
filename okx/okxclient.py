@@ -1,19 +1,17 @@
 import json
 import warnings
-from datetime import datetime, timezone
 
-import httpx
 from httpx import Client
-from datetime import datetime, timezone
-
 from loguru import logger
 
-from . import consts as c, utils, exceptions
+from . import consts as c
+from . import utils
 
 
 class OkxClient(Client):
 
-    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1',base_api=c.API_URL, debug=False, proxy=None):
+    def __init__(self, api_key='-1', api_secret_key='-1', passphrase='-1', use_server_time=None, flag='1',
+                 base_api=c.API_URL, debug=False, proxy=None):
         # Compatible with different versions of httpx
         # New versions (0.24.0+) use proxy, older versions use proxies
         try:
@@ -27,19 +25,20 @@ class OkxClient(Client):
         self.API_KEY = api_key
         self.API_SECRET_KEY = api_secret_key
         self.PASSPHRASE = passphrase
-        self.use_server_time = False
         self.flag = flag
         self.domain = base_api
         self.debug = debug
-        if use_server_time is not None:
-            warnings.warn("use_server_time parameter is deprecated. Please remove it.", DeprecationWarning)
+        if use_server_time:
+            warnings.warn(
+                "use_server_time has no effect and will be removed in 0.5.0.",
+                UserWarning,
+                stacklevel=2,
+            )
 
     def _request(self, method, request_path, params):
         if method == c.GET:
             request_path = request_path + utils.parse_params_to_str(params)
         timestamp = utils.get_timestamp()
-        if self.use_server_time:
-            timestamp = self._get_timestamp()
         body = json.dumps(params) if method == c.POST else ""
         if self.API_KEY != '-1':
             sign = utils.sign(utils.pre_hash(timestamp, method, request_path, str(body), self.debug), self.API_SECRET_KEY)
@@ -62,12 +61,3 @@ class OkxClient(Client):
 
     def _request_with_params(self, method, request_path, params):
         return self._request(method, request_path, params)
-
-    def _get_timestamp(self):
-        request_path = c.API_URL + c.SERVER_TIMESTAMP_URL
-        response = self.get(request_path)
-        if response.status_code == 200:
-            ts = datetime.fromtimestamp(int(response.json()['data'][0]['ts']) / 1000.0, tz=timezone.utc)
-            return ts.isoformat(timespec='milliseconds').replace('+00:00', 'Z')
-        else:
-            return ""

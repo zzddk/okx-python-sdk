@@ -2,6 +2,27 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.4.5]
+
+Defect-fix release. No endpoint, constructor signature or happy-path return value changes. Breaking changes from the same review are deferred to 0.5.0.
+
+### Fixed
+- `okx/consts.py`: `GET_OPTION_TRADES` was defined twice, so the market definition (`/api/v5/market/option/instrument-family-trades`) was silently shadowed by the public one. The market constant is now `MARKET_OPTION_TRADES`; both `MarketData.get_option_trades` and `PublicData.get_option_trades` reach their intended endpoint.
+- `use_server_time=True` now emits a visible `UserWarning` stating that it has no effect. Previously it raised a `DeprecationWarning`, which Python hides by default, so `True` was effectively a silent no-op.
+- Replaced 12 mutable default arguments (`x=[]`) with `None` and a per-call list.
+- GET query strings are now built with `urllib.parse.urlencode`: booleans serialize as `true`/`false`, and values containing spaces or `&` no longer truncate the query string.
+
+### Added
+- Contract test layer (`test/unit/okx/test_contract.py`): every `*API` method's `(HTTP method, path)` must resolve to a declared constant, constant names must be unique, and every declared endpoint must be reachable.
+- Unit tests for query-string encoding.
+
+### Deprecated
+- `use_server_time` will be removed from `OkxClient` and every `*API` subclass in 0.5.0.
+
+### Deferred to 0.5.0
+- Raising `OkxAPIException` by default when the HTTP status is `>= 400` or the response body has a non-`'0'` `code`, with `raise_on_error=False` as the opt-out.
+- Removal of the `use_server_time` constructor argument.
+
 ## [0.4.4]
 
 REST parity catch-up with the OKX v5 docs added between 2026-07-06 and 2026-08-26: 16 new endpoint bindings across market data, GLP performance, Flexible Loan, OKUSD, and Affiliate TVB. All changes are additive / opt-in and backward compatible — existing public signatures and happy-path behaviour are unchanged. New endpoints/modules are net-new symbols; new optional kwargs default to "unset" (omitted from the request).

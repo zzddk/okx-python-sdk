@@ -172,7 +172,9 @@ class TradeAPI(OkxClient):
     def get_easy_convert_currency_list(self):
         return self._request_without_params(GET, EASY_CONVERT_CURRENCY_LIST)
 
-    def easy_convert(self, fromCcy=[], toCcy=''):
+    def easy_convert(self, fromCcy=None, toCcy=''):
+        if fromCcy is None:
+            fromCcy = []
         params = {
             'fromCcy': fromCcy,
             'toCcy': toCcy
@@ -193,7 +195,9 @@ class TradeAPI(OkxClient):
         }
         return self._request_with_params(GET, ONE_CLICK_REPAY_SUPPORT, params)
 
-    def oneclick_repay(self, debtCcy=[], repayCcy=''):
+    def oneclick_repay(self, debtCcy=None, repayCcy=''):
+        if debtCcy is None:
+            debtCcy = []
         params = {
             'debtCcy': debtCcy,
             'repayCcy': repayCcy
@@ -226,7 +230,9 @@ class TradeAPI(OkxClient):
     def get_oneclick_repay_list_v2(self):
         return self._request_without_params(GET, ONE_CLICK_REPAY_SUPPORT_V2)
 
-    def oneclick_repay_v2(self, debtCcy='', repayCcyList=[]):
+    def oneclick_repay_v2(self, debtCcy='', repayCcyList=None):
+        if repayCcyList is None:
+            repayCcyList = []
         params = {
             'debtCcy': debtCcy,
             'repayCcyList': repayCcyList

@@ -128,7 +128,7 @@ class MarketAPI(OkxClient):
         params = {
             'instFamily':instFamily
         }
-        return self._request_with_params(GET, GET_OPTION_TRADES, params)
+        return self._request_with_params(GET, MARKET_OPTION_TRADES, params)
 
 
 

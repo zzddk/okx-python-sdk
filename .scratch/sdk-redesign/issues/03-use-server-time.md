@@ -1,7 +1,7 @@
 # 处理 use_server_time 的死参数
 
 Status: ready-for-agent
-Release: 0.4.5
+Release: 0.5.0
 
 ## 为什么
 
@@ -14,3 +14,7 @@ Release: 0.4.5
 ## 完成标准
 
 参数不再静默失效；若移除，子类签名里不再出现 `use_server_time`。
+
+## Comments
+
+- 2026-11-05: 0.4.5 keeps the parameter and replaces the default-hidden `DeprecationWarning` with a visible `UserWarning`. Removal is deferred to 0.5.0 because deleting a constructor argument breaks callers.

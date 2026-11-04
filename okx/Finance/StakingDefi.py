@@ -14,8 +14,9 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(GET, STACK_DEFI_OFFERS, params)
 
-    def purchase(self, productId='', investData=[], term='', tag=''):
-
+    def purchase(self, productId='', investData=None, term='', tag=''):
+        if investData is None:
+            investData = []
         params = {
             'productId': productId,
             'investData': investData

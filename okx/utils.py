@@ -1,6 +1,7 @@
-import hmac
 import base64
 import datetime
+import hmac
+from urllib.parse import urlencode
 
 from loguru import logger
 
@@ -40,12 +41,18 @@ def get_header_no_sign(flag,debug = True):
     return header
 
 def parse_params_to_str(params):
-    url = '?'
+    filtered = {}
     for key, value in params.items():
-        if value is not None and value != '':
-            url = url + str(key) + '=' + str(value) + '&'
-    url = url[0:-1]
-    return url
+        if value is None or value == '':
+            continue
+        if value is True:
+            value = 'true'
+        elif value is False:
+            value = 'false'
+        filtered[key] = value
+    if not filtered:
+        return ''
+    return '?' + urlencode(filtered)
 
 
 def get_timestamp():

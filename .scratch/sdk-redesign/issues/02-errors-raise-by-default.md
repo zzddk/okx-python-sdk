@@ -1,7 +1,7 @@
 # 请求失败默认抛异常
 
 Status: ready-for-agent
-Release: 0.4.5
+Release: 0.5.0
 
 ## 为什么
 
@@ -14,3 +14,7 @@ HTTP ≥ 400 或 `code != '0'` 时抛 `OkxAPIException`，构造时带 `code` / 
 ## 完成标准
 
 失败请求默认抛异常；`raise_on_error=False` 下返回值与 0.4.4 完全一致；异常对象能区分网络错误与业务拒绝。
+
+## Comments
+
+- 2026-11-05: moved from 0.4.5 to 0.5.0. Raising by default changes caller-visible behaviour, so users on `~=0.4` would receive it in a patch release. The implementation is specified and ready; it ships with the other breaking changes.
