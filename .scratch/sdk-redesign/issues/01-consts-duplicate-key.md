@@ -1,7 +1,8 @@
 # 修复 consts 重名常量覆盖
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.4.5
+Done in: 0.5.0
 
 ## 为什么
 

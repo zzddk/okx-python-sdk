@@ -1,7 +1,8 @@
 # 处理 use_server_time 的死参数
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.5.0
+Done in: 0.5.0
 
 ## 为什么
 

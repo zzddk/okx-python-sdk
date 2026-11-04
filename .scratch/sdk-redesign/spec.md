@@ -1,6 +1,6 @@
 # SDK 设计整改
 
-python-okx 的缺陷与结构性问题整改计划。来源：2026-11-04 的设计评审。决策记录见 `docs/adr/0001-release-strategy.md` 与 `docs/adr/0002-errors-raise-by-default.md`。
+python-okx 的缺陷与结构性问题整改计划。**状态：12 条全部交付于 0.5.0**（0.4.5 发布 01–06，0.5.0 发布 07–12）。来源：2026-11-04 的设计评审。决策记录见 `docs/adr/0001-release-strategy.md` 与 `docs/adr/0002-errors-raise-by-default.md`。
 
 ## 判断
 

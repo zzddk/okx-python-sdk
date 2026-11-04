@@ -1,7 +1,8 @@
 # 请求失败默认抛异常
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.5.0
+Done in: 0.5.0
 
 ## 为什么
 

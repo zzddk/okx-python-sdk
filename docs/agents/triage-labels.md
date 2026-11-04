@@ -12,6 +12,8 @@ Because issues are local markdown files, each label is written as the value of a
 | `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
+A `Status:` line also carries one non-triage value: `resolved`, meaning the issue shipped (the release is recorded in a `Done in:` line). It is a terminal state, not a triage role.
+
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding `Status:` value from this table.
 
 Edit the "Label in our tracker" column to match whatever vocabulary you actually use.

@@ -1,7 +1,8 @@
 # 补类型注解与 py.typed
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.5.0
+Done in: 0.5.0
 
 ## 为什么
 

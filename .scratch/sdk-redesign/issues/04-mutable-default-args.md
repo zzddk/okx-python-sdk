@@ -1,7 +1,8 @@
 # 清除可变默认参数
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.4.5
+Done in: 0.5.0
 
 ## 为什么
 
