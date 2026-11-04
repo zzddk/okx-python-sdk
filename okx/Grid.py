@@ -1,10 +1,12 @@
+from typing import Any, Dict
+
 from .okxclient import OkxClient
 from .consts import *
 
 
 class GridAPI(OkxClient):
-    def grid_order_algo(self, instId = None, algoOrdType = None, maxPx = None, minPx = None, gridNum = None, runType = None, tpTriggerPx = None,
-                        slTriggerPx = None, tag = None, quoteSz = None, baseSz = None, sz = None, direction = None, lever = None, basePos = None, tradeQuoteCcy = None):
+    def grid_order_algo(self, instId: Any = None, algoOrdType: Any = None, maxPx: Any = None, minPx: Any = None, gridNum: Any = None, runType: Any = None, tpTriggerPx: Any = None,
+                        slTriggerPx: Any = None, tag: Any = None, quoteSz: Any = None, baseSz: Any = None, sz: Any = None, direction: Any = None, lever: Any = None, basePos: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
         params = {'instId': instId, 'algoOrdType': algoOrdType, 'maxPx': maxPx, 'minPx': minPx, 'gridNum': gridNum,
                   'runType': runType, 'tpTriggerPx': tpTriggerPx, 'slTriggerPx': slTriggerPx, 'tag': tag,
                   'quoteSz': quoteSz, 'baseSz': baseSz, 'sz': sz, 'direction': direction, 'lever': lever,
@@ -13,44 +15,44 @@ class GridAPI(OkxClient):
             params['tradeQuoteCcy'] = tradeQuoteCcy
         return self._request_with_params(POST, GRID_ORDER_ALGO, params)
 
-    def grid_amend_order_algo(self, algoId = None, instId = None, slTriggerPx = None, tpTriggerPx = None):
+    def grid_amend_order_algo(self, algoId: Any = None, instId: Any = None, slTriggerPx: Any = None, tpTriggerPx: Any = None) -> Dict[str, Any]:
         params = {'algoId': algoId, 'instId': instId, 'slTriggerPx': slTriggerPx, 'tpTriggerPx': tpTriggerPx}
         return self._request_with_params(POST, GRID_AMEND_ORDER_ALGO, params)
 
-    def grid_stop_order_algo(self, algoId = None, instId = None, algoOrdType = None, stopType = None):
+    def grid_stop_order_algo(self, algoId: Any = None, instId: Any = None, algoOrdType: Any = None, stopType: Any = None) -> Dict[str, Any]:
         params = [{'algoId': algoId, 'instId': instId, 'algoOrdType': algoOrdType, 'stopType': stopType}]
         return self._request_with_params(POST, GRID_STOP_ORDER_ALGO, params)
 
-    def grid_orders_algo_pending(self, algoOrdType = None, algoId = None, instId = None, instType = None, after = None, before = None,
-                                 limit = None, instFamily = None):
+    def grid_orders_algo_pending(self, algoOrdType: Any = None, algoId: Any = None, instId: Any = None, instType: Any = None, after: Any = None, before: Any = None,
+                                 limit: Any = None, instFamily: Any = None) -> Dict[str, Any]:
         params = {'algoOrdType': algoOrdType, 'algoId': algoId, 'instId': instId, 'instType': instType, 'after': after,
                   'before': before, 'limit': limit,'instFamily':instFamily}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_PENDING, params)
 
-    def grid_orders_algo_history(self, algoOrdType = None, algoId = None, instId = None, instType = None, after = None, before = None,
-                                 limit = None,instFamily = None):
+    def grid_orders_algo_history(self, algoOrdType: Any = None, algoId: Any = None, instId: Any = None, instType: Any = None, after: Any = None, before: Any = None,
+                                 limit: Any = None,instFamily: Any = None) -> Dict[str, Any]:
         params = {'algoOrdType': algoOrdType, 'algoId': algoId, 'instId': instId, 'instType': instType, 'after': after,
                   'before': before, 'limit': limit,'instFamily':instFamily}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_HISTORY, params)
 
-    def grid_orders_algo_details(self, algoOrdType = None, algoId = None):
+    def grid_orders_algo_details(self, algoOrdType: Any = None, algoId: Any = None) -> Dict[str, Any]:
         params = {'algoOrdType': algoOrdType, 'algoId': algoId}
         return self._request_with_params(GET, GRID_ORDERS_ALGO_DETAILS, params)
 
-    def grid_sub_orders(self, algoId = None, algoOrdType = None, type = None, groupId = None, after = None, before = None, limit = None):
+    def grid_sub_orders(self, algoId: Any = None, algoOrdType: Any = None, type: Any = None, groupId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {'algoId': algoId, 'algoOrdType': algoOrdType, 'type': type, 'groupId': groupId, 'after': after,
                   'before': before, 'limit': limit}
         return self._request_with_params(GET, GRID_SUB_ORDERS, params)
 
-    def grid_positions(self, algoOrdType = None, algoId = None):
+    def grid_positions(self, algoOrdType: Any = None, algoId: Any = None) -> Dict[str, Any]:
         params = {'algoOrdType': algoOrdType, 'algoId': algoId}
         return self._request_with_params(GET, GRID_POSITIONS, params)
 
-    def grid_withdraw_income(self, algoId = None):
+    def grid_withdraw_income(self, algoId: Any = None) -> Dict[str, Any]:
         params = {'algoId': algoId}
         return self._request_with_params(POST, GRID_WITHDRAW_INCOME, params)
 
-    def grid_compute_margin_balance(self, algoId = None, type = None, amt = None):
+    def grid_compute_margin_balance(self, algoId: Any = None, type: Any = None, amt: Any = None) -> Dict[str, Any]:
         params = {
             'algoId': algoId,
             'type': type,
@@ -58,7 +60,7 @@ class GridAPI(OkxClient):
         }
         return self._request_with_params(POST, GRID_COMPUTE_MARGIN_BALANCE, params)
 
-    def grid_adjust_margin_balance(self, algoId = None, type = None, amt = None, percent = None):
+    def grid_adjust_margin_balance(self, algoId: Any = None, type: Any = None, amt: Any = None, percent: Any = None) -> Dict[str, Any]:
         params = {
             'algoId': algoId,
             'type': type,
@@ -67,7 +69,7 @@ class GridAPI(OkxClient):
         }
         return self._request_with_params(POST, GRID_MARGIN_BALANCE, params)
 
-    def grid_ai_param(self, algoOrdType = None, instId = None, direction = None, duration = None):
+    def grid_ai_param(self, algoOrdType: Any = None, instId: Any = None, direction: Any = None, duration: Any = None) -> Dict[str, Any]:
         params = {
             'algoOrdType': algoOrdType,
             'instId': instId,
@@ -77,8 +79,8 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GRID_AI_PARAM, params)
 
     # - Place recurring buy order
-    def place_recurring_buy_order(self, stgyName = None, recurringList = None, period = None, recurringDay = None, recurringTime = None,
-                                  timeZone = None, amt = None, investmentCcy = None, tdMode = None, algoClOrdId = None, tag = None, tradeQuoteCcy = None):
+    def place_recurring_buy_order(self, stgyName: Any = None, recurringList: Any = None, period: Any = None, recurringDay: Any = None, recurringTime: Any = None,
+                                  timeZone: Any = None, amt: Any = None, investmentCcy: Any = None, tdMode: Any = None, algoClOrdId: Any = None, tag: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
         if recurringList is None:
             recurringList = []
         params = {'stgyName': stgyName, 'recurringList': recurringList, 'period': period, 'recurringDay': recurringDay,
@@ -90,16 +92,16 @@ class GridAPI(OkxClient):
         return self._request_with_params(POST, PLACE_RECURRING_BUY_ORDER, params)
 
     # - Amend recurring buy order
-    def amend_recurring_buy_order(self, algoId = None, stgyName = None):
+    def amend_recurring_buy_order(self, algoId: Any = None, stgyName: Any = None) -> Dict[str, Any]:
         params = {'algoId': algoId, 'stgyName': stgyName}
         return self._request_with_params(POST, AMEND_RECURRING_BUY_ORDER, params)
 
     # - Stop recurring buy order
-    def stop_recurring_buy_order(self, orders_data):
+    def stop_recurring_buy_order(self, orders_data: Any) -> Dict[str, Any]:
         return self._request_with_params(POST, STOP_RECURRING_BUY_ORDER, orders_data)
 
     # - Get recurring buy order list
-    def get_recurring_buy_order_list(self, algoId = None, after = None, before = None, limit = None):
+    def get_recurring_buy_order_list(self, algoId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {
             'algoId': algoId,
             'after': after,
@@ -109,7 +111,7 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_LIST, params)
 
     # - Get recurring buy order history
-    def get_recurring_buy_order_history(self, algoId = None, after = None, before = None, limit = None):
+    def get_recurring_buy_order_history(self, algoId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {
             'algoId': algoId,
             'after': after,
@@ -119,12 +121,12 @@ class GridAPI(OkxClient):
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_HISTORY, params)
 
     # - Get recurring buy order details
-    def get_recurring_buy_order_details(self, algoId = None):
+    def get_recurring_buy_order_details(self, algoId: Any = None) -> Dict[str, Any]:
         params = {'algoId': algoId}
         return self._request_with_params(GET, GET_RECURRING_BUY_ORDER_DETAILS, params)
 
     # - Get recurring buy sub orders
-    def get_recurring_buy_sub_orders(self, algoId = None, ordId = None, after = None, before = None, limit = None):
+    def get_recurring_buy_sub_orders(self, algoId: Any = None, ordId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {
             'algoId': algoId,
             'ordId': ordId,

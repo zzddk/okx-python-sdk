@@ -41,6 +41,7 @@ No aliases are kept; update call sites using this table.
 | `consts.MARKER_INSTRUMENT_SETTING` | `consts.MAKER_INSTRUMENT_SETTING` |
 
 ### Added
+- Type annotations on every public REST method (parameters and `-> Dict[str, Any]`), plus `okx/py.typed` shipped with the package. Type checkers and IDEs now treat the SDK as typed.
 - `client=` on every REST API class. Pass an existing `OkxClient` to route requests through its connection pool and reuse its credentials.
 
 ## [0.4.5]

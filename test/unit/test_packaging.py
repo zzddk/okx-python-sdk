@@ -34,7 +34,7 @@ _RUNTIME_PACKAGES = (
 )
 
 
-def _capture_install_requires():
+def _capture_setup_kwargs():
     """Execute setup.py with a stub ``setuptools`` module, capturing install_requires.
 
     setuptools may not be importable in the runtime test environment (it is only
@@ -66,7 +66,11 @@ def _capture_install_requires():
             sys.modules["setuptools"] = original
         else:
             sys.modules.pop("setuptools", None)
-    return captured.get("install_requires", [])
+    return captured
+
+
+def _capture_install_requires():
+    return _capture_setup_kwargs().get("install_requires", [])
 
 
 def _base_name(requirement):
@@ -102,6 +106,13 @@ class TestPackagingInstallRequires(unittest.TestCase):
             len(self.install_requires), 5,
             msg=f"expected exactly 5 runtime deps, got: {self.install_requires}",
         )
+
+
+class TestTypingMarker(unittest.TestCase):
+    def test_py_typed_is_shipped_in_the_package(self):
+        kwargs = _capture_setup_kwargs()
+        self.assertIn("py.typed", kwargs.get("package_data", {}).get("okx", []))
+        self.assertTrue(os.path.exists(os.path.join(REPO_ROOT, "okx", "py.typed")))
 
 
 if __name__ == "__main__":

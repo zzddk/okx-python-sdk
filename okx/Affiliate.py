@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from okx.okxclient import OkxClient
 from okx.consts import (
     GET,
@@ -11,12 +13,12 @@ from okx.consts import (
 
 
 class AffiliateAPI(OkxClient):
-    def get_tvb_invitee_detail(self, uid):
+    def get_tvb_invitee_detail(self, uid: Any) -> Dict[str, Any]:
         params = {'uid': uid}
         return self._request_with_params(GET, AFFILIATE_TVB_INVITEE_DETAIL, params)
 
-    def get_tvb_invitee_list(self, periodType = None, begin = None, end = None, feeTier = None, tradeType = None,
-                             keyword = None, orderBy = None, orderDir = None, page = None, limit = None):
+    def get_tvb_invitee_list(self, periodType: Any = None, begin: Any = None, end: Any = None, feeTier: Any = None, tradeType: Any = None,
+                             keyword: Any = None, orderBy: Any = None, orderDir: Any = None, page: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {}
         if periodType is not None:
             params['periodType'] = periodType
@@ -40,8 +42,8 @@ class AffiliateAPI(OkxClient):
             params['limit'] = limit
         return self._request_with_params(GET, AFFILIATE_TVB_INVITEE_LIST, params)
 
-    def get_tvb_link_list(self, periodType = None, begin = None, end = None, page = None, limit = None,
-                          linkType = None, linkStatus = None):
+    def get_tvb_link_list(self, periodType: Any = None, begin: Any = None, end: Any = None, page: Any = None, limit: Any = None,
+                          linkType: Any = None, linkStatus: Any = None) -> Dict[str, Any]:
         params = {}
         if periodType is not None:
             params['periodType'] = periodType
@@ -59,7 +61,7 @@ class AffiliateAPI(OkxClient):
             params['linkStatus'] = linkStatus
         return self._request_with_params(GET, AFFILIATE_TVB_LINK_LIST, params)
 
-    def get_tvb_performance_summary(self, periodType = None, begin = None, end = None):
+    def get_tvb_performance_summary(self, periodType: Any = None, begin: Any = None, end: Any = None) -> Dict[str, Any]:
         params = {}
         if periodType is not None:
             params['periodType'] = periodType
@@ -69,7 +71,7 @@ class AffiliateAPI(OkxClient):
             params['end'] = end
         return self._request_with_params(GET, AFFILIATE_TVB_PERFORMANCE_SUMMARY, params)
 
-    def get_tvb_tier_breakdown(self, periodType = None, begin = None, end = None):
+    def get_tvb_tier_breakdown(self, periodType: Any = None, begin: Any = None, end: Any = None) -> Dict[str, Any]:
         params = {}
         if periodType is not None:
             params['periodType'] = periodType

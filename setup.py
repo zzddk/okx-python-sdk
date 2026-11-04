@@ -44,6 +44,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://okx.com/docs-v5/",
     packages=setuptools.find_packages(exclude=["test", "test.*", "example"]),
+    package_data={"okx": ["py.typed"]},
     python_requires=">=3.7",
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -1,5 +1,6 @@
 import json
 import warnings
+from typing import Any, Dict, Optional
 
 from httpx import Client
 from loguru import logger
@@ -10,9 +11,10 @@ from . import utils
 
 class OkxClient(Client):
 
-    def __init__(self, api_key=c._NO_CREDENTIAL, api_secret_key=c._NO_CREDENTIAL,
-                 passphrase=c._NO_CREDENTIAL, use_server_time = None, flag='1',
-                 base_api=c.API_URL, debug=False, proxy = None, client = None):
+    def __init__(self, api_key: str = c._NO_CREDENTIAL, api_secret_key: str = c._NO_CREDENTIAL,
+                 passphrase: str = c._NO_CREDENTIAL, use_server_time: Optional[bool] = None,
+                 flag: str = '1', base_api: str = c.API_URL, debug: bool = False,
+                 proxy: Optional[str] = None, client: Optional["OkxClient"] = None) -> None:
         # Compatible with different versions of httpx
         # New versions (0.24.0+) use proxy, older versions use proxies
         try:
@@ -20,7 +22,7 @@ class OkxClient(Client):
         except TypeError:
             # Older versions of httpx use proxies parameter
             if proxy:
-                super().__init__(base_url=base_api, http2=True, proxies={'http://': proxy, 'https://': proxy})
+                super().__init__(base_url=base_api, http2=True, proxies={'http://': proxy, 'https://': proxy})  # type: ignore[call-arg]
             else:
                 super().__init__(base_url=base_api, http2=True)
         # Sharing an existing client routes every request through that client's
@@ -47,7 +49,7 @@ class OkxClient(Client):
                 stacklevel=2,
             )
 
-    def _request(self, method, request_path, params):
+    def _request(self, method: Any, request_path: Any, params: Any) -> Dict[str, Any]:
         if self._client is not None:
             return self._client._request(method, request_path, params)
         if method == c.GET:
@@ -70,8 +72,8 @@ class OkxClient(Client):
             response = self.post(request_path, data=body, headers=header)
         return response.json()
 
-    def _request_without_params(self, method, request_path):
+    def _request_without_params(self, method: Any, request_path: Any) -> Dict[str, Any]:
         return self._request(method, request_path, {})
 
-    def _request_with_params(self, method, request_path, params):
+    def _request_with_params(self, method: Any, request_path: Any, params: Any) -> Dict[str, Any]:
         return self._request(method, request_path, params)

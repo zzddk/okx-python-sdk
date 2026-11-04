@@ -14,3 +14,7 @@ Release: 0.5.0
 ## 完成标准
 
 `mypy okx`（或 pyright）在公共接口上无 error；安装后 IDE 能补全参数名。
+
+## Comments
+
+- 2026-11-05: done in 0.5.0. Every public REST method now annotates all parameters and returns `Dict[str, Any]`; `okx/py.typed` is added and wired through `setup.py` `package_data`. `test/unit/okx/test_typing.py` asserts full annotation coverage. `mypy` was not installable in this offline environment; `typing.get_type_hints` resolves for every module and the annotation-coverage test is the local gate.

@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from okx.okxclient import OkxClient
 from okx.consts import (
     GET,
@@ -11,10 +13,10 @@ from okx.consts import (
 
 
 class OkusdAPI(OkxClient):
-    def get_account(self):
+    def get_account(self) -> Dict[str, Any]:
         return self._request_without_params(GET, OKUSD_ACCOUNT)
 
-    def get_rate_history(self, limit = None, begin = None, end = None):
+    def get_rate_history(self, limit: Any = None, begin: Any = None, end: Any = None) -> Dict[str, Any]:
         params = {}
         if limit is not None:
             params['limit'] = limit
@@ -24,7 +26,7 @@ class OkusdAPI(OkxClient):
             params['end'] = end
         return self._request_with_params(GET, OKUSD_RATE_HISTORY, params)
 
-    def get_subscribe_history(self, limit = None, begin = None, end = None):
+    def get_subscribe_history(self, limit: Any = None, begin: Any = None, end: Any = None) -> Dict[str, Any]:
         params = {}
         if limit is not None:
             params['limit'] = limit
@@ -34,7 +36,7 @@ class OkusdAPI(OkxClient):
             params['end'] = end
         return self._request_with_params(GET, OKUSD_SUBSCRIBE_HISTORY, params)
 
-    def get_redeem_history(self, limit = None, begin = None, end = None, type = None):
+    def get_redeem_history(self, limit: Any = None, begin: Any = None, end: Any = None, type: Any = None) -> Dict[str, Any]:
         params = {}
         if limit is not None:
             params['limit'] = limit
@@ -46,7 +48,7 @@ class OkusdAPI(OkxClient):
             params['type'] = type
         return self._request_with_params(GET, OKUSD_REDEEM_HISTORY, params)
 
-    def get_rewards_history(self, limit = None, begin = None, end = None):
+    def get_rewards_history(self, limit: Any = None, begin: Any = None, end: Any = None) -> Dict[str, Any]:
         params = {}
         if limit is not None:
             params['limit'] = limit

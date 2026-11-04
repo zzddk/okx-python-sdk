@@ -2,6 +2,7 @@ import base64
 import datetime
 import hmac
 import json
+from typing import Any, Dict
 from urllib.parse import urlencode
 
 from loguru import logger
@@ -9,19 +10,20 @@ from loguru import logger
 from . import consts as c
 
 
-def sign(message, secretKey):
+def sign(message: str, secretKey: str) -> bytes:
     mac = hmac.new(bytes(secretKey, encoding='utf8'), bytes(message, encoding='utf-8'), digestmod='sha256')
     d = mac.digest()
     return base64.b64encode(d)
 
 
-def pre_hash(timestamp, method, request_path, body,debug = True):
+def pre_hash(timestamp: str, method: str, request_path: str, body: str, debug: bool = True) -> str:
     if debug == True:
         logger.debug(f'body: {body}')
     return str(timestamp) + str.upper(method) + request_path + body
 
 
-def get_header(api_key, sign, timestamp, passphrase, flag,debug = True):
+def get_header(api_key: str, sign: Any, timestamp: str, passphrase: str, flag: str,
+               debug: bool = True) -> Dict[str, Any]:
     header = dict()
     header[c.CONTENT_TYPE] = c.APPLICATION_JSON
     header[c.OK_ACCESS_KEY] = api_key
@@ -33,7 +35,7 @@ def get_header(api_key, sign, timestamp, passphrase, flag,debug = True):
         logger.debug(f'header: {header}')
     return header
 
-def get_header_no_sign(flag,debug = True):
+def get_header_no_sign(flag: str, debug: bool = True) -> Dict[str, Any]:
     header = dict()
     header[c.CONTENT_TYPE] = c.APPLICATION_JSON
     header['x-simulated-trading'] = flag
@@ -41,7 +43,7 @@ def get_header_no_sign(flag,debug = True):
         logger.debug(f'header: {header}')
     return header
 
-def parse_params_to_str(params):
+def parse_params_to_str(params: Dict[str, Any]) -> str:
     """Serialize query parameters. Only None means "not supplied"."""
     filtered = {}
     for key, value in params.items():
@@ -59,20 +61,20 @@ def parse_params_to_str(params):
     return '?' + urlencode(filtered)
 
 
-def drop_none_params(params):
+def drop_none_params(params: Any) -> Any:
     """Drop top-level None values before serializing a JSON request body."""
     if isinstance(params, dict):
         return {key: value for key, value in params.items() if value is not None}
     return params
 
 
-def get_timestamp():
+def get_timestamp() -> str:
     now = datetime.datetime.utcnow()
     t = now.isoformat("T", "milliseconds")
     return t + "Z"
 
 
-def signature(timestamp, method, request_path, body, secret_key):
+def signature(timestamp: str, method: str, request_path: str, body: Any, secret_key: str) -> bytes:
     if str(body) == '{}' or str(body) == 'None':
         body = ''
     message = str(timestamp) + str.upper(method) + request_path + str(body)

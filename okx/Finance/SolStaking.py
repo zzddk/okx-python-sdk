@@ -1,28 +1,30 @@
+from typing import Any, Dict
+
 from okx.okxclient import OkxClient
 from okx.consts import *
 
 
 class SolStakingAPI(OkxClient):
-    def sol_purchase(self, amt):
+    def sol_purchase(self, amt: Any) -> Dict[str, Any]:
 
         params = {
             'amt': amt,
         }
         return self._request_with_params(POST, STACK_SOL_PURCHASE, params)
 
-    def sol_redeem(self, amt = None):
+    def sol_redeem(self, amt: Any = None) -> Dict[str, Any]:
 
         params = {
             'amt': amt,
         }
         return self._request_with_params(POST, STACK_SOL_REDEEM, params)
 
-    def sol_balance(self):
+    def sol_balance(self) -> Dict[str, Any]:
 
         params = {}
         return self._request_with_params(GET, STACK_SOL_BALANCE, params)
 
-    def sol_purchase_redeem_history(self, type = None, status = None, after = None, before = None, limit = None):
+    def sol_purchase_redeem_history(self, type: Any = None, status: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
 
         params = {}
         if type is not None:
@@ -37,12 +39,12 @@ class SolStakingAPI(OkxClient):
             params['limit'] = limit
         return self._request_with_params(GET, STACK_SOL_PURCHASE_REDEEM_HISTORY, params)
 
-    def sol_apy_history(self, days):
+    def sol_apy_history(self, days: Any) -> Dict[str, Any]:
 
         params = {
             'days': days,
         }
         return self._request_with_params(GET, STACK_SOL_APY_HISTORY, params)
 
-    def sol_product_info(self):
+    def sol_product_info(self) -> Dict[str, Any]:
         return self._request_without_params(GET, STACK_SOL_PRODUCT_INFO)

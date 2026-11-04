@@ -1,9 +1,11 @@
+from typing import Any, Dict
+
 from okx.okxclient import OkxClient
 from okx.consts import *
 
 
 class StakingDefiAPI(OkxClient):
-    def get_offers(self, productId = None, protocolType = None, ccy = None):
+    def get_offers(self, productId: Any = None, protocolType: Any = None, ccy: Any = None) -> Dict[str, Any]:
         params = {
             'productId': productId,
             'protocolType': protocolType,
@@ -11,7 +13,7 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(GET, STACK_DEFI_OFFERS, params)
 
-    def purchase(self, productId = None, investData = None, term = None, tag = None):
+    def purchase(self, productId: Any = None, investData: Any = None, term: Any = None, tag: Any = None) -> Dict[str, Any]:
         if investData is None:
             investData = []
         params = {
@@ -24,7 +26,7 @@ class StakingDefiAPI(OkxClient):
             params['tag'] = tag
         return self._request_with_params(POST, STACK_DEFI_PURCHASE, params)
 
-    def redeem(self, ordId = None, protocolType = None, allowEarlyRedeem = None):
+    def redeem(self, ordId: Any = None, protocolType: Any = None, allowEarlyRedeem: Any = None) -> Dict[str, Any]:
         params = {
             'ordId': ordId,
             'protocolType': protocolType,
@@ -32,14 +34,14 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(POST, STACK_DEFI_REDEEM, params)
 
-    def cancel(self, ordId = None, protocolType = None):
+    def cancel(self, ordId: Any = None, protocolType: Any = None) -> Dict[str, Any]:
         params = {
             'ordId': ordId,
             'protocolType': protocolType
         }
         return self._request_with_params(POST, STACK_DEFI_CANCEL, params)
 
-    def get_activity_orders(self, productId = None, protocolType = None, ccy = None, state = None):
+    def get_activity_orders(self, productId: Any = None, protocolType: Any = None, ccy: Any = None, state: Any = None) -> Dict[str, Any]:
         params = {
             'productId': productId,
             'protocolType': protocolType,
@@ -48,7 +50,7 @@ class StakingDefiAPI(OkxClient):
         }
         return self._request_with_params(GET, STACK_DEFI_ORDERS_ACTIVITY, params)
 
-    def get_orders_history(self, productId = None, protocolType = None, ccy = None, after = None, before = None, limit = None):
+    def get_orders_history(self, productId: Any = None, protocolType: Any = None, ccy: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {
             'productId': productId,
             'protocolType': protocolType,

@@ -1,18 +1,20 @@
+from typing import Any, Dict
+
 from .okxclient import OkxClient
 from .consts import *
 
 
 class SubAccountAPI(OkxClient):
-    def get_account_balance(self, subAcct):
+    def get_account_balance(self, subAcct: Any) -> Dict[str, Any]:
         params = {"subAcct": subAcct}
         return self._request_with_params(GET, BALANCE, params)
 
-    def bills(self, ccy = None, type = None, subAcct = None, after = None, before = None, limit = None):
+    def bills(self, ccy: Any = None, type: Any = None, subAcct: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {"ccy": ccy, 'type': type, 'subAcct': subAcct, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, SUBACCOUNT_BILLS, params)
 
 
-    def reset_subaccount_apikey(self, subAcct,apiKey, label = None, perm = None, ip='-1'):
+    def reset_subaccount_apikey(self, subAcct: Any,apiKey: Any, label: Any = None, perm: Any = None, ip: Any='-1') -> Dict[str, Any]:
         params = {'subAcct': subAcct, 'apiKey': apiKey}
 
         if ip != '-1':
@@ -25,23 +27,23 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, RESET, params)
 
 
-    def get_subaccount_list(self, enable = None, subAcct = None, after = None, before = None, limit = None):
+    def get_subaccount_list(self, enable: Any = None, subAcct: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {'enable': enable, 'subAcct': subAcct, 'after': after, 'before': before, 'limit': limit}
         return self._request_with_params(GET, VIEW_LIST, params)
 
-    def subaccount_transfer(self, ccy, amt, froms, to, fromSubAccount,toSubAccount,loanTrans='false',omitPosRisk = 'false'):
+    def subaccount_transfer(self, ccy: Any, amt: Any, froms: Any, to: Any, fromSubAccount: Any,toSubAccount: Any,loanTrans: Any='false',omitPosRisk: Any = 'false') -> Dict[str, Any]:
         params = {'ccy': ccy, 'amt': amt, 'from': froms, 'to': to, 'fromSubAccount': fromSubAccount, 'toSubAccount': toSubAccount,'loanTrans':loanTrans,'omitPosRisk':omitPosRisk}
         return self._request_with_params(POST, SUBACCOUNT_TRANSFER, params)
 
     #GET /api/v5/users/entrust-subaccount-list
-    def get_entrust_subaccount_list(self,subAcct = None):
+    def get_entrust_subaccount_list(self,subAcct: Any = None) -> Dict[str, Any]:
         params = {
             'subAcct':subAcct
         }
         return self._request_with_params(GET, ENTRUST_SUBACCOUNT_LIST, params)
 
     #POST /api/v5/users/subaccount/set-transfer-out
-    def set_permission_transfer_out(self,subAcct = None,canTransOut = None):
+    def set_permission_transfer_out(self,subAcct: Any = None,canTransOut: Any = None) -> Dict[str, Any]:
         params = {
             'subAcct':subAcct,
             'canTransOut':canTransOut
@@ -49,7 +51,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, SET_TRANSFER_OUT, params)
 
     #GET /api/v5/asset/subaccount/balances
-    def get_funding_balance(self,subAcct = None,ccy = None):
+    def get_funding_balance(self,subAcct: Any = None,ccy: Any = None) -> Dict[str, Any]:
         params = {
             'subAcct':subAcct,
             'ccy':ccy
@@ -57,7 +59,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(GET, GET_ASSET_SUBACCOUNT_BALANCE, params)
 
     # - Set sub_accounts VIP loan%
-    def set_sub_accounts_vip_loan(self, enable = None, alloc = None):
+    def set_sub_accounts_vip_loan(self, enable: Any = None, alloc: Any = None) -> Dict[str, Any]:
         if alloc is None:
             alloc = []
         params = {
@@ -67,7 +69,7 @@ class SubAccountAPI(OkxClient):
         return self._request_with_params(POST, SET_SUB_ACCOUNTS_VIP_LOAN, params)
 
     # - Get sub_account borrow interest and limit
-    def get_sub_account_borrow_interest_and_limit(self, subAcct = None, ccy = None):
+    def get_sub_account_borrow_interest_and_limit(self, subAcct: Any = None, ccy: Any = None) -> Dict[str, Any]:
         params = {
             'subAcct': subAcct,
             'ccy': ccy
