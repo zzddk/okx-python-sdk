@@ -1,0 +1,18 @@
+"""Block trading (RFQ) endpoint paths."""
+
+COUNTERPARTIES = '/api/v5/rfq/counterparties'
+CREATE_RFQ = '/api/v5/rfq/create-rfq'
+CANCEL_RFQ = '/api/v5/rfq/cancel-rfq'
+CANCEL_BATCH_RFQS = '/api/v5/rfq/cancel-batch-rfqs'
+CANCEL_ALL_RSQS = '/api/v5/rfq/cancel-all-rfqs'
+EXECUTE_QUOTE = '/api/v5/rfq/execute-quote'
+CREATE_QUOTE = '/api/v5/rfq/create-quote'
+CANCEL_QUOTE = '/api/v5/rfq/cancel-quote'
+CANCEL_BATCH_QUOTES = '/api/v5/rfq/cancel-batch-quotes'
+CANCEL_ALL_QUOTES = '/api/v5/rfq/cancel-all-quotes'
+GET_RFQS = '/api/v5/rfq/rfqs'
+GET_QUOTES = '/api/v5/rfq/quotes'
+GET_RFQ_TRADES = '/api/v5/rfq/trades'
+GET_PUBLIC_TRADES = '/api/v5/rfq/public-trades'
+MMP_RESET = '/api/v5/rfq/mmp-reset'
+MARKER_INSTRUMENT_SETTING = '/api/v5/rfq/maker-instrument-settings'

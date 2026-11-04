@@ -9,6 +9,7 @@ Breaking release. This is the only window in the 0.4/0.5 line for public-API cha
 ### Changed
 - All 22 `*API` classes now inherit `OkxClient.__init__`; the duplicated subclass constructors are gone. Adding a client-wide option no longer means editing 22 files.
 - The base constructor's `domain` parameter is now `base_api`, matching `OkxClient`. The positional slot is unchanged, so positional construction keeps working; `domain=` keyword calls must switch to `base_api=`.
+- `okx.consts` is now a package (`okx/consts/http.py` plus one module per product under `okx/consts/endpoints/`). `from okx import consts`, `consts.ACCOUNT_INFO` and `from okx.consts import *` are unchanged. A constant name declared in two modules now raises `ImportError` at import time instead of silently shadowing.
 
 ### Added
 - `client=` on every REST API class. Pass an existing `OkxClient` to route requests through its connection pool and reuse its credentials.

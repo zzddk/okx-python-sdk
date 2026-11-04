@@ -83,13 +83,20 @@ def _capture_requests(cls, method_name):
     return calls
 
 
-def _const_assignment_names():
-    tree = ast.parse((OKX_ROOT / "consts.py").read_text())
-    for node in tree.body:
-        if isinstance(node, ast.Assign):
-            for target in node.targets:
-                if isinstance(target, ast.Name):
-                    yield target.id
+def _const_source_files():
+    """Every module that declares constants (the package wiring is excluded)."""
+    consts_dir = OKX_ROOT / "consts"
+    return sorted([consts_dir / "http.py", *sorted((consts_dir / "endpoints").glob("*.py"))])
+
+
+def _const_assignments():
+    for path in _const_source_files():
+        tree = ast.parse(path.read_text())
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        yield path.name, target.id
 
 
 ALL_API_METHODS = sorted(
@@ -100,9 +107,20 @@ ALL_API_METHODS = sorted(
 def test_constant_names_are_unique():
     """A later definition must never silently shadow an earlier one."""
     duplicates = sorted(
-        name for name, count in Counter(_const_assignment_names()).items() if count > 1
+        name for name, count in Counter(name for _, name in _const_assignments()).items() if count > 1
     )
     assert duplicates == []
+
+
+def test_constant_names_are_unique_across_modules():
+    """Merging the subpackage must not let one module shadow another."""
+    seen = {}
+    clashes = []
+    for module_name, name in _const_assignments():
+        if name in seen and seen[name] != module_name:
+            clashes.append((name, seen[name], module_name))
+        seen[name] = module_name
+    assert clashes == []
 
 
 @pytest.mark.parametrize(
@@ -117,7 +135,7 @@ def test_api_method_uses_a_declared_endpoint(cls, method_name):
         assert http_method in (consts.GET, consts.POST)
         assert path in _ENDPOINT_PATHS, (
             f"{cls.__name__}.{method_name} requests {path!r}, "
-            "which is not a path declared in okx/consts.py"
+            "which is not a path declared in okx/consts"
         )
 
 

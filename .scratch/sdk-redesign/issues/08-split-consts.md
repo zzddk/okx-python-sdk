@@ -14,3 +14,7 @@ Release: 0.5.0
 ## 完成标准
 
 外部 `from okx import consts as c; c.POSITION_RISK` 不变；重名会在 `__init__.py` 里变成显式错误而不是静默覆盖。
+
+## Comments
+
+- 2026-11-05: done in 0.5.0. `okx/consts.py` split into `okx/consts/http.py` + `okx/consts/endpoints/*.py`; `__init__.py` merges with duplicate detection. All 293 previous names remain resolvable (`_NO_CREDENTIAL` stays private but is still exposed as `consts._NO_CREDENTIAL`). Contract test now scans the package and checks cross-module uniqueness.
