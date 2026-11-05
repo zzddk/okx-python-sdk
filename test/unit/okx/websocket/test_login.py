@@ -8,9 +8,10 @@ Mirrors: okx/websocket/login.py
 """
 import asyncio
 import json
+import time
 import unittest
 
-from okx.websocket.login import LoginHandshake
+from okx.websocket.login import LoginHandshake, login_payload
 
 ACK = '{"event": "login", "code": "0"}'
 REJECTED = '{"event": "login", "code": "60009", "msg": "Login failed"}'
@@ -34,6 +35,26 @@ class _Socket:
         if self._frames:
             return self._frames.pop(0)
         await asyncio.sleep(3600)
+
+
+class TestLoginPayload(unittest.TestCase):
+    def test_payload_matches_the_bytes_0_14_1_sent(self):
+        payload = login_payload("key", "pass", "secret", timestamp=1700000000)
+        self.assertEqual(
+            payload,
+            '{"op": "login", "args": [{"apiKey": "key", "passphrase": "pass", '
+            '"timestamp": 1700000000, "sign": '
+            '"lhmJXK08fk9SI1ZwFXKFRrPtzfbNOwC+D1xMJJ/1KZg="}]}',
+        )
+
+    def test_timestamp_defaults_to_the_local_clock_in_whole_seconds(self):
+        before = int(time.time())
+        payload = json.loads(login_payload("key", "pass", "secret"))
+        after = int(time.time())
+        stamp = payload["args"][0]["timestamp"]
+        self.assertIsInstance(stamp, int)
+        self.assertGreaterEqual(stamp, before)
+        self.assertLessEqual(stamp, after)
 
 
 class TestFeedAndWait(unittest.TestCase):

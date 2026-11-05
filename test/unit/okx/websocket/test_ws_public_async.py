@@ -80,11 +80,11 @@ class TestWsPublicAsyncLogin(unittest.TestCase):
 
         asyncio.run(run_test())
 
-    @patch('okx.websocket.WsBaseAsync.WsUtils.initLoginParams')
-    def test_login_with_credentials_success(self, mock_init_login):
+    @patch('okx.websocket.WsBaseAsync.login_payload')
+    def test_login_with_credentials_success(self, mock_login_payload):
         """Test successful login with valid credentials"""
 
-        mock_init_login.return_value = '{"op":"login","args":[...]}'
+        mock_login_payload.return_value = '{"op":"login","args":[...]}'
 
         from okx.websocket.WsPublicAsync import WsPublicAsync
         ws = WsPublicAsync(
@@ -101,10 +101,10 @@ class TestWsPublicAsyncLogin(unittest.TestCase):
             result = await ws.login()
             self.assertTrue(result)
             self.assertTrue(ws.isLoggedIn)
-            mock_init_login.assert_called_once_with(
-                apiKey=_STUB_ID,
+            mock_login_payload.assert_called_once_with(
+                api_key=_STUB_ID,
                 passphrase=_STUB_PHRASE,
-                secretKey=_STUB_SIGN
+                secret_key=_STUB_SIGN
             )
             mock_websocket.send.assert_called_once()
 

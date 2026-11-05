@@ -57,11 +57,11 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
 class TestWsPrivateAsyncSubscribe(unittest.TestCase):
     """Unit tests for WsPrivateAsync subscribe method"""
 
-    @patch('okx.websocket.WsBaseAsync.WsUtils')
-    def test_subscribe_sends_correct_payload(self, mock_ws_utils):
+    @patch('okx.websocket.WsBaseAsync.login_payload')
+    def test_subscribe_sends_correct_payload(self, mock_login_payload):
         """Test subscribe sends correct payload after login"""
 
-        mock_ws_utils.initLoginParams.return_value = '{"op":"login"}'
+        mock_login_payload.return_value = '{"op":"login"}'
 
         ws = WsPrivateAsync(
             apiKey=_STUB_ID,
@@ -90,11 +90,11 @@ class TestWsPrivateAsyncSubscribe(unittest.TestCase):
 
         asyncio.run(run_test())
 
-    @patch('okx.websocket.WsBaseAsync.WsUtils')
-    def test_subscribe_with_id(self, mock_ws_utils):
+    @patch('okx.websocket.WsBaseAsync.login_payload')
+    def test_subscribe_with_id(self, mock_login_payload):
         """Test subscribe with id parameter"""
 
-        mock_ws_utils.initLoginParams.return_value = '{"op":"login"}'
+        mock_login_payload.return_value = '{"op":"login"}'
 
         ws = WsPrivateAsync(
             apiKey=_STUB_ID,
@@ -482,11 +482,11 @@ class TestWsPrivateAsyncOrderMethods(unittest.TestCase):
 class TestWsPrivateAsyncLogin(unittest.TestCase):
     """Unit tests for WsPrivateAsync login method"""
 
-    @patch('okx.websocket.WsBaseAsync.WsUtils')
-    def test_login_calls_init_login_params(self, mock_ws_utils):
-        """Test login calls WsUtils.initLoginParams with correct parameters"""
+    @patch('okx.websocket.WsBaseAsync.login_payload')
+    def test_login_builds_the_payload(self, mock_login_payload):
+        """Test login calls login_payload with correct parameters"""
 
-        mock_ws_utils.initLoginParams.return_value = '{"op":"login","args":[...]}'
+        mock_login_payload.return_value = '{"op":"login","args":[...]}'
 
         ws = WsPrivateAsync(
             apiKey=_STUB_ID,
@@ -501,10 +501,10 @@ class TestWsPrivateAsyncLogin(unittest.TestCase):
         async def run_test():
             result = await ws.login()
             self.assertTrue(result)
-            mock_ws_utils.initLoginParams.assert_called_once_with(
-                apiKey=_STUB_ID,
+            mock_login_payload.assert_called_once_with(
+                api_key=_STUB_ID,
                 passphrase=_STUB_PHRASE,
-                secretKey=_STUB_SIGN
+                secret_key=_STUB_SIGN
             )
 
         asyncio.run(run_test())

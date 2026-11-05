@@ -37,9 +37,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
-from okx.websocket import WsUtils
 from okx.websocket.connector import WebSocketConnector
-from okx.websocket.login import DEFAULT_LOGIN_TIMEOUT, LoginHandshake
+from okx.websocket.login import DEFAULT_LOGIN_TIMEOUT, LoginHandshake, login_payload
 from okx.websocket.subscriptions import Callback, Subscriptions, key
 
 logger = logging.getLogger(__name__)
@@ -269,10 +268,10 @@ class WsBaseAsync:
         if self.websocket is None:
             raise RuntimeError("start() must be called before login()")
 
-        payload = WsUtils.initLoginParams(
-            apiKey=self.apiKey,
+        payload = login_payload(
+            api_key=self.apiKey,
             passphrase=self.passphrase,
-            secretKey=self.secretKey,
+            secret_key=self.secretKey,
         )
         if self.debug:
             logger.debug("login: %s", payload)

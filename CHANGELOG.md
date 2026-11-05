@@ -2,6 +2,15 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [Unreleased]
+
+### Removed
+- `okx.websocket.WsUtils` is gone. `initLoginParams` and `getLocalTime` had
+  one caller (`WsBaseAsync.login`) and one purpose; the login request is now
+  built by `okx.websocket.login.login_payload()`, which also takes the
+  timestamp as an argument. The signature primitive stays in `okx.utils.sign`
+  and is shared with the REST layer.
+
 ## [0.14.1]
 
 ### Added
