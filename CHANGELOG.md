@@ -2,7 +2,7 @@
 
 All notable changes to `python-okx` are documented in this file.
 
-## [Unreleased]
+## [0.14.1]
 
 ### Added
 - `WsBaseAsync.subscribe()` rejects an arg whose `channel` is missing or
