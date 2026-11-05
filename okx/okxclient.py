@@ -18,40 +18,13 @@ class OkxClient:
         self._t = transport
 
     @property
-    def API_KEY(self) -> str:
-        return self._t.API_KEY
+    def transport(self) -> Transport:
+        """The one configuration surface: credentials, environment and policy.
 
-    @property
-    def API_SECRET_KEY(self) -> str:
-        return self._t.API_SECRET_KEY
-
-    @property
-    def PASSPHRASE(self) -> str:
-        return self._t.PASSPHRASE
-
-    @property
-    def flag(self) -> str:
-        return self._t.flag
-
-    @property
-    def debug(self) -> bool:
-        return self._t.debug
-
-    @property
-    def domain(self) -> str:
-        return self._t.domain
-
-    @property
-    def raise_on_error(self) -> bool:
-        return self._t.raise_on_error
-
-    @property
-    def max_retries(self) -> int:
-        return self._t.max_retries
-
-    @property
-    def retry_backoff(self) -> float:
-        return self._t.retry_backoff
+        API classes no longer copy individual fields; read them here, e.g.
+        `api.transport.debug` or `api.transport.max_retries`.
+        """
+        return self._t
 
     def request(self, method: Any, path: Any,
                 params: Optional[Dict[str, Any]] = None, *,

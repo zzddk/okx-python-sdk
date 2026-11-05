@@ -2,6 +2,26 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.14.0]
+
+Breaking release for how an API class exposes its configuration (ADR-0015).
+
+### Added
+- `OkxClient.transport` returns the `Transport` the API class was built with;
+  it is the one place to read credentials, environment and retry policy from.
+
+### Removed
+- The nine configuration properties `OkxClient` forwarded: `API_KEY`,
+  `API_SECRET_KEY`, `PASSPHRASE`, `flag`, `debug`, `domain`,
+  `raise_on_error`, `max_retries` and `retry_backoff`. `proxy` had never
+  been forwarded, which is how the second interface started to drift.
+
+### Migration
+
+| Before | After |
+| --- | --- |
+| `api.debug` (and the other eight names above) | `api.transport.debug` |
+
 ## [0.13.0]
 
 ### Changed

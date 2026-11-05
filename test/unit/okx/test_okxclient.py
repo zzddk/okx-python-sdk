@@ -20,37 +20,24 @@ TEST_API_ENDPOINT = '/api/v5/test'
 
 
 class TestOkxClientInit(unittest.TestCase):
-    """An API class takes one Transport and reads its configuration from it."""
+    """An API class takes one Transport and exposes it, but copies nothing."""
 
-    def test_init_with_default_parameters(self):
-        client = OkxClient(mock_transport())
+    CONFIGURATION = ('API_KEY', 'API_SECRET_KEY', 'PASSPHRASE', 'flag', 'debug',
+                     'domain', 'raise_on_error', 'max_retries', 'retry_backoff')
 
-        self.assertEqual(client.API_KEY, '-1')
-        self.assertEqual(client.API_SECRET_KEY, '-1')
-        self.assertEqual(client.PASSPHRASE, '-1')
-        self.assertEqual(client.flag, '1')
-        self.assertFalse(client.debug)
-
-    def test_init_with_custom_parameters(self):
-        transport = mock_transport(
-            api_key='test_key',
-            api_secret_key='test_secret',
-            passphrase='test_pass',
-            flag='0',
-            debug=True,
-        )
+    def test_exposes_the_transport_it_was_given(self):
+        transport = mock_transport(max_retries=3)
         client = OkxClient(transport)
 
-        self.assertEqual(client.API_KEY, 'test_key')
-        self.assertEqual(client.API_SECRET_KEY, 'test_secret')
-        self.assertEqual(client.PASSPHRASE, 'test_pass')
-        self.assertEqual(client.flag, '0')
-        self.assertTrue(client.debug)
+        self.assertIs(client.transport, transport)
+        self.assertEqual(client.transport.max_retries, 3)
 
-    def test_configuration_is_read_from_the_transport(self):
-        client = OkxClient(mock_transport(max_retries=3, retry_backoff=0.5))
-        self.assertEqual(client.max_retries, 3)
-        self.assertEqual(client.retry_backoff, 0.5)
+    def test_configuration_is_not_copied_onto_the_client(self):
+        """One configuration surface: read it from api.transport."""
+        client = OkxClient(mock_transport())
+        for name in self.CONFIGURATION:
+            with self.subTest(name=name):
+                self.assertFalse(hasattr(client, name))
 
     def test_non_transport_is_rejected(self):
         with self.assertRaises(TypeError):
@@ -113,8 +100,7 @@ class TestApiConstruction(unittest.TestCase):
         api = TradeAPI(transport)
 
         self.assertIs(api._t, transport)
-        self.assertEqual(api.API_KEY, 'k')
-        self.assertEqual(api.flag, '0')
+        self.assertIs(api.transport, transport)
 
     def test_api_keys_are_no_longer_constructor_arguments(self):
         with self.assertRaises(TypeError):
@@ -127,7 +113,7 @@ class TestApiConstruction(unittest.TestCase):
     def test_domain_comes_from_the_transport(self):
         api = TradeAPI(Transport(base_api='https://example.test',
                                  http=httpx.MockTransport(lambda request: httpx.Response(200))))
-        self.assertEqual(api.domain, 'https://example.test')
+        self.assertEqual(api.transport.domain, 'https://example.test')
 
 
 def _mock_response(payload, status_code=200):

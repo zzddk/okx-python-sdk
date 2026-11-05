@@ -43,9 +43,9 @@ class _ClientTestCase(unittest.TestCase):
 class TestRetryDefaults(_ClientTestCase):
     def test_retries_are_off_by_default(self):
         client = self._make([_response()])
-        self.assertEqual(client.max_retries, 0)
+        self.assertEqual(client.transport.max_retries, 0)
         self.assertIsNone(client._t._limiter)
-        self.assertTrue(client.raise_on_error)
+        self.assertTrue(client.transport.raise_on_error)
 
     def test_get_is_not_retried_when_max_retries_is_zero(self):
         client = self._make([httpx.ConnectError('boom')])
