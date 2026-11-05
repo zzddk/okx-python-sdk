@@ -59,10 +59,8 @@ class FundingAPI(OkxClient):
 
 
     #Get Deposit Lightning
-    def get_deposit_lightning(self, ccy: Any,amt: Any,to: Any="") -> Dict[str, Any]:
-        params = {'ccy':ccy,'amt':amt}
-        if to is not None:
-            params = {'to':to}
+    def get_deposit_lightning(self, ccy: Any, amt: Any, to: Any = "") -> Dict[str, Any]:
+        params = {'ccy': ccy, 'amt': amt, 'to': to}
         return self.request(GET, DEPOSIT_LIGHTNING, params)
 
     # Withdrawal Lightning

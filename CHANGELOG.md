@@ -10,6 +10,10 @@ All notable changes to `python-okx` are documented in this file.
   branches in the endpoint modules are gone; no request changes on the wire
   (ADR-0010).
 
+### Fixed
+- `FundingAPI.get_deposit_lightning` sent only `to`: `ccy` and `amt` were
+  dropped from the request.
+
 ## [0.12.0]
 
 Breaking release for WebSocket message routing (ADR-0009).

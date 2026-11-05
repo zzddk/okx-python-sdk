@@ -208,6 +208,20 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
             self.assertEqual(call_args['state'], state)
 
 
+class TestFundingAPIDepositLightning(unittest.TestCase):
+    """GET /api/v5/asset/deposit-lightning (ccy, amt, to)"""
+
+    def setUp(self):
+        self.funding_api = FundingAPI(FakeTransport())
+
+    @patch.object(FundingAPI, 'request')
+    def test_deposit_lightning_sends_currency_and_amount(self, mock_request):
+        mock_request.return_value = {'code': '0'}
+        self.funding_api.get_deposit_lightning(ccy='BTC', amt='0.001', to='lnbc1...')
+        assert_request(mock_request, c.GET, c.DEPOSIT_LIGHTNING,
+                       {'ccy': 'BTC', 'amt': '0.001', 'to': 'lnbc1...'})
+
+
 if __name__ == '__main__':
     unittest.main()
 
