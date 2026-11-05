@@ -12,16 +12,54 @@ frame share one rule:
   socket itself and hands everything else to `deliver`.
 
 Both paths settle the same state; `wait()` is how the read-loop case blocks.
+
+`login_payload()` builds the request those paths wait for: the message the
+server expects is `str(timestamp) + 'GET' + '/users/self/verify'`, signed with
+the API secret and wrapped in the JSON envelope. The signature primitive itself
+lives in `okx.utils.sign` and is shared with the REST layer.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+import time
 from typing import Any, Awaitable, Callable
+
+from okx import utils
 
 DEFAULT_LOGIN_TIMEOUT = 10.0
 
 Deliver = Callable[[str], Awaitable[None]]
+
+
+def login_payload(
+    api_key: str,
+    passphrase: str,
+    secret_key: str,
+    timestamp: int | None = None,
+) -> str:
+    """Build the login request for a private channel.
+
+    `timestamp` defaults to the local clock in whole seconds. Tests pass a
+    fixed value so the whole string can be compared byte for byte.
+    """
+    if timestamp is None:
+        timestamp = int(time.time())
+    message = str(timestamp) + 'GET' + '/users/self/verify'
+    signature = utils.sign(message, secret_key).decode('utf-8')
+    payload = {
+        "op": "login",
+        "args": [
+            {
+                "apiKey": api_key,
+                "passphrase": passphrase,
+                "timestamp": timestamp,
+                "sign": signature,
+            }
+        ],
+    }
+    return json.dumps(payload)
 
 
 class LoginHandshake:

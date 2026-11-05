@@ -1,7 +1,7 @@
 """
 Unit tests for the WebSocket correctness fixes
 
-Mirrors: okx/websocket/WsUtils.py, Ws*Async.login
+Mirrors: okx/websocket/login.py, Ws*Async.login
 """
 import asyncio
 import json
@@ -70,6 +70,6 @@ class TestLoginAck(unittest.TestCase):
     def test_private_subscribe_does_not_sleep_after_the_ack(self):
         ws = self._ws(WsPrivateAsync)
         ws.websocket.recv = AsyncMock(return_value=ACK)
-        with patch('okx.websocket.WsBaseAsync.WsUtils.initLoginParams', return_value='{"op":"login"}'):
+        with patch('okx.websocket.WsBaseAsync.login_payload', return_value='{"op":"login"}'):
             asyncio.run(ws.subscribe([{'channel': 'account'}], MagicMock()))
         self.assertEqual(ws.websocket.send.call_count, 2)
