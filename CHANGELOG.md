@@ -5,6 +5,10 @@ All notable changes to `python-okx` are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- `paginate()` projects the request before walking: `params={'before': ...}` and
+  `params={'limit': ...}` now raise `ValueError` at the call site instead of
+  being forwarded, so one direction and one page-size knob are enforced.
+  `params={'after': ...}` still resumes from that cursor.
 - Endpoint methods with required collection parameters (`simPos`,
   `counterparties`, `legs`, `rfqIds`, `clRfqIds`, `fromCcy`, `debtCcy`,
   `repayCcyList`, `recurringList`, `alloc`, `supCollateral`, `investData`)

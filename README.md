@@ -128,6 +128,8 @@ for bill in account.paginate(account.get_account_bills, cursor='billId',
 
 The walk ends on an empty page or when the cursor stops advancing, and each page goes through the retry and rate-limit path. A page shorter than `page_size` does not end the walk — endpoints cap `limit` at their own maximum — so expect one final empty request.
 
+`page_size` is the only page-size knob: a `limit` in `params` raises `ValueError`, as does `before` (the walk goes one way only). An `after` in `params` resumes from that cursor.
+
 ### WebSocket
 
 Endpoints default to the live host; pass `url=` for anything else. To share the REST client's credentials and environment:
