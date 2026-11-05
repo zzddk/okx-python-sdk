@@ -12,10 +12,10 @@ from okx.websocket.WsBaseAsync import Callback, WsBaseAsync
 
 class WsPrivateAsync(WsBaseAsync):
     _LOGIN_REQUIRED = True
-    _DEFAULT_URL = consts.WS_PRIVATE_URL
 
     # "is demo trading" -> endpoint; the mapping itself lives in
-    # okx.websocket.config.session_config.
+    # okx.websocket.config.session_config. The live entry is also the default
+    # url when the client is built without a transport.
     _HOSTS: ClassVar[dict[bool, str]] = {
         False: consts.WS_PRIVATE_URL,
         True: consts.WS_PRIVATE_DEMO_URL,

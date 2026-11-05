@@ -11,12 +11,18 @@ from okx.websocket.WsBaseAsync import WsBaseAsync
 
 
 class WsPublicAsync(WsBaseAsync):
-    _DEFAULT_URL = consts.WS_PUBLIC_URL
+    # "is demo trading" -> endpoint. Also the default url for a bare client:
+    # with no transport there is no channel and no demo switch, and the live
+    # public endpoint is what that means.
+    _HOSTS: ClassVar[dict[bool, str]] = {
+        False: consts.WS_PUBLIC_URL,
+        True: consts.WS_PUBLIC_DEMO_URL,
+    }
 
     # channel -> {"is demo trading": endpoint}. A channel is only meaningful for
     # a real transport, so the transport is checked first.
     _CHANNELS: ClassVar[dict[str, dict[bool, str]]] = {
-        'public': {False: consts.WS_PUBLIC_URL, True: consts.WS_PUBLIC_DEMO_URL},
+        'public': _HOSTS,
         'business': {False: consts.WS_BUSINESS_URL, True: consts.WS_BUSINESS_DEMO_URL},
     }
 

@@ -40,7 +40,7 @@ import asyncio
 import inspect
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from okx.websocket.connection import (
     DEFAULT_PING_INTERVAL,
@@ -77,7 +77,9 @@ class WsBaseAsync:
     """
 
     _LOGIN_REQUIRED = False
-    _DEFAULT_URL: Optional[str] = None
+    # "is demo trading" -> endpoint, declared by each client. Without a
+    # transport there is no demo switch, so the live entry is the default url.
+    _HOSTS: ClassVar[Dict[bool, str]] = {}
 
     def __init__(
         self,
@@ -94,7 +96,7 @@ class WsBaseAsync:
         proxy: Optional[str] = None,
         connector: Optional[WebSocketConnector] = None,
     ) -> None:
-        self.url = url if url is not None else self._DEFAULT_URL
+        self.url = url if url is not None else self._HOSTS.get(False)
         self.apiKey = apiKey
         self.passphrase = passphrase
         self.secretKey = secretKey

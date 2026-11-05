@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 
 from websockets.exceptions import ConnectionClosedError
 
+from okx import consts
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
 from .fakes import FakeConnector, FakeSocket
@@ -66,7 +67,7 @@ class TestWsPublicAsyncInit(unittest.TestCase):
         self.assertTrue(ws.debug)
 
     def test_default_url_is_the_public_host(self):
-        self.assertEqual(WsPublicAsync().url, WsPublicAsync._DEFAULT_URL)
+        self.assertEqual(WsPublicAsync().url, consts.WS_PUBLIC_URL)
 
 
 class TestWsPublicAsyncLogin(unittest.TestCase):

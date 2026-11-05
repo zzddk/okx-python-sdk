@@ -8,6 +8,7 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
+from okx import consts
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
 from .fakes import FakeConnector, FakeSocket
@@ -64,7 +65,7 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
 
     def test_default_url_is_the_private_host(self):
         ws = WsPrivateAsync(apiKey=_STUB_ID, passphrase=_STUB_PHRASE, secretKey=_STUB_SIGN)
-        self.assertEqual(ws.url, WsPrivateAsync._DEFAULT_URL)
+        self.assertEqual(ws.url, consts.WS_PRIVATE_URL)
 
 
 class TestWsPrivateAsyncLogin(unittest.TestCase):
