@@ -2,6 +2,23 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [Unreleased]
+
+### Added
+- `WsBaseAsync.subscribe()` rejects an arg whose `channel` is missing or
+  blank with `ValueError`, before the subscription table or the socket is
+  touched. The server cannot route such a subscription, and the removed
+  `checkSocketParams` helper never ran on the production path.
+
+### Fixed
+- `WsPublicAsync.from_transport()` raises `ValueError` for any `channel`
+  outside `'public'`/`'business'`, including unhashable values such as a
+  list. The previous lookup leaked `TypeError` for those, contradicting the
+  "exception type and message unchanged" guarantee in ADR-0014.
+- The hardcoded `AccountAPI` example in the README builds the account class
+  from `Transport`; passing credentials directly has raised `TypeError`
+  since 0.10 (ADR-0006 / ADR-0015).
+
 ## [0.14.0]
 
 First release since 0.10.0. It rolls up four batches that were prepared but
