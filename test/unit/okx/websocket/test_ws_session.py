@@ -638,6 +638,41 @@ class TestClosedConnectionReporting(unittest.TestCase):
         self.assertEqual(error_payload["code"], "ConnClosed")
 
 
+class TestStartWhileStopping(unittest.TestCase):
+    """stop() from a callback keeps the supervisor alive until the frame ends.
+
+    `stop()` returns immediately when the frame being dispatched called it, so
+    `_task` has to stay set: otherwise `start()` would open a second socket
+    beside the read loop that is still running.
+    """
+
+    def test_start_from_the_stopping_callback_raises(self):
+        errors = []
+
+        async def run():
+            sock = FakeSocket()
+            ws = _public(connector=FakeConnector(sock))
+            seen = []
+
+            async def on_message(message):
+                seen.append(message)
+                await ws.stop()
+                try:
+                    await ws.start()
+                except RuntimeError as exc:
+                    errors.append(str(exc))
+
+            ws.callback = on_message
+            task = await ws.start()
+            sock.push('{"data": 1}')
+            await asyncio.wait_for(task, timeout=1)
+            return seen
+
+        self.assertEqual(asyncio.run(run()), ['{"data": 1}'])
+        self.assertEqual(len(errors), 1)
+        self.assertIn("still stopping", errors[0])
+
+
 class TestNeedsLoginPredicate(unittest.TestCase):
     """One predicate answers "should this connection authenticate?".
 

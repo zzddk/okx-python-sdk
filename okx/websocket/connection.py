@@ -102,7 +102,9 @@ class ConnectionSupervisor:
         `reconnect=False` and the stream ends, or with the error that ended it.
         """
         if self._task is not None and not self._task.done():
-            raise RuntimeError("WebSocket is already started")
+            raise RuntimeError(
+                "WebSocket is already started or still stopping; "
+                "wait for the previous supervisor to finish")
         self._stopping = False
         self._pong = asyncio.Event()
         await self._open()
@@ -115,19 +117,27 @@ class ConnectionSupervisor:
         When called from inside `on_frame` (a user callback calling stop()),
         it closes the socket and returns without cancelling the reader: that
         would cancel the very callback making the call. The frame finishes and
-        the read loop ends on the closed socket.
+        the read loop ends on the closed socket. `_task` stays set until that
+        happens, so `start()` refuses to open a second socket beside it.
         """
         self._stopping = True
-        task, self._task = self._task, None
+        task = self._task
         await self._stop_heartbeat()
         await self._close_socket()
-        if task is None or task.done():
+        if task is None:
             return
-        if _DISPATCHING.get():
+        # One place clears the reference: the supervisor itself, when it ends.
+        task.add_done_callback(self._forget)
+        if task.done() or _DISPATCHING.get():
             return
         task.cancel()
         with suppress(asyncio.CancelledError, Exception):
             await task
+
+    def _forget(self, task: asyncio.Task) -> None:
+        """Forget the supervisor once it ends, whether or not stop() awaited it."""
+        if self._task is task:
+            self._task = None
 
     async def send(self, payload: str) -> None:
         """Send one already-serialized frame on the current socket."""
@@ -257,8 +267,8 @@ class ConnectionSupervisor:
                 await self._close_socket()
                 return
 
-    async def _stop_heartbeat(self) -> None:
-        task, self._heartbeat = self._heartbeat, None
+    async def _cancel(self, task: Optional[asyncio.Task]) -> None:
+        """Cancel `task` and wait for it, discarding whatever it raises."""
         if task is None:
             return
         if not task.done():
@@ -266,14 +276,13 @@ class ConnectionSupervisor:
         with suppress(asyncio.CancelledError, Exception):
             await task
 
+    async def _stop_heartbeat(self) -> None:
+        task, self._heartbeat = self._heartbeat, None
+        await self._cancel(task)
+
     async def _stop_reader(self) -> None:
         task, self._reader = self._reader, None
-        if task is None:
-            return
-        if not task.done():
-            task.cancel()
-        with suppress(asyncio.CancelledError, Exception):
-            await task
+        await self._cancel(task)
 
     async def _close_socket(self) -> None:
         socket, self._socket = self._socket, None
