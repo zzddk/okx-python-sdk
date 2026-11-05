@@ -121,6 +121,13 @@ class TestFromTransport(unittest.TestCase):
         with self.assertRaises(ValueError):
             WsPublicAsync.from_transport(_transport(), channel='private')
 
+    def test_non_string_channel_is_rejected_as_value_error(self):
+        for channel in ([], None, 1):
+            with self.subTest(channel=channel):
+                with self.assertRaises(ValueError) as ctx:
+                    WsPublicAsync.from_transport(_transport(), channel=channel)
+                self.assertIn("channel must be 'public' or 'business'", str(ctx.exception))
+
     def test_private_rejects_a_non_transport(self):
         with self.assertRaises(TypeError) as ctx:
             WsPrivateAsync.from_transport(object())

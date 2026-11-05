@@ -33,11 +33,9 @@ class WsPublicAsync(WsBaseAsync):
         `okx.websocket.config.session_config`). `url` overrides the host.
         """
         require_transport(transport)
-        try:
-            hosts = cls._CHANNELS[channel]
-        except KeyError:
-            raise ValueError(f"channel must be 'public' or 'business', got {channel!r}") from None
-        return cls(**session_config(transport, hosts, url=url, debug=debug))
+        if not isinstance(channel, str) or channel not in cls._CHANNELS:
+            raise ValueError(f"channel must be 'public' or 'business', got {channel!r}")
+        return cls(**session_config(transport, cls._CHANNELS[channel], url=url, debug=debug))
 
     def __init__(
         self,

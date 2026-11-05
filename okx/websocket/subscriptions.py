@@ -49,7 +49,14 @@ class Subscription:
         self.callback = callback
 
 
-def _key(arg: Dict[str, Any]) -> str:
+def key(arg: Dict[str, Any]) -> str:
+    """The routing key for one arg: the whole dict, order-independent.
+
+    This is the single implementation of the key contract; callers that need
+    to key their own view of the table (such as the deprecated
+    `WsBaseAsync.subscriptions` property) must use it rather than repeat the
+    serialisation.
+    """
     return json.dumps(arg, sort_keys=True)
 
 
@@ -76,7 +83,7 @@ class Subscriptions:
             if not isinstance(arg, dict):
                 continue
             entry = Subscription((dict(arg),), callback)
-            self._entries[_key(arg)] = entry
+            self._entries[key(arg)] = entry
             added.append(entry)
         return tuple(added)
 
@@ -86,7 +93,7 @@ class Subscriptions:
         for arg in params:
             if not isinstance(arg, dict):
                 continue
-            entry = self._entries.pop(_key(arg), None)
+            entry = self._entries.pop(key(arg), None)
             if entry is not None:
                 removed.append(entry)
         return tuple(removed)
@@ -113,7 +120,7 @@ class Subscriptions:
         arg = payload.get("arg")
         if isinstance(arg, dict):
             try:
-                entry = self._entries.get(_key(arg))
+                entry = self._entries.get(key(arg))
             except (TypeError, ValueError):
                 entry = None
             if entry is not None:

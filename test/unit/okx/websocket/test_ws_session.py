@@ -326,6 +326,20 @@ class TestSubscriptionRegistry(unittest.TestCase):
 
         asyncio.run(run())
 
+    def test_subscribe_rejects_a_blank_channel_before_sending(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            for arg in ({'channel': '   ', 'instId': 'BTC-USDT'}, {'instId': 'BTC-USDT'}):
+                with self.subTest(arg=arg):
+                    with self.assertRaises(ValueError):
+                        await ws.subscribe([arg], None)
+            return ws
+
+        ws = asyncio.run(run())
+        self.assertEqual(ws.subscriptions, {})
+        ws.websocket.send.assert_not_awaited()
+
     def test_subscriptions_view_is_derived_from_the_table(self):
         ws = _public()
         arg = {'channel': 'tickers', 'instId': 'BTC-USDT'}
