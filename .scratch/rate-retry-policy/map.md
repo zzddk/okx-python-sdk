@@ -19,7 +19,7 @@ Labels: wayfinder:map
 
 ## Decisions so far
 
-（空——charting 不 hand-resolve 任何工单。每解一张，在此追加一行「工单名：一句话答案」并链到工单。）
+- [OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md)：官方无集中限额表，数值分散在各端点详情；窗口不统一、普通端点不按 VIP 分层、表外端点无通用政策表述；现有 8 条数值全部对得上，但官方还带计数维度与 REST/WS 共享等信息。全文在 `research/okx-rate-limit-docs` 分支（永不合并）。
 
 ## Not yet specified
 
