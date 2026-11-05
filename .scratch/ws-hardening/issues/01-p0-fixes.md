@@ -10,7 +10,7 @@ Done in: 0.8.1
 
 ## 完成标准
 
-- 空白 channel 会被 `checkSocketParams` 拒绝。
+- 空白 channel 会被 `checkSocketParams` 拒绝。（该 helper 在生产路径无调用；0.14.0 起同样的拒绝由 `WsBaseAsync.subscribe` 承担。）
 - 连接失败抛原始异常。
 - 登录被拒抛 `ConnectionError`，无回执抛 `TimeoutError`。
 - README 不再声称有重连。

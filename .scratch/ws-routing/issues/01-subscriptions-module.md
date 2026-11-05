@@ -1,7 +1,8 @@
 # 新增 Subscriptions 深模块
 
-Status: ready-for-agent
+Status: resolved
 Release: 0.14.0（原定 0.12.0）
+Done in: 0.14.0
 
 ## 为什么
 
