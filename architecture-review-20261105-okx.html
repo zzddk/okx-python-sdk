@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>python-okx 架构评审 · 2026-11-05</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 5 5; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .grain { background-image: radial-gradient(#d6d3d1 0.5px, transparent 0.5px); background-size: 6px 6px; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+    <main class="max-w-5xl mx-auto px-6 py-14 space-y-14">
+
+      <header class="space-y-6">
+        <div class="flex flex-wrap items-baseline justify-between gap-4 border-b border-slate-200 pb-6">
+          <h1 class="font-serif text-4xl tracking-tight">python-okx 架构评审</h1>
+          <p class="text-sm text-slate-500">2026-11-05 · 240 commits · 热点：WebSocket 与 REST 传输层</p>
+        </div>
+        <div class="flex flex-wrap gap-x-8 gap-y-3 text-xs text-slate-600">
+          <span class="flex items-center gap-2"><span class="inline-block h-4 w-7 border border-slate-400 bg-white"></span>module</span>
+          <span class="flex items-center gap-2"><span class="inline-block h-4 w-7 border border-slate-500 bg-slate-800"></span>deep module</span>
+          <span class="flex items-center gap-2"><svg width="28" height="6"><line x1="0" y1="3" x2="28" y2="3" stroke="#64748b" stroke-width="2" class="seam"/></svg>seam</span>
+          <span class="flex items-center gap-2"><svg width="28" height="6"><line x1="0" y1="3" x2="24" y2="3" stroke="#dc2626" stroke-width="2"/><path d="M24 0 L28 3 L24 6 Z" fill="#dc2626"/></svg>leak</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <!-- ================= 01 ================= -->
+        <article id="c1" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">01 · 把「未设置参数」的规则收回 Transport</h2>
+            <span class="rounded-full bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1">Strong</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">in-process</span>
+            <span class="rounded bg-indigo-50 text-indigo-700 px-2 py-1">locality</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/transport.py:107,133,137 · okx/utils.py:51,67 · okx/Trade.py:16-24 · okx/Account.py:12-19 · okx/MarketData.py:11 · 15 个端点 module</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">Before</p>
+              <div class="space-y-1.5">
+                <div class="h-9 border-l-4 border-slate-400 bg-white flex items-center px-3 text-[11px] uppercase tracking-wider text-slate-500">端点方法 ×258</div>
+                <div class="flex items-center gap-2 text-[10px] text-slate-500 pl-3">
+                  <svg width="12" height="34"><line x1="6" y1="34" x2="6" y2="4" stroke="#dc2626" stroke-width="1.5" class="seam"/><path d="M6 0 L3 6 L9 6 Z" fill="#dc2626"/></svg>
+                  同一条规则向上回流
+                </div>
+                <div class="h-6 border-l-4 border-amber-400 bg-amber-50 flex items-center px-3 text-[11px] text-amber-800">if x is not None: params[x] = x</div>
+                <div class="h-6 border-l-4 border-amber-400 bg-amber-50 flex items-center px-3 text-[11px] text-amber-800">if x is not None: params[x] = x</div>
+                <div class="h-6 border-l-4 border-amber-400 bg-amber-50 flex items-center px-3 text-[11px] text-amber-800">if x is not None: params[x] = x</div>
+                <div class="text-[10px] text-slate-400 pl-3">… ×154，分布在 15 个 module</div>
+                <div class="h-11 border border-slate-500 bg-slate-800 text-white flex items-center px-3 text-[11px] uppercase tracking-wider">Transport：已经丢弃 None</div>
+              </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">After</p>
+              <div class="space-y-1.5">
+                <div class="h-9 border-l-4 border-slate-400 bg-white flex items-center px-3 text-[11px] uppercase tracking-wider text-slate-500">端点方法 ×258</div>
+                <div class="flex items-center gap-2 text-[10px] text-emerald-700 pl-3">
+                  <svg width="12" height="26"><line x1="6" y1="26" x2="6" y2="4" stroke="#059669" stroke-width="1.5"/><path d="M6 0 L3 6 L9 6 Z" fill="#059669"/></svg>
+                  原样传参
+                </div>
+                <div class="h-20 border border-slate-500 deep text-white flex items-center px-3 text-[11px] uppercase tracking-wider">Transport：唯一拥有 None 省略</div>
+                <div class="text-[10px] text-slate-400 pl-3 pt-2">分支删除；规则不再复制</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>「None 表示不发送」这条规则由 <span class="font-mono text-xs">Transport</span> 拥有，却在 154 处调用点被分支重新实现一次。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>端点方法把全部参数无条件放进 dict，由序列化端唯一决定丢弃；分支全部删除。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>locality：规则只活在一处</li>
+              <li>删除 154 处重复分支</li>
+              <li>端点 module 的 implementation 退成一行映射</li>
+              <li>测试只需在 seam 上断言一次</li>
+            </ul>
+          </div>
+          <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-900">
+            删除测试：删掉分支，复杂度回到 <span class="font-mono">Transport</span> 并集中；不是搬到调用方。ADR-0001 的「None 是唯一未设置值」原样成立。
+          </div>
+        </article>
+
+        <!-- ================= 02 ================= -->
+        <article id="c2" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">02 · 把端点测试收成 seam 上的一张表</h2>
+            <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">in-process</span>
+            <span class="rounded bg-indigo-50 text-indigo-700 px-2 py-1">leverage</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">test/unit/okx/test_account.py:1-788 · test/unit/okx/test_funding.py · test/unit/okx/test_trading_data.py · test/unit/okx/test_contract.py:1-154</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">Before</p>
+              <div class="grid grid-cols-3 gap-1.5">
+                <div class="h-24 border border-slate-300 bg-white text-[9px] text-slate-500 flex items-center justify-center">test_account<br/>788 行</div>
+                <div class="h-24 border border-slate-300 bg-white text-[9px] text-slate-500 flex items-center justify-center">test_trade</div>
+                <div class="h-24 border border-slate-300 bg-white text-[9px] text-slate-500 flex items-center justify-center">test_funding</div>
+                <div class="h-12 border border-slate-300 bg-white"></div>
+                <div class="h-12 border border-slate-300 bg-white"></div>
+                <div class="h-12 border border-slate-300 bg-white"></div>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-3">24 个 test module · 3280 行 · 95 处 assert_called_once_with</p>
+              <div class="mt-2 h-16 border border-slate-300 bg-white px-3 flex items-center text-[10px] text-slate-600">
+                每个方法一份手写 params dict 断言
+              </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">After</p>
+              <div class="rounded border border-slate-500 deep text-white p-3">
+                <p class="text-[10px] uppercase tracking-wider mb-2">request seam · 一张表</p>
+                <div class="space-y-1 font-mono text-[9px] text-slate-300">
+                  <div class="flex justify-between"><span>get_positions</span><span>GET /account/positions</span></div>
+                  <div class="flex justify-between"><span>place_order</span><span>POST /trade/order</span></div>
+                  <div class="flex justify-between"><span>get_bills</span><span>GET /account/bills</span></div>
+                  <div class="text-slate-500">… 258 行，同一次 sweep</div>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-3">逐方法测试只留真正有分支的少数</p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>测试面与 implementation 同宽：断言锁的是内部 params dict，而真正的接口是 (method, path, params) 三元组。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>用一张「方法 → (method, path, 参数名)」的表驱动全部端点；手写用例只保留有条件分支的少数。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>leverage：一张表覆盖 258 个端点</li>
+              <li>参数名拼错在一个 sweep 里暴露</li>
+              <li>接口收缩成契约表</li>
+              <li>新增端点只加一行数据</li>
+            </ul>
+          </div>
+          <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-900">
+            与 01 互补：规则收回 <span class="font-mono">Transport</span> 后，逐方法断言不再锁住冗余分支，这张表才有意义。
+          </div>
+        </article>
+
+        <!-- ================= 03 ================= -->
+        <article id="c3" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">03 · 把登录回执收成一个握手</h2>
+            <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">ports &amp; adapters</span>
+            <span class="rounded bg-indigo-50 text-indigo-700 px-2 py-1">locality</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/WsBaseAsync.py:201-217,220-232,254-291,298-316,325</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-white p-2">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-1 px-2 pt-2">Before</p>
+              <pre class="mermaid">
+flowchart LR
+  A[consume 读循环] --> B[_handle_message]
+  B --> C[_login_waiter]
+  D[login] --> E[_read_login_ack]
+  E --> F[websocket.recv]
+  C --> G[_login_rejection]
+  E --> G
+  B --> H[_emit]
+  E --> H
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#dc2626;
+  class B,E,H leak
+              </pre>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-2">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-1 px-2 pt-2">After</p>
+              <pre class="mermaid">
+flowchart LR
+  A[读循环] --> H[LoginHandshake]
+  D[login] --> H
+  H -->|ack| OK[完成]
+  H -->|reject| ERR[ConnectionError]
+  H -->|data| EMIT[_emit]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a;
+  class H deep
+              </pre>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>同一次登录应答有两条实现路径；改「什么算拒绝」要改两处，<span class="font-mono text-xs">_read_login_ack</span> 还要顺手投递非登录帧。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>一个握手 module 拥有「等哪一帧、什么算拒绝」；读循环与直连 recv 只是它的两个帧来源 adapter。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>locality：协议判定只有一处</li>
+              <li>两个 adapter 共用同一 seam</li>
+              <li>登录测试不必启动会话</li>
+              <li>删除 <span class="font-mono text-xs">_consuming</span> 这条分支前提</li>
+            </ul>
+          </div>
+          <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-900">
+            不改 ADR-0005 的串行与异常隔离契约；这是会话内部的一条 seam，不触碰回调接口。
+          </div>
+        </article>
+
+        <!-- ================= 04 ================= -->
+        <article id="c4" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">04 · 把分页契约收回 pagination</h2>
+            <span class="rounded-full bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1">Worth exploring</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">in-process</span>
+            <span class="rounded bg-indigo-50 text-indigo-700 px-2 py-1">locality</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/okxclient.py:68-89 · okx/pagination.py:14-40 · test/unit/okx/test_pagination.py:90-122</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">Before</p>
+              <div class="flex items-center gap-3">
+                <div class="flex-1 border border-slate-400 bg-white p-3 text-[10px] leading-relaxed">
+                  <p class="uppercase tracking-wider text-slate-500 mb-1">OkxClient.paginate</p>
+                  <p>校验 cursor</p>
+                  <p>inspect.signature 判 page</p>
+                </div>
+                <svg width="34" height="12"><line x1="0" y1="6" x2="30" y2="6" stroke="#64748b" stroke-width="2" class="seam"/><path d="M30 3 L34 6 L30 9 Z" fill="#64748b"/></svg>
+                <div class="flex-1 border border-slate-400 bg-white p-3 text-[10px] leading-relaxed">
+                  <p class="uppercase tracking-wider text-slate-500 mb-1">pagination.paginate</p>
+                  <p>再校验 cursor</p>
+                  <p>走页 + 推游标</p>
+                </div>
+              </div>
+              <div class="mt-4 flex items-center gap-2 text-[10px] text-red-600">
+                <svg width="16" height="8"><line x1="0" y1="4" x2="12" y2="4" stroke="#dc2626" stroke-width="1.5" class="seam"/><path d="M12 1 L16 4 L12 7 Z" fill="#dc2626"/></svg>
+                cursor 校验写了两遍
+              </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">After</p>
+              <div class="flex items-center gap-3">
+                <div class="w-24 border border-slate-300 bg-white p-3 text-[10px] text-slate-500 text-center">OkxClient<br/>只转发</div>
+                <svg width="26" height="12"><line x1="0" y1="6" x2="22" y2="6" stroke="#64748b" stroke-width="2"/><path d="M22 3 L26 6 L22 9 Z" fill="#64748b"/></svg>
+                <div class="flex-1 border border-slate-500 deep text-white p-4 text-[10px] leading-relaxed">
+                  <p class="uppercase tracking-wider mb-1">pagination</p>
+                  <p class="text-slate-300">校验 + 走页 + 游标推进</p>
+                  <p class="text-slate-500 mt-2">一个 interface，一个测试面</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>「怎么翻上一页」与「什么算合法调用」分居两个 module，校验重复，且 <span class="font-mono text-xs">inspect.signature</span> 是对绑定方法的一次脆弱分类。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>pagination 拥有校验与行走；<span class="font-mono text-xs">OkxClient.paginate</span> 退成一行转发，或直接删除。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>locality：分页规则集中</li>
+              <li>cursor 校验只剩一份</li>
+              <li>测试面从两个 module 收成一个</li>
+              <li>不再反射绑定方法</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ================= 05 ================= -->
+        <article id="c5" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">05 · 两个 from_transport 共用一份 WS 配置解析</h2>
+            <span class="rounded-full bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1">Speculative</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">ports &amp; adapters</span>
+            <span class="rounded bg-indigo-50 text-indigo-700 px-2 py-1">leverage</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/WsPublicAsync.py:14-51 · okx/websocket/WsPrivateAsync.py:16-46</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">Before</p>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="border border-slate-400 bg-white p-2 text-[9px] leading-relaxed">
+                  <p class="uppercase tracking-wider text-slate-500 mb-1">WsPublic</p>
+                  <p>isinstance 校验</p>
+                  <p>demo = flag == '1'</p>
+                  <p>复制 5 个字段</p>
+                  <p class="text-slate-400">host 表：public/business</p>
+                </div>
+                <div class="border border-slate-400 bg-white p-2 text-[9px] leading-relaxed">
+                  <p class="uppercase tracking-wider text-slate-500 mb-1">WsPrivate</p>
+                  <p>isinstance 校验</p>
+                  <p>demo = flag == '1'</p>
+                  <p>复制 5 个字段</p>
+                  <p class="text-slate-400">host 表：private</p>
+                </div>
+              </div>
+              <div class="mt-3 flex items-center gap-2 text-[10px] text-red-600">
+                <svg width="16" height="8"><line x1="0" y1="4" x2="12" y2="4" stroke="#dc2626" stroke-width="1.5" class="seam"/><path d="M12 1 L16 4 L12 7 Z" fill="#dc2626"/></svg>
+                同一条映射，两份实现
+              </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">After</p>
+              <div class="border border-slate-500 deep text-white p-3">
+                <p class="text-[10px] uppercase tracking-wider mb-1">ws_config</p>
+                <p class="text-[9px] text-slate-300 leading-relaxed">类型校验 + demo 判定 + 凭据复制 + host 表</p>
+              </div>
+              <div class="flex justify-around mt-4 text-[9px] text-slate-600">
+                <div class="border border-slate-300 bg-white px-3 py-1">WsPublic</div>
+                <div class="border border-slate-300 bg-white px-3 py-1">WsPrivate</div>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-2 text-center">两个 adapter，一个 mapping</div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>Transport 每加一个 WS 该继承的字段要改两个文件；两边的 demo 判定形状已经不同。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>一份解析拥有「Transport → WS 会话配置」的映射，两个客户端只提供各自的主机表。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>leverage：一处映射，两个入口</li>
+              <li>新增传输字段不再漏改</li>
+              <li>host 选择可独立测试</li>
+              <li>两个 <span class="font-mono text-xs">__init__</span> 只留转发</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- ================= 06 ================= -->
+        <article id="c6" class="rounded-2xl border border-slate-200 bg-white p-8 space-y-6">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl leading-snug">06 · OkxClient 的转发属性已经与 Transport 漂移</h2>
+            <span class="rounded-full bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1">Speculative</span>
+          </div>
+          <div class="flex flex-wrap gap-2 text-xs">
+            <span class="rounded bg-slate-100 text-slate-600 px-2 py-1 font-mono">in-process</span>
+            <span class="rounded bg-amber-50 text-amber-800 px-2 py-1">ADR 冲突</span>
+          </div>
+          <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/okxclient.py:21-55 · okx/transport.py:36-48 · test/unit/okx/test_okxclient.py:28-31,116-117</p>
+
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">Before</p>
+              <div class="flex items-stretch gap-2">
+                <div class="flex-1 border border-slate-500 deep text-white p-2">
+                  <p class="text-[9px] uppercase tracking-wider mb-2">Transport · 11 字段</p>
+                  <div class="space-y-1 text-[9px] font-mono text-slate-300">
+                    <div>api_key</div><div>flag</div><div>debug</div><div>proxy</div><div>…</div>
+                  </div>
+                </div>
+                <div class="flex-1 border border-slate-400 bg-white p-2">
+                  <p class="text-[9px] uppercase tracking-wider mb-2 text-slate-500">OkxClient · 转发 10</p>
+                  <div class="space-y-1 text-[9px] font-mono text-slate-600">
+                    <div>API_KEY</div><div>flag</div><div>debug</div>
+                    <div class="text-red-600 border border-red-300 bg-red-50 px-1">proxy 缺失</div>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[10px] text-red-600 mt-3">同一份配置，两个读接口</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-stone-50 p-4">
+              <p class="text-xs uppercase tracking-wider text-slate-500 mb-3">After</p>
+              <div class="border border-slate-500 deep text-white p-3">
+                <p class="text-[9px] uppercase tracking-wider mb-1">Transport · 唯一配置面</p>
+                <p class="text-[9px] text-slate-300">API 类只留 request / paginate</p>
+              </div>
+              <div class="mt-4 text-[10px] text-slate-500">一个配置面，一个读取路径</div>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-6 text-sm leading-relaxed">
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Problem</p><p>同一份配置有两个 interface；新增字段必须记得补两次，而 <span class="font-mono text-xs">proxy</span> 已经漏了。</p></div>
+            <div><p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Solution</p><p>API 类只暴露 request 与 paginate，配置从 Transport 读。</p></div>
+          </div>
+
+          <div>
+            <p class="text-xs uppercase tracking-wider text-slate-500 mb-2">Wins</p>
+            <ul class="grid md:grid-cols-2 gap-x-8 gap-y-1 text-sm list-disc list-inside text-slate-700">
+              <li>interface 减半</li>
+              <li>单一配置面</li>
+              <li>删除 10 个转发属性</li>
+              <li>新增字段不会再漏</li>
+            </ul>
+          </div>
+          <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-900">
+            与 ADR-0006 的「保留只读属性并转发」冲突。但 <span class="font-mono">proxy</span> 的缺失说明转发面已开始漂移，值得重开，而不是继续靠记忆维持。
+          </div>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation">
+        <div class="rounded-2xl border border-slate-800 deep text-white p-8 space-y-4">
+          <p class="text-xs uppercase tracking-wider text-slate-400">Top recommendation</p>
+          <h2 class="font-serif text-3xl">先做 01：把「未设置参数」的规则收回 Transport</h2>
+          <p class="text-slate-300 leading-relaxed max-w-3xl">154 处分支分布在 15 个 module，而规则已经在 <span class="font-mono text-sm">Transport</span> 里存在；删除后复杂度集中而不是搬走，并且为 02 的测试面收缩腾出空间。其余候选都更小，适合随后逐条评估。</p>
+          <a href="#c1" class="inline-block text-sm text-emerald-300 hover:text-emerald-200 underline underline-offset-4">回到候选 01 →</a>
+        </div>
+      </section>
+
+    </main>
+  </body>
+</html>
