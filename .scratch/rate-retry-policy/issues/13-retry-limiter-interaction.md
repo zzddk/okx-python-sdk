@@ -16,3 +16,5 @@ Blocked by: 06
 4. 保持现状也是一个答案，但要写明理由，别让它悬着。
 
 解本工单时先 zoom 04 与 06 的 Answer。只决策，不改 `okx/transport.py` / `okx/rate_limit.py`。
+
+> **来自 07 的输入（2026-11-06）**：[文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 定了 ADR / Migration 判据：本图不新建 0018、不写 `### Migration` 行；若本工单决定改「重试是否占配额 / 429 退避联动」，届时按 `/domain-modeling` 三判据重新判断归属，不重开 07。

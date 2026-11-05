@@ -17,3 +17,5 @@ Blocked by: 03
 5. 与 [官方已公布限额的端点清单与 274/135 差异核对](09-official-limit-endpoint-list.md) 的关系：清单要不要一并维护、由谁维护？
 
 解本工单时若 09 已 resolved 则 zoom 它的清单；维护流程不依赖清单的具体内容。只决策流程，不改 `okx/consts/rate_limits.py` / CHANGELOG。
+
+> **来自 07 的输入（2026-11-06）**：[文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 已定 CHANGELOG 结构——本图不新增版本段、不写 `### Migration` 行，只订正 CHANGELOG.md:336 的过期 Notes；并**预留**了「数值变更进 CHANGELOG 哪一段」的位置，由本工单拍板具体段落。解本工单时先 zoom 07 的 Answer。

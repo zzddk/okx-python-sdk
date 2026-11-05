@@ -17,3 +17,5 @@ Blocked by: 11
 5. 每一处改动是否构成公开面变化、要不要进 ADR（0018 起）与 CHANGELOG 的 `### Migration`——由 [文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 统一判断归属。
 
 只决策，不改 `okx/transport.py` / `okx/okxclient.py`。解本工单时先 zoom 11 的 Answer。
+
+> **来自 07 的输入（2026-11-06）**：[文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 定了 ADR / Migration 判据：本图不新建 0018、不改 ADR-0003、不写 `### Migration` 行；若本工单决定改动幂等键集合 / 可重试码 / GET 判定，届时按 `/domain-modeling` 三判据重新判断 ADR 与 Migration 归属，不重开 07。

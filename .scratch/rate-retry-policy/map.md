@@ -9,7 +9,7 @@ Labels: wayfinder:map
 ## Notes
 
 - 领域：REST 传输层限流（`okx/consts/rate_limits.py`、`okx/rate_limit.py`）与重试（`okx/transport.py`、ADR-0003）。当前表只有 8 条路径、表外端点不限流；`rate_limit=False`、`max_retries=0` 均默认关闭。
-- 术语（Q2 已定，02、04、05、06 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」再分立为 `replayable`（能不能发第二次）与 `transient`（这次失败值不值得重发）；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。`rate_limit=True` 只指「表内 8 条路径的阻塞式滑动窗口」、`max_retries=N` 只指「对 `replayable ∩ transient` 的失败最多重发 N 次」，均非「全局限流 / 所有请求重试」。「共享限流状态」分立为「共享 limiter 实例」（同一 Transport 内）与「共享计数」（跨 Transport 按 User ID 合并）。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
+- 术语（Q2 已定，02、04、05、06 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」再分立为 `replayable`（能不能发第二次）与 `transient`（这次失败值不值得重发）；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。`rate_limit=True` 只指「表内 8 条路径的阻塞式滑动窗口」、`max_retries=N` 只指「对 `replayable ∩ transient` 的失败最多重发 N 次」，均非「全局限流 / 所有请求重试」。「共享限流状态」分立为「共享 limiter 实例」（同一 Transport 内）与「共享计数」（跨 Transport 按 User ID 合并）。07 另澄清：Destination 的「spec」是 handoff 交付物、不在本图产出。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
 - 事实与决策分工（Q3 已定）：口径（目标账户层级、文档快照日期、表外端点默认处置）由人在 HITL 工单拍板；外部文档事实由 `research`（AFK）工单查回；「查文档」本身不算决策工单。work-through 阶段新建的 research 工单创建后留在 frontier、不主动 fire 子代理（charting 步骤 5 才 fire）。
 - 顺序细化：[OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md) 先铺事实、[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 基于事实拍板，故后者 blocked by 前者。这样 charting 阶段能立刻 fire AFK research，口径也不至于凭空定；Q3 的分工不变。
 - 工单格式：本地 tracker，见 `docs/agents/issue-tracker.md` 的「Wayfinding operations」。`Type:` 行表达 `wayfinder:<type>` 标签；`Status: open` = 未认领，认领改 `claimed`，解完改 `resolved`；`Blocked by:` 写编号，无阻塞写 `—`。
@@ -25,6 +25,7 @@ Labels: wayfinder:map
 - [重试判定是否改动](issues/04-retry-judgement.md)：ADR-0003 三条全维持（幂等键集合、可重试码、GET 一律 replayable 都不动）；`replayable=True` 逃生口保留并写进文档、不翻按端点白名单；429/5xx 优先、TransportError 不走 `_is_transient`、`raise_on_error=False` 永不重试按现状记录；无公开面变化、不建 ADR 不写 Migration；外部事实缺口开 11，后续由 12 承接。
 - [两个默认开关是否从 off 改 on](issues/05-default-switches.md)：`rate_limit` 与 `max_retries` 都保持 off（三选一取「都不翻」）；理由为表仅 8 条、判定原状下重试不透明、ADR-0004 要求小破坏性需求攒着；无公开面变化、不建 ADR、不写 Migration 行、不改现有措辞；README 补偿说明归 07；重开条件写 Out of scope。
 - [限流器形态与共享边界](issues/06-limiter-shape.md)：四问全维持现状——per-Transport 不共享计数、同步阻塞 + `_sleep` 注入、滑动窗口不改算法、纯数据不加可观测接口；记录两条 Known limitation（跨 Transport 可能超额、86400 秒滑动 ≠ UTC 0:00 重置）；分页计量单位定为按 HTTP 请求计；与 08 划清形态边界；无公开面变化、不建 ADR；07 随之解锁。
+- [文档、CHANGELOG 与 ADR 怎么落](issues/07-docs-and-adr.md)：README「Retries and rate limiting」段改 `:113` 免责声明措辞、补三组说明（生效范围 / 默认关闭理由 / `replayable` 与 `raise_on_error` 两处）、不动 `:101`；CHANGELOG 不新增段 / 不写 Migration 行，只订正 `:336` 过期 Notes，并预留 10/12/13 位置；不建 0018、不动 ADR-0003；spec 七节骨架按施工阅读顺序排、第一步为模块注释与免责声明；`spec.md` 属 handoff 不在本图产出；07 不收图。
 
 ## Not yet specified
 
