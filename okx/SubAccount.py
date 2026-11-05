@@ -53,9 +53,7 @@ class SubAccountAPI(OkxClient):
         return self.request(GET, GET_ASSET_SUBACCOUNT_BALANCE, params)
 
     # - Set sub_accounts VIP loan%
-    def set_sub_accounts_vip_loan(self, enable: Any = None, alloc: Any = None) -> Dict[str, Any]:
-        if alloc is None:
-            alloc = []
+    def set_sub_accounts_vip_loan(self, enable: Any = None, alloc: Any = []) -> Dict[str, Any]:
         params = {
             'enable': enable,
             'alloc': alloc

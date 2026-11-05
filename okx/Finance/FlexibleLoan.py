@@ -12,9 +12,7 @@ class FlexibleLoanAPI(OkxClient):
         params = {'ccy': ccy}
         return self.request(GET, FINANCE_COLLATERAL_ASSETS, params)
 
-    def max_loan(self, borrowCcy: Any = None, supCollateral: Any = None) -> Dict[str, Any]:
-        if supCollateral is None:
-            supCollateral = []
+    def max_loan(self, borrowCcy: Any = None, supCollateral: Any = []) -> Dict[str, Any]:
         params = {
             'borrowCcy': borrowCcy,
             'supCollateral': supCollateral,

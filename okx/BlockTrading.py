@@ -9,12 +9,8 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self.request(GET, COUNTERPARTIES, params)
 
-    def create_rfq(self, counterparties: Any = None, anonymous: Any='false', clRfqId: Any = None, tag: Any = None, allowPartialExecution: Any='false',
-                   legs: Any = None) -> Dict[str, Any]:
-        if counterparties is None:
-            counterparties = []
-        if legs is None:
-            legs = []
+    def create_rfq(self, counterparties: Any = [], anonymous: Any='false', clRfqId: Any = None, tag: Any = None, allowPartialExecution: Any='false',
+                   legs: Any = []) -> Dict[str, Any]:
         params = {'counterparties': counterparties, 'anonymous': anonymous, 'clRfqId': clRfqId, 'tag': tag,
                   'allowPartialExecution': allowPartialExecution, 'legs': legs}
         return self.request(POST, CREATE_RFQ, params)
@@ -23,11 +19,7 @@ class BlockTradingAPI(OkxClient):
         params = {'rfqId': rfqId, 'clRfqId': clRfqId}
         return self.request(POST, CANCEL_RFQ, params)
 
-    def cancel_batch_rfqs(self, rfqIds: Any = None, clRfqIds: Any = None) -> Dict[str, Any]:
-        if rfqIds is None:
-            rfqIds = []
-        if clRfqIds is None:
-            clRfqIds = []
+    def cancel_batch_rfqs(self, rfqIds: Any = [], clRfqIds: Any = []) -> Dict[str, Any]:
         params = {'rfqIds': rfqIds, 'clRfqIds': clRfqIds}
         return self.request(POST, CANCEL_BATCH_RFQS, params)
 
@@ -35,15 +27,11 @@ class BlockTradingAPI(OkxClient):
         params = {}
         return self.request(POST, CANCEL_ALL_RFQS, params)
 
-    def execute_quote(self, rfqId: Any = None, quoteId: Any = None, legs: Any = None) -> Dict[str, Any]:
-        if legs is None:
-            legs = []
+    def execute_quote(self, rfqId: Any = None, quoteId: Any = None, legs: Any = []) -> Dict[str, Any]:
         params = {'rfqId': rfqId, 'quoteId': quoteId, 'legs': legs}
         return self.request(POST, EXECUTE_QUOTE, params)
 
-    def create_quote(self, rfqId: Any = None, clQuoteId: Any = None, tag: Any = None, quoteSide: Any = None, legs: Any = None, anonymous: Any=False, expiresIn: Any = None) -> Dict[str, Any]:
-        if legs is None:
-            legs = []
+    def create_quote(self, rfqId: Any = None, clQuoteId: Any = None, tag: Any = None, quoteSide: Any = None, legs: Any = [], anonymous: Any=False, expiresIn: Any = None) -> Dict[str, Any]:
         params = {'rfqId': rfqId, 'clQuoteId': clQuoteId, 'tag': tag, 'quoteSide': quoteSide, 'legs': legs,
                   'anonymous': anonymous, 'expiresIn': expiresIn}
         return self.request(POST, CREATE_QUOTE, params)

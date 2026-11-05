@@ -2,6 +2,16 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Endpoint methods with required collection parameters (`simPos`,
+  `counterparties`, `legs`, `rfqIds`, `clRfqIds`, `fromCcy`, `debtCcy`,
+  `repayCcyList`, `recurringList`, `alloc`, `supCollateral`, `investData`)
+  now default to `[]` in the signature, so a call without them still sends an
+  empty array. Passing `None` explicitly now means "not sent" (ADR-0010):
+  `create_rfq(legs=None)` no longer sends `legs`.
+
 ## [0.14.1]
 
 ### Added

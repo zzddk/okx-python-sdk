@@ -77,10 +77,8 @@ class GridAPI(OkxClient):
         return self.request(GET, GRID_AI_PARAM, params)
 
     # - Place recurring buy order
-    def place_recurring_buy_order(self, stgyName: Any = None, recurringList: Any = None, period: Any = None, recurringDay: Any = None, recurringTime: Any = None,
+    def place_recurring_buy_order(self, stgyName: Any = None, recurringList: Any = [], period: Any = None, recurringDay: Any = None, recurringTime: Any = None,
                                   timeZone: Any = None, amt: Any = None, investmentCcy: Any = None, tdMode: Any = None, algoClOrdId: Any = None, tag: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
-        if recurringList is None:
-            recurringList = []
         params = {'stgyName': stgyName, 'recurringList': recurringList, 'period': period, 'recurringDay': recurringDay,
                   'recurringTime': recurringTime, 'timeZone': timeZone, 'amt': amt, 'investmentCcy': investmentCcy,
                   'tdMode': tdMode, 'algoClOrdId': algoClOrdId, 'tag': tag, 'tradeQuoteCcy': tradeQuoteCcy}

@@ -134,9 +134,7 @@ class AccountAPI(OkxClient):
         return self.request(GET, INTEREST_LIMITS, params)
 
     # Get Simulated Margin
-    def get_simulated_margin(self, instType: Any = None, inclRealPos: Any=True, spotOffsetType: Any = None, simPos: Any = None) -> Dict[str, Any]:
-        if simPos is None:
-            simPos = []
+    def get_simulated_margin(self, instType: Any = None, inclRealPos: Any=True, spotOffsetType: Any = None, simPos: Any = []) -> Dict[str, Any]:
         params = {'instType': instType, 'inclRealPos': inclRealPos, 'spotOffsetType': spotOffsetType, 'simPos': simPos}
         return self.request(POST, SIMULATED_MARGIN, params)
 
