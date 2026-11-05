@@ -9,7 +9,7 @@ Labels: wayfinder:map
 ## Notes
 
 - 领域：REST 传输层限流（`okx/consts/rate_limits.py`、`okx/rate_limit.py`）与重试（`okx/transport.py`、ADR-0003）。当前表只有 8 条路径、表外端点不限流；`rate_limit=False`、`max_retries=0` 均默认关闭。
-- 术语（Q2 已定）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；另两件分别叫「重试判定」「账户层级口径」，不混用。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
+- 术语（Q2 已定，[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」另立；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
 - 事实与决策分工（Q3 已定）：口径（目标账户层级、文档快照日期、表外端点默认处置）由人在 HITL 工单拍板；外部文档事实由 `research`（AFK）工单查回；「查文档」本身不算决策工单。
 - 顺序细化：[OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md) 先铺事实、[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 基于事实拍板，故后者 blocked by 前者。这样 charting 阶段能立刻 fire AFK research，口径也不至于凭空定；Q3 的分工不变。
 - 工单格式：本地 tracker，见 `docs/agents/issue-tracker.md` 的「Wayfinding operations」。`Type:` 行表达 `wayfinder:<type>` 标签；`Status: open` = 未认领，认领改 `claimed`，解完改 `resolved`；`Blocked by:` 写编号，无阻塞写 `—`。
@@ -20,6 +20,7 @@ Labels: wayfinder:map
 ## Decisions so far
 
 - [OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md)：官方无集中限额表，数值分散在各端点详情；窗口不统一、普通端点不按 VIP 分层、表外端点无通用政策表述；现有 8 条数值全部对得上，但官方还带计数维度与 REST/WS 共享等信息。全文在 `research/okx-rate-limit-docs` 分支（永不合并）。
+- [采用哪个账户层级口径与文档快照](issues/02-limit-scope.md)：数值取官方端点详情页固定值、不按 VIP 分级，删 `rate_limits.py` 的 floor / stable 注释；「表外」定名「未收录端点」并维持不限流、不兜底；快照 2026-11-06；口径落注释 + README、不新建 ADR；覆盖目标移到 03。
 
 ## Not yet specified
 
@@ -32,6 +33,6 @@ Labels: wayfinder:map
 - WS 层限速与重连退避：归 ADR-0005 / ADR-0016 的连接监督者，属别的 effort。
 - 限流算法重写（滑动窗口 → 令牌桶 / 并发控制）：除非图内某张决策明确要求，否则不动。
 - 按 VIP / 账户层级在运行时动态拉取限额：需要运行时账户信息，且缺稳定外部来源。
-- 把策略落成代码、发版，以及把 72 个本地积压提交推到 origin。
+- 把策略落成代码、发版，以及把本地积压提交推到 origin。
 - 新建 `GLOSSARY.md`：两轮评审都记过，属 E 类小任务；本图不产该文件。
 - 把约 274 个端点全量查全填进 `RATE_LIMITS`：是施工，不是决策。
