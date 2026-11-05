@@ -1,8 +1,8 @@
 # Transport 保留 proxy
 
 Status: resolved
-Release: 0.10.1
-Done in: 0.11.0
+Release: 0.14.0（原定 0.10.1）
+Done in: 0.14.0（原定 0.11.0）
 
 ## 为什么
 

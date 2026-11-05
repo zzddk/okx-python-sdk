@@ -1,7 +1,7 @@
 # 修正 get_deposit_lightning 丢弃 ccy 与 amt
 
 Status: resolved
-Release: 0.13.0
+Release: 0.14.0（原定 0.13.0）
 
 ## 为什么
 

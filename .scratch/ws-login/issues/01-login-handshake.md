@@ -1,7 +1,7 @@
 # 登录协议收进 LoginHandshake
 
 Status: resolved
-Release: 0.13.0
+Release: 0.14.0（原定 0.13.0）
 
 ## 为什么
 

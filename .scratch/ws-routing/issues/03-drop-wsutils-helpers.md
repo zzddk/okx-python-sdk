@@ -1,7 +1,7 @@
 # 删除 WsUtils 的订阅参数校验死代码
 
 Status: ready-for-agent
-Release: 0.12.0
+Release: 0.14.0（原定 0.12.0）
 
 ## 为什么
 

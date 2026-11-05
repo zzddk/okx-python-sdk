@@ -2,7 +2,7 @@
 
 Status: ready-for-agent
 Blocked by: 01
-Release: 0.12.0
+Release: 0.14.0（原定 0.12.0）
 
 ## 为什么
 
@@ -42,4 +42,4 @@ Release: 0.12.0
 ### 回归
 
 11. `env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy python -m pytest test/unit -q` 全绿，用例数不减少（01 新增的照常计入）。
-12. CHANGELOG 新增 `[0.12.0]` 段：多频道订阅各自的回调、`ws.callback` 降为兜底并标废弃、`ws.subscriptions` 变只读。迁移一行：把 `ws.callback = f` 换成 `await ws.subscribe(params, f)`。
+12. CHANGELOG 新增 `[0.14.0]` 段（原定 0.12.0）：多频道订阅各自的回调、`ws.callback` 降为兜底并标废弃、`ws.subscriptions` 变只读。迁移一行：把 `ws.callback = f` 换成 `await ws.subscribe(params, f)`。

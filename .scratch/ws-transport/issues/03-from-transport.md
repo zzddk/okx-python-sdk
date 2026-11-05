@@ -1,8 +1,8 @@
 # from_client 改名 from_transport
 
 Status: resolved
-Release: 0.11.0
-Done in: 0.11.0
+Release: 0.14.0（原定 0.11.0）
+Done in: 0.14.0（原定 0.11.0）
 
 ## 为什么
 
@@ -24,4 +24,4 @@ Done in: 0.11.0
 
 ## 备注
 
-与 ADR-0006 的一条后果冲突：那里写了「`WsPrivateAsync.from_client` 与既有的读取代码不必改」。ADR-0008 显式取代这一条，迁移说明写进 0.11.0 的 CHANGELOG。
+与 ADR-0006 的一条后果冲突：那里写了「`WsPrivateAsync.from_client` 与既有的读取代码不必改」。ADR-0008 显式取代这一条，迁移说明写进 0.14.0 的 CHANGELOG（原定 0.11.0）。

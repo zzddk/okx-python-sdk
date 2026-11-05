@@ -1,8 +1,8 @@
 # WS 连接接缝：WebSocketConnector 取代 WebSocketFactory
 
 Status: resolved
-Release: 0.11.0
-Done in: 0.11.0
+Release: 0.14.0（原定 0.11.0）
+Done in: 0.14.0（原定 0.11.0）
 
 ## 为什么
 
@@ -39,4 +39,4 @@ Done in: 0.11.0
 
 ### 文档
 
-12. CHANGELOG 的 0.11.0 段落记录 `WebSocketFactory` 删除，以及「自建连接」的替代写法（传 `connector=`）。ADR-0007 已记录决策。
+12. CHANGELOG 的 0.14.0 段落（原定 0.11.0）记录 `WebSocketFactory` 删除，以及「自建连接」的替代写法（传 `connector=`）。ADR-0007 已记录决策。

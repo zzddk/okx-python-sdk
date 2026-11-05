@@ -1,7 +1,7 @@
 # 分页校验与行走同属 pagination
 
 Status: resolved
-Release: 0.13.0
+Release: 0.14.0（原定 0.13.0）
 
 ## 为什么
 

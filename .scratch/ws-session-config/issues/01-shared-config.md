@@ -1,7 +1,7 @@
 # 共享 Transport 到 WS 会话配置的解析
 
 Status: resolved
-Release: 0.13.0
+Release: 0.14.0（原定 0.13.0）
 
 ## 为什么
 
