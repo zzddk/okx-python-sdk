@@ -16,6 +16,10 @@ import inspect
 
 import pytest
 
+from okx import MarketData, PublicData
+from okx.Account import AccountAPI
+from okx.Trade import TradeAPI
+
 from .endpoints import ENDPOINTS
 from .fakes import FakeTransport
 from .test_contract import ALL_API_METHODS
@@ -86,6 +90,53 @@ def test_endpoint_sends_what_the_table_declares(cls, name, http_method, path, sp
 
     expected = {ALIASES.get(parameter, parameter): value for parameter, value in arguments.items()}
     assert sent == expected
+
+
+# A representative slice of endpoints where callers pass arguments
+# positionally. The expected mapping is written out, not derived from the
+# signature, so reordering a parameter or renaming it fails here.
+POSITIONAL = [
+    pytest.param(
+        AccountAPI, 'set_leverage', ('10', 'cross', 'BTC-USDT'),
+        {'lever': '10', 'mgnMode': 'cross', 'instId': 'BTC-USDT'},
+        id='AccountAPI.set_leverage'),
+    pytest.param(
+        AccountAPI, 'get_positions', ('SWAP', 'BTC-USDT-SWAP', 'p1'),
+        {'instType': 'SWAP', 'instId': 'BTC-USDT-SWAP', 'posId': 'p1'},
+        id='AccountAPI.get_positions'),
+    pytest.param(
+        AccountAPI, 'get_leverage', ('cross', 'BTC', 'BTC-USDT'),
+        {'mgnMode': 'cross', 'ccy': 'BTC', 'instId': 'BTC-USDT'},
+        id='AccountAPI.get_leverage'),
+    pytest.param(
+        TradeAPI, 'place_order', ('BTC-USDT', 'cash', 'buy', 'limit', '1'),
+        {'instId': 'BTC-USDT', 'tdMode': 'cash', 'side': 'buy',
+         'ordType': 'limit', 'sz': '1'},
+        id='TradeAPI.place_order'),
+    pytest.param(
+        TradeAPI, 'cancel_order', ('BTC-USDT', 'o1', 'c1'),
+        {'instId': 'BTC-USDT', 'ordId': 'o1', 'clOrdId': 'c1'},
+        id='TradeAPI.cancel_order'),
+    pytest.param(
+        MarketData.MarketAPI, 'get_candlesticks', ('BTC-USDT', '1m', '2m', '1H', '100'),
+        {'instId': 'BTC-USDT', 'after': '1m', 'before': '2m',
+         'bar': '1H', 'limit': '100'},
+        id='MarketAPI.get_candlesticks'),
+    pytest.param(
+        PublicData.PublicAPI, 'get_instruments', ('SPOT', 'BTC', 'BTC-USDT', 'BTC-USDT-SWAP'),
+        {'instType': 'SPOT', 'uly': 'BTC', 'instId': 'BTC-USDT',
+         'instFamily': 'BTC-USDT-SWAP'},
+        id='PublicAPI.get_instruments'),
+]
+
+
+@pytest.mark.parametrize('cls, name, arguments, expected', POSITIONAL)
+def test_representative_endpoints_keep_their_positional_order(cls, name, arguments, expected):
+    transport = FakeTransport()
+    getattr(cls(transport), name)(*arguments)
+    assert len(transport.calls) == 1
+    sent = transport.calls[0][2] or {}
+    assert {parameter: sent.get(parameter) for parameter in expected} == expected
 
 
 def test_the_table_covers_every_public_method():
