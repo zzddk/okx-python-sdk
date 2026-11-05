@@ -1,0 +1,118 @@
+"""
+Unit tests for the login handshake.
+
+The handshake is exercised without a session: frames go in through `feed()` or
+through a scripted socket, and the outcome comes out of `wait()` / `read()`.
+
+Mirrors: okx/websocket/login.py
+"""
+import asyncio
+import json
+import unittest
+
+from okx.websocket.login import LoginHandshake
+
+ACK = '{"event": "login", "code": "0"}'
+REJECTED = '{"event": "login", "code": "60009", "msg": "Login failed"}'
+DATA = '{"arg": {"channel": "tickers", "instId": "BTC-USDT"}, "data": []}'
+
+
+def _parse(message):
+    try:
+        return json.loads(message)
+    except ValueError:
+        return None
+
+
+class _Socket:
+    """Yields scripted frames, then hangs so a timeout can be observed."""
+
+    def __init__(self, *frames):
+        self._frames = list(frames)
+
+    async def recv(self):
+        if self._frames:
+            return self._frames.pop(0)
+        await asyncio.sleep(3600)
+
+
+class TestFeedAndWait(unittest.TestCase):
+    def test_accepting_answer_completes_the_wait(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            self.assertTrue(handshake.feed(_parse(ACK)))
+            await handshake.wait()
+
+        asyncio.run(run())
+
+    def test_rejection_raises_with_the_server_code_and_message(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            handshake.feed(_parse(REJECTED))
+            with self.assertRaises(ConnectionError) as caught:
+                await handshake.wait()
+            self.assertIn("60009", str(caught.exception))
+            self.assertIn("Login failed", str(caught.exception))
+
+        asyncio.run(run())
+
+    def test_data_frames_are_left_to_the_caller(self):
+        async def run():
+            handshake = LoginHandshake(timeout=0.01)
+            self.assertFalse(handshake.feed(_parse(DATA)))
+            with self.assertRaises(TimeoutError) as caught:
+                await handshake.wait()
+            self.assertIn("no login acknowledgement", str(caught.exception))
+
+        asyncio.run(run())
+
+    def test_only_the_first_answer_counts(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            handshake.feed(_parse(REJECTED))
+            handshake.feed(_parse(ACK))
+            with self.assertRaises(ConnectionError):
+                await handshake.wait()
+
+        asyncio.run(run())
+
+
+class TestDirectRead(unittest.TestCase):
+    def test_read_delivers_other_frames_and_stops_at_the_answer(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            delivered = []
+
+            async def deliver(message):
+                delivered.append(message)
+
+            await handshake.read(_Socket(DATA, ACK), _parse, deliver)
+            self.assertEqual(delivered, [DATA])
+
+        asyncio.run(run())
+
+    def test_read_raises_on_rejection_without_delivering_it(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            delivered = []
+
+            async def deliver(message):
+                delivered.append(message)
+
+            with self.assertRaises(ConnectionError):
+                await handshake.read(_Socket(DATA, REJECTED), _parse, deliver)
+            self.assertEqual(delivered, [DATA])
+
+        asyncio.run(run())
+
+    def test_read_times_out_when_no_answer_arrives(self):
+        async def run():
+            handshake = LoginHandshake(timeout=0.01)
+
+            async def deliver(message):
+                raise AssertionError("nothing should be delivered")
+
+            with self.assertRaises(TimeoutError):
+                await handshake.read(_Socket(), _parse, deliver)
+
+        asyncio.run(run())

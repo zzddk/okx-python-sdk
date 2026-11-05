@@ -39,6 +39,7 @@ from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from okx.websocket import WsUtils
 from okx.websocket.connector import WebSocketConnector
+from okx.websocket.login import LoginHandshake
 from okx.websocket.subscriptions import Callback, Subscriptions
 
 logger = logging.getLogger(__name__)
@@ -113,7 +114,7 @@ class WsBaseAsync:
         self._consumer: Optional[asyncio.Task] = None
         self._heartbeat: Optional[asyncio.Task] = None
         self._pong: Optional[asyncio.Event] = None
-        self._login_waiter: Optional[asyncio.Future] = None
+        self._handshake: Optional[LoginHandshake] = None
 
         if debug:
             logger.setLevel(logging.DEBUG)
@@ -206,14 +207,11 @@ class WsBaseAsync:
                 self._pong.set()
             return
         payload = self._parse(message)
-        if isinstance(payload, dict) and payload.get("event") == "login":
-            waiter = self._login_waiter
-            if waiter is not None and not waiter.done():
-                rejection = self._login_rejection(payload)
-                if rejection is not None:
-                    waiter.set_exception(rejection)
-                else:
-                    waiter.set_result(None)
+        if LoginHandshake.is_ack(payload):
+            # A login answer is never delivered: it belongs to the handshake.
+            handshake = self._handshake
+            if handshake is not None:
+                handshake.feed(payload)
             return
         await self._deliver(message, payload)
 
@@ -254,9 +252,11 @@ class WsBaseAsync:
     async def login(self, timeout: float = 10.0) -> bool:
         """Authenticate the connection and wait for the server's acknowledgement.
 
-        When the reader is already running the acknowledgement is delivered by
-        it (a second `recv()` there would collide); otherwise this method reads
-        the socket itself, which is what happens during a reconnect.
+        The protocol lives in `okx.websocket.login.LoginHandshake`; this method
+        only decides who feeds it. When the reader is running the acknowledgement
+        is delivered by it (a second `recv()` there would collide); otherwise the
+        handshake reads the socket itself, which is what happens during a
+        reconnect and after `connect()` before `start()`.
         """
         if self.isLoggedIn:
             return True
@@ -273,54 +273,22 @@ class WsBaseAsync:
         if self.debug:
             logger.debug("login: %s", payload)
 
-        waiter: Optional[asyncio.Future] = None
-        if self._consuming():
-            waiter = asyncio.get_running_loop().create_future()
-            self._login_waiter = waiter
+        handshake = LoginHandshake(timeout)
+        self._handshake = handshake
         try:
             await self.websocket.send(payload)
-            if waiter is not None:
-                try:
-                    await asyncio.wait_for(waiter, timeout)
-                except asyncio.TimeoutError:
-                    raise TimeoutError(f"no login acknowledgement within {timeout}s")
+            if self._consuming():
+                await handshake.wait()
             else:
-                await self._read_login_ack(timeout)
+                await handshake.read(self.websocket, self._parse, self._emit)
         except BaseException:
             self.isLoggedIn = False
             raise
         finally:
-            self._login_waiter = None
+            self._handshake = None
         self.isLoggedIn = True
         self._should_login = True
         return True
-
-    async def _read_login_ack(self, timeout: float) -> None:
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + timeout
-        while True:
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                raise TimeoutError(f"no login acknowledgement within {timeout}s")
-            try:
-                message = await asyncio.wait_for(self.websocket.recv(), timeout=remaining)
-            except asyncio.TimeoutError:
-                raise TimeoutError(f"no login acknowledgement within {timeout}s")
-            payload = self._parse(message)
-            if isinstance(payload, dict) and payload.get("event") == "login":
-                rejection = self._login_rejection(payload)
-                if rejection is not None:
-                    raise rejection
-                return
-            await self._emit(message)
-
-    @staticmethod
-    def _login_rejection(payload: Dict[str, Any]) -> Optional[ConnectionError]:
-        if str(payload.get("code", "0")) != "0":
-            return ConnectionError(
-                f"login rejected: code={payload.get('code')} msg={payload.get('msg')}"
-            )
-        return None
 
     def _consuming(self) -> bool:
         return self._consumer is not None and not self._consumer.done()

@@ -9,6 +9,9 @@ All notable changes to `python-okx` are documented in this file.
   which drops the ones set to `None`. The 136 `if x is not None: params[x] = x`
   branches in the endpoint modules are gone; no request changes on the wire
   (ADR-0010).
+- The WebSocket login protocol lives in `okx.websocket.login.LoginHandshake`.
+  The read loop and the direct socket read share one rule for which frame
+  answers a login; behaviour is unchanged (ADR-0012).
 
 ### Fixed
 - `FundingAPI.get_deposit_lightning` sent only `to`: `ccy` and `amt` were

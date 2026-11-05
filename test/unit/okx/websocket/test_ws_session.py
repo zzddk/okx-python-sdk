@@ -254,6 +254,22 @@ class _AckSocket:
         self.sent.append(payload)
 
 
+class _RecvSocket:
+    """Answers `recv()` from a script; used where no reader is running."""
+
+    def __init__(self, *frames):
+        self._frames = list(frames)
+        self.sent = []
+
+    async def recv(self):
+        if not self._frames:
+            await asyncio.sleep(3600)
+        return self._frames.pop(0)
+
+    async def send(self, payload):
+        self.sent.append(payload)
+
+
 class TestLoginThroughTheReader(unittest.TestCase):
     def _run(self, frame):
         async def run():
@@ -274,6 +290,24 @@ class TestLoginThroughTheReader(unittest.TestCase):
     def test_rejection_is_delivered_by_the_running_reader(self):
         with self.assertRaises(ConnectionError):
             self._run('{"event":"login","code":"60009","msg":"Login failed"}')
+
+
+class TestLoginWithoutAReader(unittest.TestCase):
+    def test_frames_before_the_answer_reach_the_callback(self):
+        async def run():
+            ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
+                                url=URL, ping_interval=0)
+            data = '{"arg": {"channel": "account"}, "data": [{"bal": "1"}]}'
+            ws.websocket = _RecvSocket(data, ACK)
+            seen = []
+            ws.callback = seen.append
+            await ws.login()
+            return ws, seen
+
+        ws, seen = asyncio.run(run())
+        self.assertTrue(ws.isLoggedIn)
+        self.assertEqual(len(seen), 1)
+        self.assertIn('"bal"', seen[0])
 
 
 class TestSubscriptionRegistry(unittest.TestCase):
