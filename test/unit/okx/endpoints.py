@@ -9,6 +9,10 @@ Each row is (HTTP method, path constant, spec), where spec is one of:
 test_endpoint_table.py drives every method from this table: add a row when you
 add an endpoint, and update the row when its parameters change. A parameter
 renamed in the signature but not here fails the sweep.
+
+`DEFAULTED_COLLECTIONS` is the companion table for required collection
+parameters: each row names a method and the request keys that must be sent as
+`[]` when the caller passes nothing.
 """
 
 from okx import consts as c
@@ -418,3 +422,21 @@ ENDPOINTS = {
         'get_open_interest_history': (c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, 'instId period begin end limit'),
     },
 }
+
+# Methods whose collection parameters are required: the default lives in the
+# signature as `[]`, so calling the method without arguments still sends the
+# key. One row per method, listing the request keys that must be [].
+DEFAULTED_COLLECTIONS = [
+    (AccountAPI, 'get_simulated_margin', ('simPos',)),
+    (BlockTradingAPI, 'create_rfq', ('counterparties', 'legs')),
+    (BlockTradingAPI, 'cancel_batch_rfqs', ('rfqIds', 'clRfqIds')),
+    (BlockTradingAPI, 'execute_quote', ('legs',)),
+    (BlockTradingAPI, 'create_quote', ('legs',)),
+    (TradeAPI, 'easy_convert', ('fromCcy',)),
+    (TradeAPI, 'oneclick_repay', ('debtCcy',)),
+    (TradeAPI, 'oneclick_repay_v2', ('repayCcyList',)),
+    (GridAPI, 'place_recurring_buy_order', ('recurringList',)),
+    (SubAccountAPI, 'set_sub_accounts_vip_loan', ('alloc',)),
+    (FlexibleLoanAPI, 'max_loan', ('supCollateral',)),
+    (StakingDefiAPI, 'purchase', ('investData',)),
+]

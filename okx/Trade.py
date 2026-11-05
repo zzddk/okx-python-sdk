@@ -149,9 +149,7 @@ class TradeAPI(OkxClient):
     def get_easy_convert_currency_list(self) -> Dict[str, Any]:
         return self.request(GET, EASY_CONVERT_CURRENCY_LIST)
 
-    def easy_convert(self, fromCcy: Any = None, toCcy: Any = None) -> Dict[str, Any]:
-        if fromCcy is None:
-            fromCcy = []
+    def easy_convert(self, fromCcy: Any = [], toCcy: Any = None) -> Dict[str, Any]:
         params = {
             'fromCcy': fromCcy,
             'toCcy': toCcy
@@ -172,9 +170,7 @@ class TradeAPI(OkxClient):
         }
         return self.request(GET, ONE_CLICK_REPAY_SUPPORT, params)
 
-    def oneclick_repay(self, debtCcy: Any = None, repayCcy: Any = None) -> Dict[str, Any]:
-        if debtCcy is None:
-            debtCcy = []
+    def oneclick_repay(self, debtCcy: Any = [], repayCcy: Any = None) -> Dict[str, Any]:
         params = {
             'debtCcy': debtCcy,
             'repayCcy': repayCcy
@@ -207,9 +203,7 @@ class TradeAPI(OkxClient):
     def get_oneclick_repay_list_v2(self) -> Dict[str, Any]:
         return self.request(GET, ONE_CLICK_REPAY_SUPPORT_V2)
 
-    def oneclick_repay_v2(self, debtCcy: Any = None, repayCcyList: Any = None) -> Dict[str, Any]:
-        if repayCcyList is None:
-            repayCcyList = []
+    def oneclick_repay_v2(self, debtCcy: Any = None, repayCcyList: Any = []) -> Dict[str, Any]:
         params = {
             'debtCcy': debtCcy,
             'repayCcyList': repayCcyList

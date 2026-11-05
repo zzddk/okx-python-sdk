@@ -13,15 +13,18 @@ A row is wrong, or the implementation drifted from it, when either:
   removed or renamed without updating the table).
 """
 import inspect
+from unittest.mock import patch
 
 import pytest
 
 from okx import MarketData, PublicData
+from okx import consts as c
 from okx.Account import AccountAPI
+from okx.BlockTrading import BlockTradingAPI
 from okx.Trade import TradeAPI
 
-from .endpoints import ENDPOINTS
-from .fakes import FakeTransport
+from .endpoints import DEFAULTED_COLLECTIONS, ENDPOINTS
+from .fakes import FakeTransport, assert_request
 from .test_contract import ALL_API_METHODS
 
 # Parameters whose request key differs from the argument name.
@@ -144,3 +147,23 @@ def test_the_table_covers_every_public_method():
     actual = set(ALL_API_METHODS)
     assert sorted(actual - declared, key=lambda item: (item[0].__name__, item[1])) == []
     assert sorted(declared - actual, key=lambda item: (item[0].__name__, item[1])) == []
+
+
+@pytest.mark.parametrize(
+    'cls, name, keys', DEFAULTED_COLLECTIONS,
+    ids=[f'{cls.__name__}.{name}' for cls, name, _ in DEFAULTED_COLLECTIONS])
+def test_collection_parameters_default_to_an_empty_list(cls, name, keys):
+    transport = FakeTransport()
+    getattr(cls(transport), name)()
+    assert len(transport.calls) == 1, f'{cls.__name__}.{name} sent {len(transport.calls)} requests'
+    params = transport.calls[0][2]
+    assert {key: params[key] for key in keys} == {key: [] for key in keys}
+
+
+@patch.object(BlockTradingAPI, 'request')
+def test_create_rfq_with_explicit_none_does_not_send_legs(mock_request):
+    mock_request.return_value = {'code': '0'}
+    BlockTradingAPI(FakeTransport()).create_rfq(legs=None)
+    assert_request(
+        mock_request, c.POST, c.CREATE_RFQ,
+        {'counterparties': [], 'anonymous': 'false', 'allowPartialExecution': 'false'})
