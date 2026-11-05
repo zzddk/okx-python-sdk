@@ -81,11 +81,34 @@ class TestPaginateWalk(unittest.TestCase):
         fetch = MagicMock(return_value={'code': '0', 'data': []})
         self.assertEqual(list(pagination.paginate(fetch, cursor='billId')), [])
 
-    def test_missing_cursor_is_rejected(self):
+    def test_missing_cursor_is_rejected_before_the_first_page(self):
+        """The check runs at the call, not on the first next()."""
         fetch = MagicMock()
         with self.assertRaises(ValueError):
-            list(pagination.paginate(fetch, cursor=''))
+            pagination.paginate(fetch, cursor='')
         fetch.assert_not_called()
+
+    def test_missing_cursor_names_the_callable(self):
+        def get_bills(**kwargs):
+            return _page()
+
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(get_bills)
+        self.assertIn('get_bills', str(caught.exception))
+        self.assertIn('billId', str(caught.exception))
+
+    def test_page_number_endpoints_get_a_specific_message(self):
+        def get_announcements(page=None):
+            return _page()
+
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(get_announcements)
+        self.assertIn('page', str(caught.exception))
+
+    def test_callable_without_a_signature_falls_back_to_the_generic_message(self):
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(dict)
+        self.assertIn('cursor is required', str(caught.exception))
 
 
 class TestClientPaginate(unittest.TestCase):
@@ -97,16 +120,6 @@ class TestClientPaginate(unittest.TestCase):
         client.get_bills = MagicMock()
         with self.assertRaises(ValueError):
             client.paginate(client.get_bills)
-
-    def test_page_number_endpoints_get_a_specific_message(self):
-        client = self._client()
-
-        def get_announcements(page=None):
-            return {'code': '0', 'data': []}
-
-        with self.assertRaises(ValueError) as ctx:
-            client.paginate(get_announcements)
-        self.assertIn('page', str(ctx.exception))
 
     def test_iterates_through_the_client(self):
         client = self._client()

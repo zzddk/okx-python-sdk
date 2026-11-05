@@ -12,6 +12,9 @@ All notable changes to `python-okx` are documented in this file.
 - The WebSocket login protocol lives in `okx.websocket.login.LoginHandshake`.
   The read loop and the direct socket read share one rule for which frame
   answers a login; behaviour is unchanged (ADR-0012).
+- Pagination validates the cursor in `okx.pagination`; `OkxClient.paginate`
+  only forwards. Both entries raise the same message, naming the method
+  (ADR-0013).
 
 ### Fixed
 - `FundingAPI.get_deposit_lightning` sent only `to`: `ccy` and `amt` were

@@ -1,4 +1,3 @@
-import inspect
 from typing import Any, Dict, Iterator, Optional
 
 from . import pagination
@@ -71,20 +70,11 @@ class OkxClient:
                  max_pages: Optional[int] = None) -> Iterator[Dict[str, Any]]:
         """Walk a list endpoint backwards, one record at a time.
 
-        `cursor` names the response field `after` refers to and is required;
-        see `okx.pagination.paginate`. Validation happens here rather than on
-        the first `next()`, so a wrong call fails at the call site.
+        Validation and the walk live in `okx.pagination.paginate`; this method
+        only forwards, so `api.paginate(...)` and `okx.pagination.paginate(...)`
+        behave identically (including failing at the call site when `cursor`
+        is missing).
         """
-        name = getattr(method, '__name__', str(method))
-        if not cursor:
-            if 'page' in inspect.signature(method).parameters:
-                raise ValueError(
-                    f"{name} pages by page number, not by cursor; call it directly with page="
-                )
-            raise ValueError(
-                f"cursor is required for {name}: name the response field 'after' "
-                "refers to, for example cursor='billId'"
-            )
         return pagination.paginate(method, cursor=cursor, params=params,
                                    page_size=page_size, max_pages=max_pages)
 
