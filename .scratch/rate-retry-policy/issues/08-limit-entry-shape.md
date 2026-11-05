@@ -17,3 +17,5 @@ Blocked by: 02
 5. 升级是否构成公开面变化（`RATE_LIMITS` 是 `okx.consts` 下可导入的常量），要不要进 ADR（0018 起）与 CHANGELOG 的 `### Migration`？
 
 只决策条目形状，不改 `okx/consts/rate_limits.py` / `okx/rate_limit.py`。
+
+> **来自 06 的输入（2026-11-06）**：[限流器形态与共享边界](06-limiter-shape.md) 已定「保持 per-Transport、per-path 滑动窗口、同步阻塞、纯数据」；06 只管**当前二元组 + per-path 计数**下的形态。本工单可自由定表的 value 形状，但若决定**让计数维度参与计数**或改用 **UTC 0:00 固定窗口**，那属于 limiter 形态变更，需新开工单重审、不由 08 顺带替 06 拍。另：把 `per day` 写成 86400 秒滑动窗口并不等价于「UTC 0:00 重置」（06 的 Known limitation）。解本工单时先 zoom 06 的 Answer。
