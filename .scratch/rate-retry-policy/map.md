@@ -9,7 +9,7 @@ Labels: wayfinder:map
 ## Notes
 
 - 领域：REST 传输层限流（`okx/consts/rate_limits.py`、`okx/rate_limit.py`）与重试（`okx/transport.py`、ADR-0003）。当前表只有 8 条路径、表外端点不限流；`rate_limit=False`、`max_retries=0` 均默认关闭。
-- 术语（Q2 已定，02 与 04 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」再分立为 `replayable`（能不能发第二次）与 `transient`（这次失败值不值得重发）；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
+- 术语（Q2 已定，02、04、05 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」再分立为 `replayable`（能不能发第二次）与 `transient`（这次失败值不值得重发）；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。`rate_limit=True` 只指「表内 8 条路径的阻塞式滑动窗口」、`max_retries=N` 只指「对 `replayable ∩ transient` 的失败最多重发 N 次」，均非「全局限流 / 所有请求重试」。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
 - 事实与决策分工（Q3 已定）：口径（目标账户层级、文档快照日期、表外端点默认处置）由人在 HITL 工单拍板；外部文档事实由 `research`（AFK）工单查回；「查文档」本身不算决策工单。work-through 阶段新建的 research 工单创建后留在 frontier、不主动 fire 子代理（charting 步骤 5 才 fire）。
 - 顺序细化：[OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md) 先铺事实、[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 基于事实拍板，故后者 blocked by 前者。这样 charting 阶段能立刻 fire AFK research，口径也不至于凭空定；Q3 的分工不变。
 - 工单格式：本地 tracker，见 `docs/agents/issue-tracker.md` 的「Wayfinding operations」。`Type:` 行表达 `wayfinder:<type>` 标签；`Status: open` = 未认领，认领改 `claimed`，解完改 `resolved`；`Blocked by:` 写编号，无阻塞写 `—`。
@@ -23,6 +23,7 @@ Labels: wayfinder:map
 - [采用哪个账户层级口径与文档快照](issues/02-limit-scope.md)：数值取官方端点详情页固定值、不按 VIP 分级，删 `rate_limits.py` 的 floor / stable 注释；「表外」定名「未收录端点」并维持不限流、不兜底；快照 2026-11-06；口径落注释 + README、不新建 ADR；覆盖目标移到 03。
 - [表外端点怎么处置、表要不要全量补全](issues/03-table-coverage.md)：覆盖验收线定为「官方已公布限额且与项目路径常量对应的端点」，不以 274 为分母；spec 只给判定规则与取数方法、不列最终表；未收录端点维持不限流 / 不兜底（归 02）；断言按验收线集合、实现依赖 09；条目形状归 08。
 - [重试判定是否改动](issues/04-retry-judgement.md)：ADR-0003 三条全维持（幂等键集合、可重试码、GET 一律 replayable 都不动）；`replayable=True` 逃生口保留并写进文档、不翻按端点白名单；429/5xx 优先、TransportError 不走 `_is_transient`、`raise_on_error=False` 永不重试按现状记录；无公开面变化、不建 ADR 不写 Migration；外部事实缺口开 11，后续由 12 承接。
+- [两个默认开关是否从 off 改 on](issues/05-default-switches.md)：`rate_limit` 与 `max_retries` 都保持 off（三选一取「都不翻」）；理由为表仅 8 条、判定原状下重试不透明、ADR-0004 要求小破坏性需求攒着；无公开面变化、不建 ADR、不写 Migration 行、不改现有措辞；README 补偿说明归 07；重开条件写 Out of scope。
 
 ## Not yet specified
 
@@ -37,3 +38,4 @@ Labels: wayfinder:map
 - 把策略落成代码、发版，以及把本地积压提交推到 origin。
 - 新建 `GLOSSARY.md`：两轮评审都记过，属 E 类小任务；本图不产该文件。
 - 把端点表补全到验收线（官方已公布限额的端点）是施工，不是决策。
+- 在表补全到 03 的验收线后重新评估两个默认开关是否翻：属新的破坏性批次 / 新 effort，本图不处理（触发条件见 [两个默认开关是否从 off 改 on](issues/05-default-switches.md) 的 Answer）。
