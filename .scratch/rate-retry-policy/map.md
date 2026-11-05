@@ -9,8 +9,8 @@ Labels: wayfinder:map
 ## Notes
 
 - 领域：REST 传输层限流（`okx/consts/rate_limits.py`、`okx/rate_limit.py`）与重试（`okx/transport.py`、ADR-0003）。当前表只有 8 条路径、表外端点不限流；`rate_limit=False`、`max_retries=0` 均默认关闭。
-- 术语（Q2 已定，[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」另立；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
-- 事实与决策分工（Q3 已定）：口径（目标账户层级、文档快照日期、表外端点默认处置）由人在 HITL 工单拍板；外部文档事实由 `research`（AFK）工单查回；「查文档」本身不算决策工单。
+- 术语（Q2 已定，02 与 04 的 Answer 增补）：「覆盖」只指**端点路径是否进 `RATE_LIMITS` 表**；「重试判定」再分立为 `replayable`（能不能发第二次）与 `transient`（这次失败值不值得重发）；「账户层级口径」不再指 VIP 分级、改指「数值来源口径」；「表外端点」定名为「未收录端点」（项目未收录，非官方未公布）。本轮不新建 `GLOSSARY.md`（`docs/agents/domain.md` 要求缺失时静默略过）。
+- 事实与决策分工（Q3 已定）：口径（目标账户层级、文档快照日期、表外端点默认处置）由人在 HITL 工单拍板；外部文档事实由 `research`（AFK）工单查回；「查文档」本身不算决策工单。work-through 阶段新建的 research 工单创建后留在 frontier、不主动 fire 子代理（charting 步骤 5 才 fire）。
 - 顺序细化：[OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md) 先铺事实、[采用哪个账户层级口径与文档快照](issues/02-limit-scope.md) 基于事实拍板，故后者 blocked by 前者。这样 charting 阶段能立刻 fire AFK research，口径也不至于凭空定；Q3 的分工不变。
 - 工单格式：本地 tracker，见 `docs/agents/issue-tracker.md` 的「Wayfinding operations」。`Type:` 行表达 `wayfinder:<type>` 标签；`Status: open` = 未认领，认领改 `claimed`，解完改 `resolved`；`Blocked by:` 写编号，无阻塞写 `—`。
 - 默认工单类型 `grilling`（HITL，配 `/grilling` + `/domain-modeling`）；`research` 为 AFK，可并行。每会话只解一张（research 例外）。
@@ -22,10 +22,11 @@ Labels: wayfinder:map
 - [OKX 官方限流文档的事实结构](issues/01-okx-rate-limit-docs.md)：官方无集中限额表，数值分散在各端点详情；窗口不统一、普通端点不按 VIP 分层、表外端点无通用政策表述；现有 8 条数值全部对得上，但官方还带计数维度与 REST/WS 共享等信息。全文在 `research/okx-rate-limit-docs` 分支（永不合并）。
 - [采用哪个账户层级口径与文档快照](issues/02-limit-scope.md)：数值取官方端点详情页固定值、不按 VIP 分级，删 `rate_limits.py` 的 floor / stable 注释；「表外」定名「未收录端点」并维持不限流、不兜底；快照 2026-11-06；口径落注释 + README、不新建 ADR；覆盖目标移到 03。
 - [表外端点怎么处置、表要不要全量补全](issues/03-table-coverage.md)：覆盖验收线定为「官方已公布限额且与项目路径常量对应的端点」，不以 274 为分母；spec 只给判定规则与取数方法、不列最终表；未收录端点维持不限流 / 不兜底（归 02）；断言按验收线集合、实现依赖 09；条目形状归 08。
+- [重试判定是否改动](issues/04-retry-judgement.md)：ADR-0003 三条全维持（幂等键集合、可重试码、GET 一律 replayable 都不动）；`replayable=True` 逃生口保留并写进文档、不翻按端点白名单；429/5xx 优先、TransportError 不走 `_is_transient`、`raise_on_error=False` 永不重试按现状记录；无公开面变化、不建 ADR 不写 Migration；外部事实缺口开 11，后续由 12 承接。
 
 ## Not yet specified
 
-- **限流与重试的相互作用**：重试的那一次尝试是否再占一个限流配额、服务端 429 是否触发自适应退避。现在只能看出「这里有个交互问题」，要等 [重试判定是否改动](issues/04-retry-judgement.md) 与 [限流器形态与共享边界](issues/06-limiter-shape.md) 的答案才能拆成能拍板的决策。
+- **限流与重试的相互作用**：现状已由 [重试判定是否改动](issues/04-retry-judgement.md) 的代码核查明确——`okx/transport.py:113-114` 里每次尝试都 `_limiter.acquire(path)`，即每次重试都占一个限流配额；429 走固定指数退避、不与限流器联动。但「占不占配额 / 退避要不要联动」从未被决策过，04 维持判定原状未改变其形状；要等 [限流器形态与共享边界](issues/06-limiter-shape.md) 定了形态后才拍「要不要改」。
 - **分页 / 批量调用下限额的计量单位**：`paginate()` 每页都走同一路径，限流按 HTTP 请求计还是按一次逻辑操作计。03 已定验收线但没定计量单位，要等 [限流器形态与共享边界](issues/06-limiter-shape.md) 定了才问得准。
 
 ## Out of scope

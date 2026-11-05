@@ -16,3 +16,5 @@ Blocked by: 03, 04, 05, 06
 依赖 [表外端点怎么处置、表要不要全量补全](03-table-coverage.md)、[重试判定是否改动](04-retry-judgement.md)、[两个默认开关是否从 off 改 on](05-default-switches.md)、[限流器形态与共享边界](06-limiter-shape.md)，因为要等所有决策定了才知道要写什么。本工单只定「文档结构与归属」，不写正文、不改文件。
 
 > **来自 02 / 03 / 10 的输入（2026-11-06）**：02 定下 README.md:113 免责声明「保留为行为描述，但不再被读成官方没给值」，03 把具体行文归本工单；03 另把表覆盖断言的口径定为「验收线集合」（不是 274 分母），实现归施工。10 会拍板数值变更进 CHANGELOG 的哪一段，本工单定文档结构时预留该位置。
+
+> **来自 04 的输入（2026-11-06）**：04 维持 ADR-0003 三条原状、无公开面变化，因此 **04 不贡献 `### Migration` 行、也不新建 ADR**。但有两处说明需写进文档：① `Transport.request` / `OkxClient.request` 的 `replayable=True` 显式覆盖入口（`okx/transport.py:78`、`okx/okxclient.py:31,38`）；② `raise_on_error=False` 时永不重试（README.md:111 与 CHANGELOG.md:330 目前未说明）。ADR-0003 要不要补一句说明也由本工单统一判断；若 [OKX 官方幂等键、瞬时业务码与 GET 副作用端点核查](11-idempotency-and-error-codes.md) 查出确凿遗漏、由 [11 的事实要不要改重试判定](12-retry-facts-followup.md) 决定改动，届时再判断 ADR 与 Migration 归属。
