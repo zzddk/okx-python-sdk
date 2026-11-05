@@ -1,38 +1,16 @@
 """
-Unit tests for okx.MarketData MarketAPI.get_rpi_orderbook — TD 0.4.4 item #1
-(GET /api/v5/market/books-rpi). Mirrors get_orderbook.
+Unit tests for okx.MarketData constants.
+
+The endpoint surface itself is covered by test_endpoint_table.py.
 """
 import unittest
-from unittest.mock import patch
-from okx.MarketData import MarketAPI
+
 from okx import consts as c
-from .fakes import FakeTransport
-
-_STUB_ID = 'test_key'
-_STUB_SIGN = 'test_secret'
-_STUB_PHRASE = 'test_pass'
 
 
-class TestGetRpiOrderbook(unittest.TestCase):
-    def setUp(self):
-        self.api = MarketAPI(FakeTransport())
-
+class TestMarketConstants(unittest.TestCase):
     def test_books_rpi_constant_path(self):
         self.assertEqual(c.MARKET_BOOKS_RPI, '/api/v5/market/books-rpi')
-
-    @patch.object(MarketAPI, 'request')
-    def test_get_rpi_orderbook_required_only(self, mock_request):
-        mock_request.return_value = {'code': '0'}
-        self.api.get_rpi_orderbook(instId='BTC-USDT-SWAP')
-        mock_request.assert_called_once_with(
-            c.GET, c.MARKET_BOOKS_RPI, {'instId': 'BTC-USDT-SWAP', 'sz': None})
-
-    @patch.object(MarketAPI, 'request')
-    def test_get_rpi_orderbook_with_sz(self, mock_request):
-        mock_request.return_value = {'code': '0'}
-        self.api.get_rpi_orderbook(instId='BTC-USDT-SWAP', sz='50')
-        mock_request.assert_called_once_with(
-            c.GET, c.MARKET_BOOKS_RPI, {'instId': 'BTC-USDT-SWAP', 'sz': '50'})
 
 
 if __name__ == '__main__':
