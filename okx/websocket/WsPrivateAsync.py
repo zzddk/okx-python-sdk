@@ -12,6 +12,7 @@ from okx.websocket.WsBaseAsync import Callback, WsBaseAsync
 
 class WsPrivateAsync(WsBaseAsync):
     _LOGIN_REQUIRED = True
+    _DEFAULT_URL = consts.WS_PRIVATE_URL
 
     # "is demo trading" -> endpoint; the mapping itself lives in
     # okx.websocket.config.session_config.
@@ -40,7 +41,7 @@ class WsPrivateAsync(WsBaseAsync):
         apiKey: str,
         passphrase: str,
         secretKey: str,
-        url: str = consts.WS_PRIVATE_URL,
+        url: Optional[str] = None,
         debug: bool = False,
         **options: Any,
     ) -> None:

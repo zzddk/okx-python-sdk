@@ -164,6 +164,8 @@ async def main(transport):
     await ws.stop()                                       # also cancels the supervisor
 ```
 
+`start()` restores the session before it returns: a private client logs in first, and a rejected login raises `ConnectionError` from `start()`. After a reconnect the same restore runs before new frames are routed.
+
 The client sends a `ping` every 25 seconds and treats a missing `pong` as a dead connection. After a drop it reconnects with exponential backoff (1s doubling to 60s) and replays every subscription it knows about. Tune it with `ping_interval`, `ping_timeout`, `reconnect`, `reconnect_backoff` and `reconnect_max_backoff`; pass `reconnect=False` to keep the pre-0.9 behaviour where the returned task surfaces the connection error instead of retrying. Pong frames are handled by the heartbeat and are not passed to the callback.
 
 ### Development Setup

@@ -1,7 +1,7 @@
 """Open WebSocket connections, optionally through a proxy.
 
 The connector is the injection seam for the socket: it returns a connection
-and keeps no reference to it, so `WsBaseAsync.websocket` stays the only
+and keeps no reference to it, so the connection supervisor stays the only
 holder. Proxy support arrived in websockets 15.0 while this package accepts
 10.0 and later, which is why the capability is probed on the live signature
 instead of being derived from a version string.

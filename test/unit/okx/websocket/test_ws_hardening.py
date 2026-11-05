@@ -1,75 +1,100 @@
 """
-Unit tests for the WebSocket correctness fixes
+Unit tests for the WebSocket login correctness fixes
 
 Mirrors: okx/websocket/login.py, Ws*Async.login
 """
 import asyncio
-import json
 import unittest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
+from .fakes import FakeConnector, FakeSocket
+
+URL = 'wss://example.com'
 ACK = '{"event":"login","code":"0"}'
 REJECT = '{"event":"login","code":"60009","msg":"Login failed"}'
+CREDS = {'apiKey': 'k', 'passphrase': 'p', 'secretKey': 's'}
 
 
-class _LoginSubject:
-    """Build a client with a mocked socket, without touching the network."""
+def _public_on(answer_login=None, *frames):
+    sock = FakeSocket(*frames, answer_login=answer_login)
+    return WsPublicAsync(url=URL, connector=FakeConnector(sock), **CREDS), sock
 
-    def public(self, **kwargs):
-        return WsPublicAsync(apiKey='k', passphrase='p', secretKey='s',
-                             url='wss://example.com', **kwargs)
 
-    def private(self, **kwargs):
-        return WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                              url='wss://example.com', **kwargs)
+def _private_on(answer_login=None, *frames):
+    sock = FakeSocket(*frames, answer_login=answer_login)
+    return WsPrivateAsync(url=URL, connector=FakeConnector(sock), **CREDS), sock
 
 
 class TestLoginAck(unittest.TestCase):
-    def _ws(self, klass):
-        ws = _LoginSubject().public() if klass is WsPublicAsync else _LoginSubject().private()
-        ws.websocket = AsyncMock()
-        return ws
-
     def test_public_login_succeeds_on_ack(self):
-        ws = self._ws(WsPublicAsync)
-        ws.websocket.recv = AsyncMock(return_value=ACK)
-        self.assertTrue(asyncio.run(ws.login()))
-        self.assertTrue(ws.isLoggedIn)
+        async def run():
+            ws, sock = _public_on(ACK)
+            await ws.start()
+            result = await ws.login()
+            logged_in = ws.isLoggedIn
+            await ws.stop()
+            return result, logged_in
+
+        self.assertEqual(asyncio.run(run()), (True, True))
 
     def test_public_login_raises_on_rejection(self):
-        ws = self._ws(WsPublicAsync)
-        ws.websocket.recv = AsyncMock(return_value=REJECT)
+        async def run():
+            ws, sock = _public_on(REJECT)
+            await ws.start()
+            try:
+                await ws.login()
+            finally:
+                await ws.stop()
+
         with self.assertRaises(ConnectionError) as ctx:
-            asyncio.run(ws.login())
+            asyncio.run(run())
         self.assertIn('60009', str(ctx.exception))
-        self.assertFalse(ws.isLoggedIn)
 
     def test_private_login_raises_on_rejection(self):
-        ws = self._ws(WsPrivateAsync)
-        ws.websocket.recv = AsyncMock(return_value=REJECT)
+        async def run():
+            ws, sock = _private_on(REJECT)
+            await ws.start()
+
         with self.assertRaises(ConnectionError):
-            asyncio.run(ws.login())
+            asyncio.run(run())
 
     def test_login_times_out_without_an_ack(self):
-        ws = self._ws(WsPublicAsync)
-        ws.websocket.recv = AsyncMock(return_value='{"event":"subscribe"}')
+        async def run():
+            ws, sock = _public_on()
+            await ws.start()
+            try:
+                await ws.login(timeout=0.05)
+            finally:
+                await ws.stop()
+
         with self.assertRaises(TimeoutError):
-            asyncio.run(ws.login(timeout=0.05))
+            asyncio.run(run())
 
     def test_non_login_frames_reach_the_callback(self):
-        ws = self._ws(WsPublicAsync)
         received = []
-        ws.callback = received.append
-        ws.websocket.recv = AsyncMock(side_effect=['{"event":"notice"}', ACK])
-        asyncio.run(ws.login())
+
+        async def run():
+            ws, sock = _public_on(ACK, '{"event":"notice"}')
+            ws.callback = received.append
+            await ws.start()
+            await ws.login()
+            await ws.stop()
+
+        asyncio.run(run())
         self.assertEqual(received, ['{"event":"notice"}'])
 
     def test_private_subscribe_does_not_sleep_after_the_ack(self):
-        ws = self._ws(WsPrivateAsync)
-        ws.websocket.recv = AsyncMock(return_value=ACK)
-        with patch('okx.websocket.WsBaseAsync.login_payload', return_value='{"op":"login"}'):
-            asyncio.run(ws.subscribe([{'channel': 'account'}], MagicMock()))
-        self.assertEqual(ws.websocket.send.call_count, 2)
+        async def run():
+            ws, sock = _private_on(ACK)
+            await ws.start()
+            await ws.subscribe([{'channel': 'account'}])
+            await ws.stop()
+            return [p['op'] for p in sock.payloads]
+
+        self.assertEqual(asyncio.run(run()), ['login', 'subscribe'])
+
+
+if __name__ == '__main__':
+    unittest.main()

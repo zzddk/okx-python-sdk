@@ -3,15 +3,13 @@
 A private channel answers a login request with exactly one frame:
 `{"event": "login", "code": "0"}` when accepted, a non-zero `code` when
 rejected. Everything that decides *which* frame answers the request and *what
-counts as a rejection* lives here, so the two ways a session can receive that
-frame share one rule:
+counts as a rejection* lives here, so every frame the session reads goes
+through one rule.
 
-- the read loop feeds every parsed frame through `feed()`;
-- when no reader is running (between a reconnect and the reader restart, or
-  after `connect()` and before `start()`), `read()` pulls frames from the
-  socket itself and hands everything else to `deliver`.
-
-Both paths settle the same state; `wait()` is how the read-loop case blocks.
+The read loop feeds every parsed frame through `feed()`; `wait()` is how the
+request blocks until its answer arrives. The reader always runs once the
+connection supervisor has opened the socket, so there is no second path that
+reads the socket itself.
 
 `login_payload()` builds the request those paths wait for: the message the
 server expects is `str(timestamp) + 'GET' + '/users/self/verify'`, signed with
@@ -24,13 +22,11 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from typing import Any, Awaitable, Callable
+from typing import Any
 
 from okx import utils
 
 DEFAULT_LOGIN_TIMEOUT = 10.0
-
-Deliver = Callable[[str], Awaitable[None]]
 
 
 def login_payload(
@@ -73,7 +69,7 @@ class LoginHandshake:
     def __init__(self, timeout: float = DEFAULT_LOGIN_TIMEOUT) -> None:
         self.timeout = timeout
         self._answer = asyncio.Event()
-        self._rejection: ConnectionError | None = None
+        self._rejection: BaseException | None = None
 
     @staticmethod
     def is_ack(payload: Any) -> bool:
@@ -103,6 +99,17 @@ class LoginHandshake:
             self._answer.set()
         return True
 
+    def abort(self, error: BaseException) -> None:
+        """End the wait early because the connection is gone.
+
+        A socket that dies while the login request is in flight never answers.
+        Without this the caller would wait out the full timeout; the read loop
+        reports the loss, and whoever owns the handshake turns it into this.
+        """
+        if not self._answer.is_set():
+            self._rejection = error
+            self._answer.set()
+
     async def wait(self) -> None:
         """Block until `feed()` takes the answer, then raise or return."""
         try:
@@ -111,29 +118,6 @@ class LoginHandshake:
             raise TimeoutError(self._timeout_message()) from None
         if self._rejection is not None:
             raise self._rejection
-
-    async def read(self, websocket: Any, parse: Callable[[Any], Any],
-                   deliver: Deliver) -> None:
-        """Read the socket until the answer arrives.
-
-        Frames that are not the answer are handed to `deliver` — during a
-        reconnect they are pushed data the caller still expects to see.
-        """
-        loop = asyncio.get_running_loop()
-        deadline = loop.time() + self.timeout
-        while True:
-            remaining = deadline - loop.time()
-            if remaining <= 0:
-                raise TimeoutError(self._timeout_message())
-            try:
-                message = await asyncio.wait_for(websocket.recv(), timeout=remaining)
-            except asyncio.TimeoutError:
-                raise TimeoutError(self._timeout_message()) from None
-            if self.feed(parse(message)):
-                if self._rejection is not None:
-                    raise self._rejection
-                return
-            await deliver(message)
 
     def _timeout_message(self) -> str:
         return f"no login acknowledgement within {self.timeout}s"

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Optional
+from typing import ClassVar, Optional
 
 from okx import consts
 from okx.transport import Transport
@@ -11,6 +11,8 @@ from okx.websocket.WsBaseAsync import WsBaseAsync
 
 
 class WsPublicAsync(WsBaseAsync):
+    _DEFAULT_URL = consts.WS_PUBLIC_URL
+
     # channel -> {"is demo trading": endpoint}. A channel is only meaningful for
     # a real transport, so the transport is checked first.
     _CHANNELS: ClassVar[dict[str, dict[bool, str]]] = {
@@ -36,21 +38,3 @@ class WsPublicAsync(WsBaseAsync):
         if not isinstance(channel, str) or channel not in cls._CHANNELS:
             raise ValueError(f"channel must be 'public' or 'business', got {channel!r}")
         return cls(**session_config(transport, cls._CHANNELS[channel], url=url, debug=debug))
-
-    def __init__(
-        self,
-        url: str = consts.WS_PUBLIC_URL,
-        apiKey: str = '',
-        passphrase: str = '',
-        secretKey: str = '',
-        debug: bool = False,
-        **options: Any,
-    ) -> None:
-        super().__init__(
-            url=url,
-            apiKey=apiKey,
-            passphrase=passphrase,
-            secretKey=secretKey,
-            debug=debug,
-            **options,
-        )

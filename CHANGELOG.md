@@ -5,6 +5,15 @@ All notable changes to `python-okx` are documented in this file.
 ## [Unreleased]
 
 ### Changed
+- `WsBaseAsync.start()` now restores the session before returning: it opens the
+  connection, starts the read loop, then marks the connection unlogged, drops
+  replies owed to the old one, logs in when this session needs to, and replays
+  its subscriptions. `WsPrivateAsync.start()` therefore authenticates; a
+  rejected login raises `ConnectionError` from `start()`. `login()` now
+  requires a prior `start()`.
+- `WsBaseAsync.websocket` and `WsBaseAsync.isLoggedIn` are read-only
+  properties. The socket is owned by the connection supervisor, and the login
+  flag is written only by the session itself.
 - `paginate()` projects the request before walking: `params={'before': ...}` and
   `params={'limit': ...}` now raise `ValueError` at the call site instead of
   being forwarded, so one direction and one page-size knob are enforced.
@@ -23,6 +32,11 @@ All notable changes to `python-okx` are documented in this file.
   which it previously skipped.
 
 ### Removed
+- `WsBaseAsync.connect()` and `WsBaseAsync.consume()`. The connection
+  supervisor opens the socket and runs the read loop; `start()` is the entry
+  that does both (and `stop()` the one that tears them down).
+- `LoginHandshake.read()`, the path that read the socket itself when no reader
+  was running. The reader always runs once the supervisor has connected.
 - `okx.websocket.WsUtils` is gone. `initLoginParams` and `getLocalTime` had
   one caller (`WsBaseAsync.login`) and one purpose; the login request is now
   built by `okx.websocket.login.login_payload()`, which also takes the

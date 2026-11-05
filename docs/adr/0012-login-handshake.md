@@ -1,5 +1,7 @@
 # 登录协议收进一个握手对象，两条读帧路径共用它
 
+> 2026-11-05 补记：ADR-0016 让连接监督者在每次连上后先起读循环，再跑会话的 `on_ready`，因此「没有读循环」那条路径不再存在，`LoginHandshake.read()` 与 `_consuming()` 已随 03 删除。本文其余部分记录的是当时的取舍。
+
 `WsBaseAsync.login()` 有两种等回执的方式：读循环在跑时，它把 future 挂在 `_login_waiter` 上，由 `_handle_message` 结算；读循环没跑时（重连后、或 `connect()` 之后 `start()` 之前），`_read_login_ack` 自己 `recv()`，把同一套判定再写一遍，还顺手把非登录帧 `_emit` 出去。
 
 于是「哪一帧算登录回执」「什么算拒绝」「超时说什么」这三件事各有两份实现；`_consuming()` 这个「谁在读 socket」的事实，则同时是 `_handle_message` 与 `login()` 的前提。

@@ -14,6 +14,8 @@ from okx.websocket.WsPublicAsync import WsPublicAsync
 
 from ..fakes import mock_transport
 
+from .fakes import FakeSocket
+
 PROXY = 'http://127.0.0.1:8080'
 
 # An arbitrary host table: session_config only chooses between the two entries.
@@ -142,18 +144,25 @@ class TestFromTransport(unittest.TestCase):
 
 
 class TestProxyInheritance(unittest.TestCase):
-    def test_connect_uses_the_proxy_recorded_on_the_transport(self):
+    def _start_and_stop(self, ws):
+        async def run():
+            await ws.start()
+            await ws.stop()
+        asyncio.run(run())
+
+    def test_start_uses_the_proxy_recorded_on_the_transport(self):
         seen = {}
 
         async def connect(url, *, ssl=None, proxy=None):
             seen['url'] = url
             seen['proxy'] = proxy
-            return object()
+            return FakeSocket()
 
-        ws = WsPrivateAsync.from_transport(_transport(proxy=PROXY))
+        ws = WsPublicAsync.from_transport(_transport(proxy=PROXY))
         with patch('okx.websocket.connector.websockets.connect', new=connect):
-            asyncio.run(ws.connect())
+            self._start_and_stop(ws)
 
+        self.assertEqual(seen['url'], ws.url)
         self.assertEqual(seen['proxy'], PROXY)
 
     def test_injecting_http_does_not_detach_websocket_from_the_environment(self):
@@ -162,11 +171,11 @@ class TestProxyInheritance(unittest.TestCase):
 
         async def connect(url, **kwargs):
             seen.update(kwargs)
-            return object()
+            return FakeSocket()
 
         ws = WsPublicAsync.from_transport(_transport())  # http= injected, no proxy
         with patch('okx.websocket.connector.websockets.connect', new=connect):
-            asyncio.run(ws.connect())
+            self._start_and_stop(ws)
 
         self.assertNotIn('proxy', seen)
 

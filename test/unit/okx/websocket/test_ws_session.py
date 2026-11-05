@@ -2,13 +2,12 @@
 Unit tests for the shared WebSocket session: callback contract, heartbeat,
 reconnect and subscription replay.
 
-Mirrors: okx/websocket/WsBaseAsync.py
+Mirrors: okx/websocket/WsBaseAsync.py, okx/websocket/connection.py
 """
 import asyncio
 import json
 import unittest
-from contextlib import suppress
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 from websockets.exceptions import ConnectionClosedError
 
@@ -16,10 +15,11 @@ from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 from okx.websocket.connector import WebSocketConnector
 
-from .fakes import FakeConnector
+from .fakes import FakeConnector, FakeSocket
 
 URL = 'wss://example.com'
 ACK = '{"event":"login","code":"0"}'
+REJECT = '{"event":"login","code":"60009","msg":"Login failed"}'
 
 
 def _public(**kwargs):
@@ -28,85 +28,95 @@ def _public(**kwargs):
     return WsPublicAsync(**kwargs)
 
 
-class _Messages:
-    def __init__(self, *messages):
-        self._messages = list(messages)
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self._messages:
-            return self._messages.pop(0)
-        raise StopAsyncIteration
+def _private(**kwargs):
+    kwargs.setdefault('url', URL)
+    kwargs.setdefault('ping_interval', 0)
+    return WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s', **kwargs)
 
 
-class _Socket:
-    def __init__(self):
-        self.sent = []
-        self.closed = False
+def _public_on(*frames, **socket_kwargs):
+    sock = FakeSocket(*frames, **socket_kwargs)
+    return _public(connector=FakeConnector(sock)), sock
 
-    async def send(self, payload):
-        self.sent.append(payload)
 
-    async def close(self):
-        self.closed = True
+def _private_on(*frames, **socket_kwargs):
+    sock = FakeSocket(*frames, **socket_kwargs)
+    return _private(connector=FakeConnector(sock)), sock
+
+
+async def _until(predicate, timeout: float = 1.0) -> None:
+    """Wait for a condition the reader task settles; fails loudly on timeout."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while not predicate():
+        if loop.time() > deadline:
+            raise AssertionError('condition not met before the deadline')
+        await asyncio.sleep(0.005)
 
 
 class TestCallbackContract(unittest.TestCase):
     def test_async_callback_is_awaited_in_order(self):
-        ws = _public()
-        seen = []
+        async def run():
+            sock = FakeSocket('a', 'b', ends=True)
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            seen = []
 
-        async def callback(message):
-            await asyncio.sleep(0)
-            seen.append(message)
+            async def callback(message):
+                await asyncio.sleep(0)
+                seen.append(message)
 
-        ws.callback = callback
-        ws.websocket = _Messages('a', 'b')
+            ws.callback = callback
+            task = await ws.start()
+            await asyncio.wait_for(task, timeout=1)
+            return seen
 
-        asyncio.run(ws.consume())
-        self.assertEqual(seen, ['a', 'b'])
+        self.assertEqual(asyncio.run(run()), ['a', 'b'])
 
     def test_sync_callback_still_works(self):
-        ws = _public()
-        seen = []
-        ws.callback = seen.append
-        ws.websocket = _Messages('a')
+        async def run():
+            sock = FakeSocket('a', ends=True)
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            seen = []
+            ws.callback = seen.append
+            task = await ws.start()
+            await asyncio.wait_for(task, timeout=1)
+            return seen
 
-        asyncio.run(ws.consume())
-        self.assertEqual(seen, ['a'])
+        self.assertEqual(asyncio.run(run()), ['a'])
 
     def test_callback_exception_does_not_end_the_stream(self):
-        ws = _public()
-        seen = []
+        async def run():
+            sock = FakeSocket('boom', 'after', ends=True)
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            seen = []
 
-        async def callback(message):
-            if message == 'boom':
-                raise RuntimeError('callback failed')
-            seen.append(message)
+            async def callback(message):
+                if message == 'boom':
+                    raise RuntimeError('callback failed')
+                seen.append(message)
 
-        ws.callback = callback
-        ws.websocket = _Messages('boom', 'after')
+            ws.callback = callback
+            task = await ws.start()
+            await asyncio.wait_for(task, timeout=1)
+            return seen
 
         with patch('okx.websocket.WsBaseAsync.logger.exception') as log:
-            asyncio.run(ws.consume())
+            seen = asyncio.run(run())
 
         self.assertEqual(seen, ['after'])
         log.assert_called_once()
 
-    def test_pong_is_not_delivered_and_sets_the_event(self):
-        ws = _public()
-        seen = []
-        ws.callback = seen.append
-
+    def test_pong_is_not_delivered(self):
         async def run():
-            ws._pong = asyncio.Event()
-            await ws._handle_message('pong')
-            return ws._pong.is_set()
+            sock = FakeSocket('pong', 'a', ends=True)
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            seen = []
+            ws.callback = seen.append
+            task = await ws.start()
+            await asyncio.wait_for(task, timeout=1)
+            return seen
 
-        self.assertTrue(asyncio.run(run()))
-        self.assertEqual(seen, [])
+        self.assertEqual(asyncio.run(run()), ['a'])
 
 
 class TestMessageRouting(unittest.TestCase):
@@ -114,13 +124,14 @@ class TestMessageRouting(unittest.TestCase):
 
     def test_two_channels_reach_their_own_callbacks(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             tickers, books = [], []
             await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], tickers.append)
             await ws.subscribe([{'channel': 'books', 'instId': 'BTC-USDT'}], books.append)
-            await ws._handle_message(json.dumps({'arg': {'channel': 'tickers', 'instId': 'BTC-USDT'}, 'data': ['t']}))
-            await ws._handle_message(json.dumps({'arg': {'channel': 'books', 'instId': 'BTC-USDT'}, 'data': ['b']}))
+            await ws._on_frame(json.dumps({'arg': {'channel': 'tickers', 'instId': 'BTC-USDT'}, 'data': ['t']}))
+            await ws._on_frame(json.dumps({'arg': {'channel': 'books', 'instId': 'BTC-USDT'}, 'data': ['b']}))
+            await ws.stop()
             return tickers, books
 
         tickers, books = asyncio.run(run())
@@ -129,11 +140,13 @@ class TestMessageRouting(unittest.TestCase):
 
     def test_unmatched_message_falls_back_to_callback(self):
         async def run():
-            ws = _public()
+            ws, sock = _public_on()
+            await ws.start()
             seen = []
             ws.callback = seen.append
             frame = json.dumps({'arg': {'channel': 'unknown'}, 'data': []})
-            await ws._handle_message(frame)
+            await ws._on_frame(frame)
+            await ws.stop()
             return seen, frame
 
         seen, frame = asyncio.run(run())
@@ -141,21 +154,24 @@ class TestMessageRouting(unittest.TestCase):
 
     def test_subscription_without_callback_falls_back(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             seen = []
             ws.callback = seen.append
             params = [{'channel': 'tickers', 'instId': 'BTC-USDT'}]
             await ws.subscribe(params, None)
-            await ws._handle_message(json.dumps({'arg': params[0], 'data': []}))
+            await ws._on_frame(json.dumps({'arg': params[0], 'data': []}))
+            await ws.stop()
             return seen
 
         self.assertEqual(len(asyncio.run(run())), 1)
 
     def test_unmatched_message_without_a_fallback_is_dropped(self):
         async def run():
-            ws = _public()
-            await ws._handle_message('{"arg": {"channel": "unknown"}}')
+            ws, sock = _public_on()
+            await ws.start()
+            await ws._on_frame('{"arg": {"channel": "unknown"}}')
+            await ws.stop()
 
         asyncio.run(run())
 
@@ -163,22 +179,17 @@ class TestMessageRouting(unittest.TestCase):
 class TestRequestRouting(unittest.TestCase):
     """One-shot responses are matched by id, not by arg."""
 
-    def _private(self):
-        ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                            url=URL, ping_interval=0)
-        ws.websocket = AsyncMock()
-        ws.websocket.recv = AsyncMock(return_value=ACK)
-        return ws
-
     def test_order_ack_goes_to_the_request_callback_once(self):
         async def run():
-            ws = self._private()
+            ws, sock = _private_on(answer_login=ACK)
+            await ws.start()
             fallback, routed = [], []
             ws.callback = fallback.append
             await ws.place_order([{'instId': 'BTC-USDT'}], callback=routed.append, id='o1')
             ack = json.dumps({'id': 'o1', 'op': 'order', 'data': []})
-            await ws._handle_message(ack)
-            await ws._handle_message(ack)
+            await ws._on_frame(ack)
+            await ws._on_frame(ack)
+            await ws.stop()
             return routed, fallback, ack
 
         routed, fallback, ack = asyncio.run(run())
@@ -187,11 +198,13 @@ class TestRequestRouting(unittest.TestCase):
 
     def test_callback_without_an_id_becomes_the_fallback(self):
         async def run():
-            ws = self._private()
+            ws, sock = _private_on(answer_login=ACK)
+            await ws.start()
             received = []
             callback = received.append
             await ws.place_order([{'instId': 'BTC-USDT'}], callback=callback)
-            await ws._handle_message(json.dumps({'op': 'order', 'data': []}))
+            await ws._on_frame(json.dumps({'op': 'order', 'data': []}))
+            await ws.stop()
             return ws, callback, received
 
         ws, callback, received = asyncio.run(run())
@@ -200,121 +213,124 @@ class TestRequestRouting(unittest.TestCase):
 
 
 class TestHeartbeat(unittest.TestCase):
-    def test_ping_is_sent_and_missing_pong_closes_the_socket(self):
+    def test_missing_pong_triggers_a_reconnect(self):
         async def run():
-            ws = _public(ping_interval=0.01, ping_timeout=0.01)
-            sock = _Socket()
-            ws.websocket = sock
-            ws._pong = asyncio.Event()
-            await asyncio.wait_for(ws._heartbeat_loop(), timeout=1)
-            return ws, sock
+            first, second = FakeSocket(), FakeSocket(answer_pings=True)
+            connector = FakeConnector(first, second)
+            ws = _public(connector=connector, ping_interval=0.01, ping_timeout=0.01,
+                         reconnect_backoff=0)
+            await ws.start()
+            await _until(lambda: len(connector.urls) == 2)
+            await ws.stop()
+            return first, connector
 
-        ws, sock = asyncio.run(run())
-        self.assertIn('ping', sock.sent)
-        self.assertTrue(sock.closed)
-        self.assertIsNone(ws.websocket)
+        first, connector = asyncio.run(run())
+        self.assertIn('ping', first.sent)
+        self.assertTrue(first.closed)
+        self.assertEqual(connector.urls, [URL, URL])
 
     def test_pong_keeps_the_connection_open(self):
         async def run():
-            ws = _public(ping_interval=0.01, ping_timeout=5)
-            sock = _Socket()
-            ws.websocket = sock
-            ws._pong = asyncio.Event()
-            task = asyncio.create_task(ws._heartbeat_loop())
-            while not sock.sent:
-                await asyncio.sleep(0.001)
-            ws._pong.set()
-            await asyncio.sleep(0.05)
-            task.cancel()
-            with suppress(asyncio.CancelledError):
-                await task
-            return sock
+            sock = FakeSocket(answer_pings=True)
+            connector = FakeConnector(sock)
+            ws = _public(connector=connector, ping_interval=0.01, ping_timeout=0.05)
+            await ws.start()
+            await _until(lambda: sock.sent.count('ping') >= 2)
+            await ws.stop()
+            return sock, connector
 
-        self.assertFalse(asyncio.run(run()).closed)
+        sock, connector = asyncio.run(run())
+        self.assertEqual(connector.urls, [URL])
+        self.assertGreaterEqual(sock.sent.count('ping'), 2)
 
 
-class _AckSocket:
-    """Yields one scripted frame, then ends the stream."""
-
-    def __init__(self, frame):
-        self.frame = frame
-        self.sent = []
-        self._yielded = False
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        if self._yielded:
-            raise StopAsyncIteration
-        self._yielded = True
-        return self.frame
-
-    async def send(self, payload):
-        self.sent.append(payload)
-
-
-class _RecvSocket:
-    """Answers `recv()` from a script; used where no reader is running."""
-
-    def __init__(self, *frames):
-        self._frames = list(frames)
-        self.sent = []
-
-    async def recv(self):
-        if not self._frames:
-            await asyncio.sleep(3600)
-        return self._frames.pop(0)
-
-    async def send(self, payload):
-        self.sent.append(payload)
-
-
-class TestLoginThroughTheReader(unittest.TestCase):
-    def _run(self, frame):
+class TestLogin(unittest.TestCase):
+    def test_private_start_logs_in_through_the_reader(self):
         async def run():
-            ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                                url=URL, ping_interval=0, reconnect=False)
-            ws.connect = AsyncMock()
-            ws.websocket = _AckSocket(frame)
-            task = await ws.start()
-            await ws.login()
-            await asyncio.wait_for(task, timeout=1)
-            return ws
+            ws, sock = _private_on(answer_login=ACK)
+            await ws.start()
+            logged_in = ws.isLoggedIn
+            await ws.stop()
+            return logged_in
 
-        return asyncio.run(run())
+        self.assertTrue(asyncio.run(run()))
 
-    def test_ack_is_delivered_by_the_running_reader(self):
-        self.assertTrue(self._run(ACK).isLoggedIn)
-
-    def test_rejection_is_delivered_by_the_running_reader(self):
-        with self.assertRaises(ConnectionError):
-            self._run('{"event":"login","code":"60009","msg":"Login failed"}')
-
-
-class TestLoginWithoutAReader(unittest.TestCase):
-    def test_frames_before_the_answer_reach_the_callback(self):
+    def test_a_rejected_login_fails_start(self):
         async def run():
-            ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                                url=URL, ping_interval=0)
-            data = '{"arg": {"channel": "account"}, "data": [{"bal": "1"}]}'
-            ws.websocket = _RecvSocket(data, ACK)
-            seen = []
-            ws.callback = seen.append
-            await ws.login()
-            return ws, seen
+            ws, sock = _private_on(answer_login=REJECT)
+            await ws.start()
 
-        ws, seen = asyncio.run(run())
-        self.assertTrue(ws.isLoggedIn)
-        self.assertEqual(len(seen), 1)
-        self.assertIn('"bal"', seen[0])
+        with self.assertRaises(ConnectionError) as ctx:
+            asyncio.run(run())
+        self.assertIn('60009', str(ctx.exception))
+
+    def test_a_drop_during_login_fails_instead_of_waiting_for_the_timeout(self):
+        """The socket dying while the request is in flight is not a 10s wait."""
+        async def run():
+            sock = FakeSocket()
+            ws = _private(connector=FakeConnector(sock), reconnect_backoff=0)
+
+            async def drop_once_the_request_is_out():
+                await _until(lambda: bool(sock.sent))
+                sock.drop()
+
+            asyncio.create_task(drop_once_the_request_is_out())
+            with self.assertRaises(ConnectionError):
+                await asyncio.wait_for(ws.start(), timeout=1)
+
+        asyncio.run(run())
+
+    def test_login_requires_start(self):
+        ws = _private()
+        with self.assertRaises(RuntimeError) as ctx:
+            asyncio.run(ws.login())
+        self.assertIn('start() must be called before login()', str(ctx.exception))
+
+    def test_public_login_waits_for_the_ack_and_sets_the_latch(self):
+        async def run():
+            sock = FakeSocket(answer_login=ACK)
+            ws = _public(connector=FakeConnector(sock), apiKey='k', passphrase='p', secretKey='s')
+            await ws.start()
+            self.assertFalse(ws.isLoggedIn)
+            self.assertTrue(await ws.login(timeout=1))
+            logged_in = ws.isLoggedIn
+            await ws.stop()
+            return logged_in
+
+        self.assertTrue(asyncio.run(run()))
+
+    def test_login_times_out_without_an_ack(self):
+        async def run():
+            sock = FakeSocket()
+            ws = _public(connector=FakeConnector(sock), apiKey='k', passphrase='p', secretKey='s')
+            await ws.start()
+            try:
+                await ws.login(timeout=0.05)
+            finally:
+                await ws.stop()
+
+        with self.assertRaises(TimeoutError):
+            asyncio.run(run())
+
+    def test_non_login_frames_reach_the_callback(self):
+        async def run():
+            sock = FakeSocket('{"event":"notice"}', answer_login=ACK)
+            ws = _public(connector=FakeConnector(sock), apiKey='k', passphrase='p', secretKey='s')
+            received = []
+            ws.callback = received.append
+            await ws.start()
+            await ws.login(timeout=1)
+            await ws.stop()
+            return received
+
+        self.assertEqual(asyncio.run(run()), ['{"event":"notice"}'])
 
 
 class TestSubscriptionRegistry(unittest.TestCase):
     def test_subscribe_records_and_unsubscribe_removes(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             tickers = {'channel': 'tickers', 'instId': 'BTC-USDT'}
             books = {'channel': 'books', 'instId': 'BTC-USDT'}
             await ws.subscribe([tickers], None)
@@ -323,56 +339,60 @@ class TestSubscriptionRegistry(unittest.TestCase):
             self.assertEqual(len(ws.subscriptions), 2)
             await ws.unsubscribe([tickers], None)
             self.assertEqual(list(ws.subscriptions.values()), [books])
+            await ws.stop()
 
         asyncio.run(run())
 
     def test_subscribe_rejects_a_blank_channel_before_sending(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             for arg in ({'channel': '   ', 'instId': 'BTC-USDT'}, {'instId': 'BTC-USDT'}):
                 with self.subTest(arg=arg):
                     with self.assertRaises(ValueError):
                         await ws.subscribe([arg], None)
-            return ws
+            await ws.stop()
+            return ws, sock
 
-        ws = asyncio.run(run())
+        ws, sock = asyncio.run(run())
         self.assertEqual(ws.subscriptions, {})
-        ws.websocket.send.assert_not_awaited()
+        self.assertEqual(sock.sent, [])
 
     def test_subscribe_rejects_the_whole_batch_before_touching_anything(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], None)
             with self.assertRaises(ValueError):
                 await ws.subscribe([{'channel': 'books'}, 'x'], None)
-            return ws
+            await ws.stop()
+            return ws, sock
 
-        ws = asyncio.run(run())
+        ws, sock = asyncio.run(run())
         self.assertEqual(
             ws.subscriptions,
             {json.dumps({'channel': 'tickers', 'instId': 'BTC-USDT'}, sort_keys=True):
              {'channel': 'tickers', 'instId': 'BTC-USDT'}},
         )
-        self.assertEqual(len(ws.websocket.send.await_args_list), 1)
+        self.assertEqual(len(sock.payloads), 1)
 
     def test_unsubscribe_rejects_an_unroutable_arg(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             arg = {'channel': 'tickers', 'instId': 'BTC-USDT'}
             await ws.subscribe([arg], None)
             for bad in ({'channel': '  '}, {'instId': 'BTC-USDT'}, 'x'):
                 with self.subTest(bad=bad):
                     with self.assertRaises(ValueError):
                         await ws.unsubscribe([bad], None)
-            return ws, arg
+            await ws.stop()
+            return ws, sock, arg
 
-        ws, arg = asyncio.run(run())
+        ws, sock, arg = asyncio.run(run())
         self.assertEqual(len(ws.subscriptions), 1)
         self.assertIsNone(ws._subs.take({'arg': arg}))
-        self.assertEqual(len(ws.websocket.send.await_args_list), 1)
+        self.assertEqual(len(sock.payloads), 1)
 
     def test_subscriptions_view_is_derived_from_the_table(self):
         ws = _public()
@@ -380,6 +400,12 @@ class TestSubscriptionRegistry(unittest.TestCase):
         ws._subs.add([arg])
 
         self.assertEqual(ws.subscriptions, {json.dumps(arg, sort_keys=True): arg})
+
+    def test_websocket_view_rejects_assignment(self):
+        ws = _public()
+
+        with self.assertRaises(AttributeError):
+            ws.websocket = object()
 
     def test_subscriptions_view_rejects_assignment(self):
         ws = _public()
@@ -390,25 +416,26 @@ class TestSubscriptionRegistry(unittest.TestCase):
     def test_generic_send_leaves_the_subscription_table_alone(self):
         """Only subscribe()/unsubscribe() own the table; send() is generic."""
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
+            await ws.start()
             await ws.send('subscribe', [{'channel': 'tickers', 'instId': 'BTC-USDT'}])
+            await ws.stop()
             return ws.subscriptions
 
         self.assertEqual(asyncio.run(run()), {})
 
 
-class TestSessionRestore(unittest.TestCase):
+class TestStartRestoresSession(unittest.TestCase):
     def test_public_replays_subscriptions(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
+            ws, sock = _public_on()
             ws._subs.add([
                 {'channel': 'tickers', 'instId': 'BTC-USDT'},
                 {'channel': 'books', 'instId': 'ETH-USDT'},
             ])
-            await ws._restore_session()
-            return [json.loads(call.args[0]) for call in ws.websocket.send.await_args_list]
+            await ws.start()
+            await ws.stop()
+            return sock.payloads
 
         payloads = asyncio.run(run())
         self.assertEqual([p['op'] for p in payloads], ['subscribe', 'subscribe'])
@@ -416,34 +443,39 @@ class TestSessionRestore(unittest.TestCase):
 
     def test_private_logs_in_then_replays_subscriptions(self):
         async def run():
-            ws = WsPrivateAsync(apiKey='k', passphrase='p', secretKey='s',
-                                url=URL, ping_interval=0)
-            ws.websocket = AsyncMock()
-            ws.websocket.recv = AsyncMock(return_value=ACK)
+            ws, sock = _private_on(answer_login=ACK)
             ws._subs.add([{'channel': 'account'}])
-            await ws._restore_session()
-            return ws, [json.loads(call.args[0]) for call in ws.websocket.send.await_args_list]
+            await ws.start()
+            logged_in = ws.isLoggedIn
+            await ws.stop()
+            return logged_in, sock.payloads
 
-        ws, payloads = asyncio.run(run())
-        self.assertTrue(ws.isLoggedIn)
+        logged_in, payloads = asyncio.run(run())
+        self.assertTrue(logged_in)
         self.assertEqual([p['op'] for p in payloads], ['login', 'subscribe'])
 
-    def test_restore_session_forgets_pending_requests(self):
+    def test_start_forgets_pending_requests(self):
         async def run():
-            ws = _public()
-            ws.websocket = AsyncMock()
-            ws._subs.add_request('o1', MagicMock())
-            await ws._restore_session()
+            ws, sock = _public_on()
+            ws._subs.add_request('o1', object())
+            await ws.start()
+            await ws.stop()
             return ws
 
         ws = asyncio.run(run())
         self.assertIsNone(ws._subs.take({'id': 'o1'}))
 
+    def test_stop_before_start_is_a_no_op(self):
+        ws = _public()
+
+        asyncio.run(ws.stop())
+        self.assertIsNone(ws.websocket)
+
     def test_stop_forgets_pending_requests(self):
         async def run():
-            ws = _public(ping_interval=0)
-            ws.websocket = AsyncMock()
-            ws._subs.add_request('o1', MagicMock())
+            ws, sock = _public_on()
+            await ws.start()
+            ws._subs.add_request('o1', object())
             await ws.stop()
             return ws
 
@@ -451,53 +483,15 @@ class TestSessionRestore(unittest.TestCase):
         self.assertIsNone(ws._subs.take({'id': 'o1'}))
 
 
-class _DroppingSocket:
-    def __init__(self):
-        self.drop = asyncio.Event()
-        self.sent = []
-        self.closed = False
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        await self.drop.wait()
-        raise ConnectionClosedError(None, None)
-
-    async def send(self, payload):
-        self.sent.append(payload)
-
-    async def close(self):
-        self.closed = True
-
-
-class _IdleSocket:
-    def __init__(self):
-        self.release = asyncio.Event()
-        self.sent = []
-        self.closed = False
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        await self.release.wait()
-        raise StopAsyncIteration
-
-    async def send(self, payload):
-        self.sent.append(payload)
-
-    async def close(self):
-        self.closed = True
-
-
 class TestConnectorChoice(unittest.TestCase):
     def test_injected_connector_wins_over_proxy_without_raising(self):
         """`connector` wins over `proxy`, the same rule as Transport(proxy=, http=)."""
         async def run():
-            connector = FakeConnector(_Socket())
-            ws = _public(proxy='http://127.0.0.1:1', connector=connector)
-            await ws.connect()
+            sock = FakeSocket(ends=True)
+            connector = FakeConnector(sock)
+            ws = _public(proxy='http://127.0.0.1:1', connector=connector, reconnect=False)
+            task = await ws.start()
+            await asyncio.wait_for(task, timeout=1)
             return ws, connector
 
         ws, connector = asyncio.run(run())
@@ -512,9 +506,7 @@ class TestConnectorChoice(unittest.TestCase):
 class TestStopFromCallback(unittest.TestCase):
     def test_stop_inside_a_callback_completes(self):
         async def run():
-            ws = _public(ping_interval=0)
-            ws.connect = AsyncMock()
-            ws.websocket = _Messages('go')
+            ws, sock = _public_on('go', ends=True)
             finished = []
 
             async def callback(message):
@@ -529,51 +521,163 @@ class TestStopFromCallback(unittest.TestCase):
         self.assertEqual(asyncio.run(run()), ['go'])
 
 
+    def test_stop_inside_the_error_callback_completes(self):
+        async def run():
+            sock = FakeSocket()
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            stopped = []
+
+            async def callback(message):
+                if json.loads(message).get("code") == "ConnClosed":
+                    await ws.stop()
+                    stopped.append(True)
+
+            ws.callback = callback
+            task = await ws.start()
+            sock.drop()
+            await asyncio.wait_for(task, timeout=1)
+            return stopped
+
+        self.assertEqual(asyncio.run(run()), [True])
+
+
 class TestReconnect(unittest.TestCase):
     def test_reconnects_and_replays_subscriptions(self):
         async def run():
-            first, second = _DroppingSocket(), _IdleSocket()
-            ws = _public(reconnect_backoff=0, ping_interval=0,
-                         connector=FakeConnector(first, second))
+            first, second = FakeSocket(), FakeSocket()
+            ws = _public(connector=FakeConnector(first, second), reconnect_backoff=0)
 
             tickers = {'channel': 'tickers', 'instId': 'BTC-USDT'}
             books = {'channel': 'books', 'instId': 'ETH-USDT'}
             await ws.start()
             await ws.subscribe([tickers], None)
             await ws.subscribe([books], None)
-            first.drop.set()
+            first.drop()
 
-            loop = asyncio.get_running_loop()
-            deadline = loop.time() + 2
-            while len([p for p in second.sent if json.loads(p)['op'] == 'subscribe']) < 2:
-                if loop.time() > deadline:
-                    raise AssertionError(f'no resubscribe after reconnect: {second.sent}')
-                await asyncio.sleep(0.01)
-
+            await _until(lambda: len([p for p in second.payloads if p['op'] == 'subscribe']) >= 2)
             await ws.stop()
             return first, second
 
         first, second = asyncio.run(run())
         self.assertTrue(first.closed)
         self.assertEqual(
-            [json.loads(p)['args'] for p in second.sent],
+            [p['args'] for p in second.payloads],
             [[{'channel': 'tickers', 'instId': 'BTC-USDT'}],
              [{'channel': 'books', 'instId': 'ETH-USDT'}]],
         )
 
     def test_reconnect_disabled_surfaces_the_connection_error(self):
         async def run():
-            ws = _public(reconnect=False, ping_interval=0)
-            ws.connect = AsyncMock()
-            sock = _DroppingSocket()
-            sock.drop.set()
-            ws.websocket = sock
+            sock = FakeSocket()
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
             task = await ws.start()
-            await task
+            sock.drop()
+            await asyncio.wait_for(task, timeout=1)
 
         with self.assertRaises(ConnectionClosedError):
             asyncio.run(run())
 
+    def test_private_reconnect_logs_in_then_replays(self):
+        async def run():
+            first = FakeSocket(answer_login=ACK)
+            second = FakeSocket(answer_login=ACK)
+            ws = _private(connector=FakeConnector(first, second), reconnect_backoff=0)
+            await ws.start()
+            await ws.subscribe([{'channel': 'account'}], None)
+            first.drop()
+            await _until(lambda: [p['op'] for p in second.payloads] == ['login', 'subscribe'])
+            await ws.stop()
+            return second.payloads
+
+        payloads = asyncio.run(run())
+        self.assertEqual(payloads[0]['op'], 'login')
+        self.assertEqual(payloads[1]['args'], [{'channel': 'account'}])
+
+    def test_a_failed_restore_enters_the_backoff(self):
+        """Login rejection on a reconnect is retried, not surfaced."""
+        async def run():
+            first = FakeSocket(answer_login=ACK)
+            rejected = FakeSocket(answer_login=REJECT)
+            recovered = FakeSocket(answer_login=ACK)
+            connector = FakeConnector(first, rejected, recovered)
+            ws = _private(connector=connector, reconnect_backoff=0)
+            await ws.start()
+            await ws.subscribe([{'channel': 'account'}], None)
+            first.drop()
+
+            await _until(lambda: len(connector.urls) == 3)
+            await _until(lambda: [p['op'] for p in recovered.payloads] == ['login', 'subscribe'])
+            await ws.stop()
+            return connector, recovered
+
+        connector, recovered = asyncio.run(run())
+        self.assertEqual(len(connector.urls), 3)
+        self.assertEqual([p['op'] for p in recovered.payloads], ['login', 'subscribe'])
+
+
+class TestClosedConnectionReporting(unittest.TestCase):
+    def test_a_dropped_socket_reaches_the_callback_as_an_error_event(self):
+        received = []
+
+        async def run():
+            sock = FakeSocket('{"data": "ok"}')
+            ws = _public(connector=FakeConnector(sock), reconnect=False)
+            ws.callback = received.append
+            task = await ws.start()
+            sock.drop()
+            await asyncio.wait_for(task, timeout=1)
+
+        with patch('okx.websocket.connection.logger.error') as log:
+            with self.assertRaises(ConnectionClosedError):
+                asyncio.run(run())
+
+        log.assert_called_once()
+        self.assertEqual(received[0], '{"data": "ok"}')
+        error_payload = json.loads(received[1])
+        self.assertEqual(error_payload["event"], "error")
+        self.assertEqual(error_payload["code"], "ConnClosed")
+
+
+class TestNeedsLoginPredicate(unittest.TestCase):
+    """One predicate answers "should this connection authenticate?".
+
+    Truth table: client type x ever logged in x credentials x current login.
+    The latch is what keeps a public client that logged in for the business
+    channel logging in again after a reconnect.
+    """
+
+    def _ws(self, private, credentials, ever_logged_in, logged_in):
+        ws = _private() if private else _public()
+        if credentials:
+            ws.apiKey, ws.passphrase, ws.secretKey = 'k', 'p', 's'
+        else:
+            ws.apiKey = ws.passphrase = ws.secretKey = ''
+        ws._ever_logged_in = ever_logged_in
+        ws._is_logged_in = logged_in
+        return ws
+
+    def test_truth_table(self):
+        cases = [
+            # private, credentials, ever_logged_in, logged_in, expected
+            (False, False, False, False, False),
+            (False, True, False, False, False),
+            (False, True, True, False, True),
+            (False, True, True, True, False),
+            (True, False, False, False, False),
+            (True, True, False, False, True),
+            (True, True, False, True, False),
+            (True, True, True, True, False),
+        ]
+        for private, credentials, ever, logged, expected in cases:
+            with self.subTest(private=private, credentials=credentials,
+                              ever_logged_in=ever, logged_in=logged):
+                ws = self._ws(private, credentials, ever, logged)
+                self.assertIs(ws._needs_login(), expected)
+
+    def test_is_logged_in_is_read_only(self):
+        ws = _public()
+        with self.assertRaises(AttributeError):
+            ws.isLoggedIn = True
 
 if __name__ == '__main__':
     unittest.main()

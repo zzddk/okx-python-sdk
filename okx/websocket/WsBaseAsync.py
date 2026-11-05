@@ -1,9 +1,11 @@
-"""Shared WebSocket session lifecycle.
+"""Shared WebSocket session: routing, authentication and the public entries.
 
 `WsPublicAsync` and `WsPrivateAsync` differ only in their constructors and the
-private trading helpers. Everything that keeps a connection alive — the read
-loop, the heartbeat, reconnect and subscription replay — lives here so it is
-written once.
+private trading helpers. This module owns what the protocol *means*: which
+callback receives a message, whether this connection needs a login, what a
+subscribe frame carries. The socket and the tasks that keep it alive — the read
+loop, the heartbeat, reconnect backoff and stop — live in
+`okx.websocket.connection.ConnectionSupervisor`.
 
 Routing and callbacks
 ----------------------
@@ -19,11 +21,17 @@ callers written against 0.8 and earlier). Either way an exception raised by the
 callback is logged and the next message is still delivered — a broken callback
 cannot end the stream.
 
+Login
+-----
+`start()` runs the login when this session needs one, so the first
+connection and a reconnect follow the same path: the reader is already
+running, and the handshake only has to wait for the acknowledgement it feeds.
+
 Protocol frames
 ---------------
 The server answers a text `ping` with `pong`. Pong frames are consumed by the
-heartbeat machinery and are not handed to the callback. A missing pong makes
-the connection count as dead, which triggers a reconnect.
+supervisor's heartbeat and are not handed here. A missing pong makes the
+connection count as dead, which triggers a reconnect.
 """
 
 from __future__ import annotations
@@ -32,30 +40,34 @@ import asyncio
 import inspect
 import json
 import logging
-from contextlib import suppress
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from websockets.exceptions import ConnectionClosed, ConnectionClosedError
-
+from okx.websocket.connection import (
+    DEFAULT_PING_INTERVAL,
+    DEFAULT_PING_TIMEOUT,
+    DEFAULT_RECONNECT_BACKOFF,
+    DEFAULT_RECONNECT_MAX_BACKOFF,
+    ConnectionSupervisor,
+    Message,
+)
 from okx.websocket.connector import WebSocketConnector
 from okx.websocket.login import DEFAULT_LOGIN_TIMEOUT, LoginHandshake, login_payload
 from okx.websocket.subscriptions import Callback, Subscriptions, key
 
 logger = logging.getLogger(__name__)
 
-Message = Union[str, bytes]
 
-DEFAULT_PING_INTERVAL = 25.0
-DEFAULT_PING_TIMEOUT = 10.0
-DEFAULT_RECONNECT_BACKOFF = 1.0
-DEFAULT_RECONNECT_MAX_BACKOFF = 60.0
+def _is_connection_lost(payload: Any) -> bool:
+    """Whether this parsed frame is the supervisor's report of a dead socket."""
+    return (isinstance(payload, dict) and payload.get("event") == "error"
+            and payload.get("code") == "ConnClosed")
 
 
 class WsBaseAsync:
-    """One OKX WebSocket session with heartbeat, reconnect and replay.
+    """One OKX WebSocket session: sending, subscribing, login and routing.
 
-    Subclasses only supply a constructor (and, for the private client, the
-    order-entry helpers). `_LOGIN_REQUIRED` selects whether subscribing
+    Subclasses supply a default host and, for the private client, the
+    order-entry helpers. `_LOGIN_REQUIRED` selects whether subscribing
     authenticates first, which is what `WsPrivateAsync` always did.
 
     The socket is opened by `connector`; when it is omitted a
@@ -65,10 +77,11 @@ class WsBaseAsync:
     """
 
     _LOGIN_REQUIRED = False
+    _DEFAULT_URL: Optional[str] = None
 
     def __init__(
         self,
-        url: str,
+        url: Optional[str] = None,
         apiKey: str = '',
         passphrase: str = '',
         secretKey: str = '',
@@ -81,7 +94,7 @@ class WsBaseAsync:
         proxy: Optional[str] = None,
         connector: Optional[WebSocketConnector] = None,
     ) -> None:
-        self.url = url
+        self.url = url if url is not None else self._DEFAULT_URL
         self.apiKey = apiKey
         self.passphrase = passphrase
         self.secretKey = secretKey
@@ -95,8 +108,9 @@ class WsBaseAsync:
 
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         self._connector = connector if connector is not None else WebSocketConnector(proxy=proxy)
-        self.websocket: Any = None
-        self.isLoggedIn = False
+        self._is_logged_in = False
+        self._ever_logged_in = False
+        self._handshake: Optional[LoginHandshake] = None
 
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout
@@ -104,19 +118,37 @@ class WsBaseAsync:
         self.reconnect_backoff = reconnect_backoff
         self.reconnect_max_backoff = reconnect_max_backoff
 
-        # Set from _LOGIN_REQUIRED, then latched on the first successful login
-        # so a public client that logged in for the business channel keeps
-        # logging in after a reconnect.
-        self._should_login = self._LOGIN_REQUIRED
-        self._stopping = False
-        self._task: Optional[asyncio.Task] = None
-        self._consumer: Optional[asyncio.Task] = None
-        self._heartbeat: Optional[asyncio.Task] = None
-        self._pong: Optional[asyncio.Event] = None
-        self._handshake: Optional[LoginHandshake] = None
+        self._connection = ConnectionSupervisor(
+            connector=self._connector,
+            url=self.url,
+            on_frame=self._on_frame,
+            on_ready=self._on_ready,
+            ping_interval=ping_interval,
+            ping_timeout=ping_timeout,
+            reconnect=reconnect,
+            reconnect_backoff=reconnect_backoff,
+            reconnect_max_backoff=reconnect_max_backoff,
+            debug=debug,
+        )
 
         if debug:
             logger.setLevel(logging.DEBUG)
+
+    # ------------------------------------------------------------------ views
+
+    @property
+    def isLoggedIn(self) -> bool:
+        """Whether the current connection has authenticated. Read-only.
+
+        The session writes it in `login()`, `stop()` and on reconnect;
+        callers only read it.
+        """
+        return self._is_logged_in
+
+    @property
+    def websocket(self) -> Any:
+        """The connection the supervisor currently holds, or None. Read-only."""
+        return self._connection.socket
 
     @property
     def subscriptions(self) -> Dict[str, Dict[str, Any]]:
@@ -130,46 +162,26 @@ class WsBaseAsync:
 
     # ------------------------------------------------------------------ start/stop
 
-    async def connect(self) -> None:
-        self.websocket = await self._connector.connect(self.url)
-
     async def start(self) -> asyncio.Task:
-        """Connect and start the reader, heartbeat and reconnect supervisor.
+        """Connect and start the supervisor, heartbeat and reconnect loop.
 
-        The returned task is the supervisor. It stays alive across reconnects
-        and finishes only when `stop()` is called (or when `reconnect=False`
-        and the connection ends).
+        The first connection also runs the session restore: a session that
+        needs to log in does so before `start()` returns. The returned task is
+        the supervisor. It stays alive across reconnects and finishes only when
+        `stop()` is called (or when `reconnect=False` and the connection ends).
         """
-        if self._task is not None and not self._task.done():
-            raise RuntimeError("WebSocket is already started")
         self.loop = asyncio.get_running_loop()
-        self._stopping = False
-        self._pong = asyncio.Event()
-        if self.debug:
-            logger.debug("Connecting to WebSocket...")
-        else:
-            logger.info("Connecting to WebSocket...")
-        await self.connect()
-        self._start_connection_tasks()
-        self._task = asyncio.create_task(self._supervise())
-        return self._task
+        return await self._connection.start()
 
     async def stop(self) -> None:
-        """Stop the supervisor, the heartbeat and the socket. Idempotent."""
-        self._stopping = True
-        current = asyncio.current_task()
-        task = self._task
-        self._task = None
-        # A callback may call stop() from inside consume(); cancelling the
-        # supervisor then would cancel the very task awaiting us.
-        if task is not None and task is not current and current is not self._consumer:
-            task.cancel()
-            with suppress(asyncio.CancelledError, Exception):
-                await task
-        await self._stop_heartbeat()
-        await self._close_socket()
+        """Stop the supervisor, the heartbeat and the socket. Idempotent.
+
+        A callback may call this from inside a dispatch; the supervisor then
+        returns without cancelling the frame it is running.
+        """
+        await self._connection.stop()
         self._subs.drop_requests()
-        self.isLoggedIn = False
+        self._is_logged_in = False
 
     def stop_sync(self) -> None:
         if self.loop is None:
@@ -180,32 +192,15 @@ class WsBaseAsync:
         else:
             self.loop.run_until_complete(self.stop())
 
-    # ------------------------------------------------------------------ read loop
+    # ------------------------------------------------------------------ frames
 
-    async def consume(self) -> None:
-        """Read frames from the current socket until it closes.
-
-        A closed connection raises `ConnectionClosedError` after the callback
-        has been told; the supervisor catches it and reconnects.
-        """
-        if self.websocket is None:
-            raise RuntimeError("connect() must be called before consume()")
-        try:
-            async for message in self.websocket:
-                await self._handle_message(message)
-        except ConnectionClosedError as exc:
-            logger.error("WebSocket connection closed: %s", exc)
-            await self._emit_error("ConnClosed", str(exc))
-            raise
-
-    async def _handle_message(self, message: Message) -> None:
+    async def _on_frame(self, message: Message) -> None:
+        """Take one frame from the supervisor (pong is already filtered out)."""
         if self.debug:
             logger.debug("Received message: {%s}", message)
-        if message == "pong":
-            if self._pong is not None:
-                self._pong.set()
-            return
         payload = self._parse(message)
+        if self._handshake is not None and _is_connection_lost(payload):
+            self._handshake.abort(ConnectionError(f"connection lost during login: {payload.get('msg')}"))
         if LoginHandshake.is_ack(payload):
             # A login answer is never delivered: it belongs to the handshake.
             handshake = self._handshake
@@ -213,6 +208,19 @@ class WsBaseAsync:
                 handshake.feed(payload)
             return
         await self._deliver(message, payload)
+
+    async def _on_ready(self) -> None:
+        """Restore the session on a fresh connection.
+
+        Runs after the reader has started: mark the new connection unlogged,
+        forget replies that belonged to the old one, log in when this session
+        needs to, and replay the subscriptions.
+        """
+        self._is_logged_in = False
+        self._subs.drop_requests()
+        if self._needs_login():
+            await self.login()
+        await self._replay()
 
     async def _deliver(self, message: Message, payload: Any) -> None:
         await self._emit(message, self._subs.take(payload))
@@ -231,9 +239,6 @@ class WsBaseAsync:
         except Exception:
             logger.exception("WebSocket callback failed; dropping the message and continuing")
 
-    async def _emit_error(self, code: str, msg: str) -> None:
-        await self._emit(json.dumps({"event": "error", "code": code, "msg": msg}))
-
     @staticmethod
     def _parse(message: Message) -> Any:
         if not isinstance(message, (str, bytes)):
@@ -249,16 +254,14 @@ class WsBaseAsync:
         """Authenticate the connection and wait for the server's acknowledgement.
 
         The protocol lives in `okx.websocket.login.LoginHandshake`; this method
-        only decides who feeds it. When the reader is running the acknowledgement
-        is delivered by it (a second `recv()` there would collide); otherwise the
-        handshake reads the socket itself, which is what happens during a
-        reconnect and after `connect()` before `start()`.
+        only decides who feeds it — the reader always runs after `start()`, so
+        the answer arrives through `_on_frame`.
         """
-        if self.isLoggedIn:
+        if self._is_logged_in:
             return True
         if not self._has_credentials():
             raise ValueError("apiKey, secretKey and passphrase are required for login")
-        if self.websocket is None:
+        if self._connection.socket is None:
             raise RuntimeError("start() must be called before login()")
 
         payload = login_payload(
@@ -272,28 +275,35 @@ class WsBaseAsync:
         handshake = LoginHandshake(timeout)
         self._handshake = handshake
         try:
-            await self.websocket.send(payload)
-            if self._consuming():
-                await handshake.wait()
-            else:
-                await handshake.read(self.websocket, self._parse, self._emit)
+            await self._connection.send(payload)
+            await handshake.wait()
         except BaseException:
-            self.isLoggedIn = False
+            self._is_logged_in = False
             raise
         finally:
             self._handshake = None
-        self.isLoggedIn = True
-        self._should_login = True
+        self._is_logged_in = True
+        self._ever_logged_in = True
         return True
-
-    def _consuming(self) -> bool:
-        return self._consumer is not None and not self._consumer.done()
 
     def _has_credentials(self) -> bool:
         return bool(self.apiKey and self.passphrase and self.secretKey)
 
+    def _needs_login(self) -> bool:
+        """Whether this connection should authenticate before it is used.
+
+        `_LOGIN_REQUIRED` is what the class always wanted; `_ever_logged_in`
+        keeps a public client that logged in for the business channel logging
+        in after a reconnect. The other two terms are the current state.
+        """
+        return (
+            (self._LOGIN_REQUIRED or self._ever_logged_in)
+            and not self._is_logged_in
+            and self._has_credentials()
+        )
+
     async def _ensure_login(self) -> None:
-        if self._should_login and not self.isLoggedIn and self._has_credentials():
+        if self._needs_login():
             await self.login()
 
     # ------------------------------------------------------------------ operations
@@ -361,15 +371,13 @@ class WsBaseAsync:
         args: List[Dict[str, Any]],
         id: Optional[str],
     ) -> None:
-        if self.websocket is None:
-            raise RuntimeError("not connected: call start() first")
         payload_dict: Dict[str, Any] = {"op": op, "args": args}
         if id is not None:
             payload_dict["id"] = id
         payload = json.dumps(payload_dict)
         if self.debug:
             logger.debug("send: %s", payload)
-        await self.websocket.send(payload)
+        await self._connection.send(payload)
 
     async def _replay(self) -> None:
         args = self._subs.replay()
@@ -378,100 +386,3 @@ class WsBaseAsync:
         for arg in args:
             await self._send_payload("subscribe", [arg], None)
         logger.info("Resubscribed to %d channel(s)", len(args))
-
-    # ------------------------------------------------------------------ lifecycle
-
-    def _start_connection_tasks(self) -> None:
-        self._consumer = asyncio.create_task(self.consume())
-        self._heartbeat = asyncio.create_task(self._heartbeat_loop())
-
-    async def _supervise(self) -> None:
-        while True:
-            error: Optional[BaseException] = None
-            try:
-                await self._consumer
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                error = exc
-                logger.warning("WebSocket stream ended: %s", exc)
-            finally:
-                await self._stop_heartbeat()
-
-            if self._stopping:
-                return
-            if not self.reconnect:
-                if error is not None:
-                    raise error
-                return
-
-            logger.info("Reconnecting WebSocket...")
-            await self._reconnect()
-            if self._stopping:
-                return
-            self._start_connection_tasks()
-
-    async def _reconnect(self) -> None:
-        delay = self.reconnect_backoff
-        while not self._stopping:
-            try:
-                await self._close_socket()
-                await self.connect()
-                await self._restore_session()
-                return
-            except asyncio.CancelledError:
-                raise
-            except Exception as exc:
-                logger.warning("Reconnect failed: %s; retrying in %.1fs", exc, delay)
-                await self._close_socket()
-                await asyncio.sleep(delay)
-                delay = min(delay * 2, self.reconnect_max_backoff)
-
-    async def _restore_session(self) -> None:
-        self.isLoggedIn = False
-        # Replies to requests made on the old connection will never arrive.
-        self._subs.drop_requests()
-        if self._should_login and self._has_credentials():
-            await self.login()
-        await self._replay()
-
-    async def _heartbeat_loop(self) -> None:
-        if not self.ping_interval or self.ping_interval <= 0:
-            return
-        pong = self._pong
-        while not self._stopping:
-            await asyncio.sleep(self.ping_interval)
-            if self._stopping or self.websocket is None or pong is None:
-                return
-            pong.clear()
-            try:
-                await self.websocket.send("ping")
-            except ConnectionClosed:
-                return
-            try:
-                await asyncio.wait_for(pong.wait(), timeout=self.ping_timeout)
-            except asyncio.TimeoutError:
-                # Close from here but do not call the user's callback: consume()
-                # may be inside it, and callbacks are promised to run one at a
-                # time in arrival order. The read loop will finish (or raise
-                # ConnectionClosed) and the supervisor will reconnect.
-                logger.warning("No pong within %.1fs; treating the connection as dead", self.ping_timeout)
-                await self._close_socket()
-                return
-
-    async def _stop_heartbeat(self) -> None:
-        task = self._heartbeat
-        self._heartbeat = None
-        if task is None:
-            return
-        if not task.done():
-            task.cancel()
-        with suppress(asyncio.CancelledError, Exception):
-            await task
-
-    async def _close_socket(self) -> None:
-        websocket = self.websocket
-        self.websocket = None
-        if websocket is not None:
-            with suppress(Exception):
-                await websocket.close()
