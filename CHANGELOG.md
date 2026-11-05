@@ -30,6 +30,11 @@ All notable changes to `python-okx` are documented in this file.
   as it was (it used to be skipped silently).
 - `WsBaseAsync.unsubscribe()` applies the same arg rule as `subscribe()`,
   which it previously skipped.
+- A dropped connection no longer arrives in the callback as a fabricated
+  `{"event": "error", "code": "ConnClosed"}` frame. The supervisor reports the
+  loss to the session, which fails a login that is in flight; otherwise the drop
+  is reported by the task `start()` returned. The callback stream now carries
+  server messages only, the same rule that already kept `pong` out of it.
 
 ### Removed
 - `WsBaseAsync.connect()` and `WsBaseAsync.consume()`. The connection
@@ -54,6 +59,7 @@ All notable changes to `python-okx` are documented in this file.
 | `Subscription(arg, callback)` entries from `add()` / `remove()` | entries are the `(arg, callback)` pair; both methods return `None` |
 | `ws.isLoggedIn = True` | read-only property; `await ws.login()` is what sets it |
 | `ws.subscribe(params)` with a missing or blank `channel` (skipped silently) | raises `ValueError` before the table or the socket is touched |
+| `ws.callback` got `{"event": "error", "code": "ConnClosed"}` when the socket dropped | the task `start()` returned ends, or raises with `reconnect=False`; the callback sees server messages only |
 | `paginate(params={'before': …})` or `params={'limit': …}`, forwarded as-is | raises `ValueError`; one direction (`after`) and one size knob (`page_size`) |
 | `create_rfq(legs=None)` sent `legs: []` | `None` means "not sent" (ADR-0010); omit the argument to send `[]` |
 

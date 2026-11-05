@@ -22,7 +22,6 @@ variable rather than by comparing task identities.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from contextlib import suppress
 from contextvars import ContextVar
@@ -37,6 +36,8 @@ logger = logging.getLogger(__name__)
 Message = Union[str, bytes]
 FrameHandler = Callable[[Message], Awaitable[None]]
 ReadyHandler = Callable[[], Awaitable[None]]
+# The socket ended on its own (not because stop() closed it).
+LostHandler = Callable[[BaseException], None]
 
 DEFAULT_PING_INTERVAL = 25.0
 DEFAULT_PING_TIMEOUT = 10.0
@@ -62,6 +63,7 @@ class ConnectionSupervisor:
         url: Optional[str],
         on_frame: FrameHandler,
         on_ready: ReadyHandler,
+        on_lost: LostHandler,
         *,
         ping_interval: Optional[float] = DEFAULT_PING_INTERVAL,
         ping_timeout: float = DEFAULT_PING_TIMEOUT,
@@ -74,6 +76,7 @@ class ConnectionSupervisor:
         self.url = url
         self._on_frame = on_frame
         self._on_ready = on_ready
+        self._on_lost = on_lost
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout
         self.reconnect = reconnect
@@ -211,9 +214,9 @@ class ConnectionSupervisor:
         """Read frames from `socket` until it closes.
 
         The heartbeat's `pong` is consumed here; everything else goes to
-        `on_frame`. A closed connection is reported to the session as an error
-        frame (unless we are the ones closing it) and re-raised so the
-        supervisor can reconnect.
+        `on_frame`. A closed connection is reported to `on_lost` and re-raised
+        so the supervisor can reconnect. It is not a frame: nothing the server
+        sent looks like it, and nothing in it belongs in the callback stream.
         """
         try:
             async for message in socket:
@@ -231,14 +234,7 @@ class ConnectionSupervisor:
                 # stop() closed the socket on purpose; this is not a failure.
                 return
             logger.error("WebSocket connection closed: %s", exc)
-            # Delivered like any other frame, so a callback that calls stop()
-            # here must not have this task cancelled from under it either.
-            token = _DISPATCHING.set(True)
-            try:
-                await self._on_frame(json.dumps(
-                    {"event": "error", "code": "ConnClosed", "msg": str(exc)}))
-            finally:
-                _DISPATCHING.reset(token)
+            self._on_lost(exc)
             raise
 
     # ------------------------------------------------------------------ heartbeat

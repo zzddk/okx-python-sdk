@@ -521,26 +521,6 @@ class TestStopFromCallback(unittest.TestCase):
         self.assertEqual(asyncio.run(run()), ['go'])
 
 
-    def test_stop_inside_the_error_callback_completes(self):
-        async def run():
-            sock = FakeSocket()
-            ws = _public(connector=FakeConnector(sock), reconnect=False)
-            stopped = []
-
-            async def callback(message):
-                if json.loads(message).get("code") == "ConnClosed":
-                    await ws.stop()
-                    stopped.append(True)
-
-            ws.callback = callback
-            task = await ws.start()
-            sock.drop()
-            await asyncio.wait_for(task, timeout=1)
-            return stopped
-
-        self.assertEqual(asyncio.run(run()), [True])
-
-
 class TestReconnect(unittest.TestCase):
     def test_reconnects_and_replays_subscriptions(self):
         async def run():
@@ -616,7 +596,8 @@ class TestReconnect(unittest.TestCase):
 
 
 class TestClosedConnectionReporting(unittest.TestCase):
-    def test_a_dropped_socket_reaches_the_callback_as_an_error_event(self):
+    def test_a_dropped_socket_ends_the_returned_task(self):
+        """The task is the report; the callback stream carries messages only."""
         received = []
 
         async def run():
@@ -632,10 +613,7 @@ class TestClosedConnectionReporting(unittest.TestCase):
                 asyncio.run(run())
 
         log.assert_called_once()
-        self.assertEqual(received[0], '{"data": "ok"}')
-        error_payload = json.loads(received[1])
-        self.assertEqual(error_payload["event"], "error")
-        self.assertEqual(error_payload["code"], "ConnClosed")
+        self.assertEqual(received, ['{"data": "ok"}'])
 
 
 class TestStartWhileStopping(unittest.TestCase):

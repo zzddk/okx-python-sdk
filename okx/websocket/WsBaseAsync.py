@@ -57,12 +57,6 @@ from okx.websocket.subscriptions import Callback, Subscriptions, key
 logger = logging.getLogger(__name__)
 
 
-def _is_connection_lost(payload: Any) -> bool:
-    """Whether this parsed frame is the supervisor's report of a dead socket."""
-    return (isinstance(payload, dict) and payload.get("event") == "error"
-            and payload.get("code") == "ConnClosed")
-
-
 class WsBaseAsync:
     """One OKX WebSocket session: sending, subscribing, login and routing.
 
@@ -125,6 +119,7 @@ class WsBaseAsync:
             url=self.url,
             on_frame=self._on_frame,
             on_ready=self._on_ready,
+            on_lost=self._on_lost,
             ping_interval=ping_interval,
             ping_timeout=ping_timeout,
             reconnect=reconnect,
@@ -201,8 +196,6 @@ class WsBaseAsync:
         if self.debug:
             logger.debug("Received message: {%s}", message)
         payload = self._parse(message)
-        if self._handshake is not None and _is_connection_lost(payload):
-            self._handshake.abort(ConnectionError(f"connection lost during login: {payload.get('msg')}"))
         if LoginHandshake.is_ack(payload):
             # A login answer is never delivered: it belongs to the handshake.
             handshake = self._handshake
@@ -210,6 +203,17 @@ class WsBaseAsync:
                 handshake.feed(payload)
             return
         await self._deliver(message, payload)
+
+    def _on_lost(self, exc: BaseException) -> None:
+        """The reader ended on its own: fail the login handshake if one is open.
+
+        Nothing goes to the callback stream here. A drop is reported by the
+        task `start()` returned (and, with reconnect on, by the session being
+        restored once the socket is back) — the same reason `pong` stays out of
+        callbacks: it is connection state, not a message from the server.
+        """
+        if self._handshake is not None:
+            self._handshake.abort(ConnectionError(f"connection lost during login: {exc}"))
 
     async def _on_ready(self) -> None:
         """Restore the session on a fresh connection.
