@@ -17,8 +17,7 @@ Both paths settle the same state; `wait()` is how the read-loop case blocks.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Awaitable, Callable
 
 DEFAULT_LOGIN_TIMEOUT = 10.0
 
