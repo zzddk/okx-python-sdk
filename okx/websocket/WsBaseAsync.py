@@ -39,7 +39,7 @@ from websockets.exceptions import ConnectionClosed, ConnectionClosedError
 
 from okx.websocket import WsUtils
 from okx.websocket.connector import WebSocketConnector
-from okx.websocket.login import LoginHandshake
+from okx.websocket.login import DEFAULT_LOGIN_TIMEOUT, LoginHandshake
 from okx.websocket.subscriptions import Callback, Subscriptions, key
 
 logger = logging.getLogger(__name__)
@@ -223,10 +223,7 @@ class WsBaseAsync:
         await self._deliver(message, payload)
 
     async def _deliver(self, message: Message, payload: Any) -> None:
-        callback = self._subs.take(payload)
-        if callback is None:
-            callback = self.callback
-        await self._emit(message, callback)
+        await self._emit(message, self._subs.take(payload))
 
     async def _emit(self, message: Message, callback: Optional[Callback] = None) -> None:
         if callback is None:
@@ -256,7 +253,7 @@ class WsBaseAsync:
 
     # ------------------------------------------------------------------ auth
 
-    async def login(self, timeout: float = 10.0) -> bool:
+    async def login(self, timeout: float = DEFAULT_LOGIN_TIMEOUT) -> bool:
         """Authenticate the connection and wait for the server's acknowledgement.
 
         The protocol lives in `okx.websocket.login.LoginHandshake`; this method
