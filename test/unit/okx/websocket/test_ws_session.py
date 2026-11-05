@@ -660,12 +660,20 @@ class TestNeedsLoginPredicate(unittest.TestCase):
         cases = [
             # private, credentials, ever_logged_in, logged_in, expected
             (False, False, False, False, False),
+            (False, False, False, True, False),
+            (False, False, True, False, False),
+            (False, False, True, True, False),
             (False, True, False, False, False),
+            (False, True, False, True, False),
             (False, True, True, False, True),
             (False, True, True, True, False),
             (True, False, False, False, False),
+            (True, False, False, True, False),
+            (True, False, True, False, False),
+            (True, False, True, True, False),
             (True, True, False, False, True),
             (True, True, False, True, False),
+            (True, True, True, False, True),
             (True, True, True, True, False),
         ]
         for private, credentials, ever, logged, expected in cases:
