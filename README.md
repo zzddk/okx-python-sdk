@@ -39,14 +39,15 @@ pip install python-okx
 
 ```python
 from okx import Account
+from okx.transport import Transport
 
-account = Account.AccountAPI(
+account = Account.AccountAPI(Transport(
     api_key="your-api-key-here",
     api_secret_key="your-api-secret-here",
     passphrase="your-passphrase-here",
     flag="1",  # 0 = live trading, 1 = demo trading
-    debug=False
-)
+    debug=False,
+))
 ```
 
 #### Option 2: Using `.env` file (recommended)
