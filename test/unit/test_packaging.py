@@ -2,7 +2,7 @@
 Packaging-metadata unit test — TD 239 item #1 (dev-deps split).
 
 Verifies that setup.py's computed ``install_requires`` (derived from requirements.txt
-via parse_requirements) contains ONLY the 5 runtime dependencies and none of the dev /
+via parse_requirements) contains ONLY the 3 runtime dependencies and none of the dev /
 release packages. This guards against dev tooling leaking into end-user ``pip install``.
 """
 import os
