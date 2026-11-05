@@ -2,6 +2,14 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.13.0]
+
+### Changed
+- Every REST endpoint method now passes all of its arguments to `Transport`,
+  which drops the ones set to `None`. The 136 `if x is not None: params[x] = x`
+  branches in the endpoint modules are gone; no request changes on the wire
+  (ADR-0010).
+
 ## [0.12.0]
 
 Breaking release for WebSocket message routing (ADR-0009).

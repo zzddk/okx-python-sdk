@@ -124,17 +124,8 @@ class PublicAPI(OkxClient):
 
     # Get historical market data
     def get_market_data_history(self, module: Any, instType: Any, dateAggrType: Any, begin: Any, end: Any, instIdList: Any = None, instFamilyList: Any = None) -> Dict[str, Any]:
-        params = {
-            'module': module,
-            'instType': instType,
-            'dateAggrType': dateAggrType,
-            'begin': begin,
-            'end': end
-        }
-        if instIdList is not None:
-            params['instIdList'] = instIdList
-        if instFamilyList is not None:
-            params['instFamilyList'] = instFamilyList
+        params = {'module': module, 'instType': instType, 'dateAggrType': dateAggrType, 'begin': begin, 'end': end,
+                  'instIdList': instIdList, 'instFamilyList': instFamilyList}
         return self.request(GET, MARKET_DATA_HISTORY, params)
 
     # Get announcements (BROK-1730)

@@ -8,16 +8,12 @@ class AccountAPI(OkxClient):
 
     # Get Positions
     def get_position_risk(self, instType: Any = None) -> Dict[str, Any]:
-        params = {}
-        if instType is not None:
-            params['instType'] = instType
+        params = {'instType': instType}
         return self.request(GET, POSITION_RISK, params)
 
     # Get Balance
     def get_account_balance(self, ccy: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ccy is not None:
-            params['ccy'] = ccy
+        params = {'ccy': ccy}
         return self.request(GET, ACCOUNT_INFO, params)
 
     # Get Positions
@@ -27,21 +23,8 @@ class AccountAPI(OkxClient):
 
     def position_builder(self, acctLv: Any = None, inclRealPosAndEq: Any = None, lever: Any = None, greeksType: Any = None, simPos: Any = None,
                          simAsset: Any = None, idxVol: Any = None) -> Dict[str, Any]:
-        params = {}
-        if acctLv is not None:
-            params['acctLv'] = acctLv
-        if inclRealPosAndEq is not None:
-            params['inclRealPosAndEq'] = inclRealPosAndEq
-        if lever is not None:
-            params['lever'] = lever
-        if greeksType is not None:
-            params['greeksType'] = greeksType
-        if simPos is not None:
-            params['simPos'] = simPos
-        if simAsset is not None:
-            params['simAsset'] = simAsset
-        if idxVol is not None:
-            params['idxVol'] = idxVol
+        params = {'acctLv': acctLv, 'inclRealPosAndEq': inclRealPosAndEq, 'lever': lever, 'greeksType': greeksType,
+                  'simPos': simPos, 'simAsset': simAsset, 'idxVol': idxVol}
         return self.request(POST, POSITION_BUILDER, params)
 
     # Get Bills Details (recent 7 days)
@@ -75,17 +58,13 @@ class AccountAPI(OkxClient):
 
     # Get Maximum Tradable Size For Instrument
     def get_max_order_size(self, instId: Any, tdMode: Any, ccy: Any = None, px: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
-        params = {'instId': instId, 'tdMode': tdMode, 'ccy': ccy, 'px': px}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
+        params = {'instId': instId, 'tdMode': tdMode, 'ccy': ccy, 'px': px, 'tradeQuoteCcy': tradeQuoteCcy}
         return self.request(GET, MAX_TRADE_SIZE, params)
 
     # Get Maximum Available Tradable Amount
     def get_max_avail_size(self, instId: Any, tdMode: Any, ccy: Any = None, reduceOnly: Any = None, unSpotOffset: Any = None, quickMgnType: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
         params = {'instId': instId, 'tdMode': tdMode, 'ccy': ccy, 'reduceOnly': reduceOnly,
-                  'unSpotOffset': unSpotOffset, 'quickMgnType': quickMgnType}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
+                  'unSpotOffset': unSpotOffset, 'quickMgnType': quickMgnType, 'tradeQuoteCcy': tradeQuoteCcy}
         return self.request(GET, MAX_AVAIL_SIZE, params)
 
     # Increase / Decrease margin
@@ -105,16 +84,13 @@ class AccountAPI(OkxClient):
 
     # Get the maximum loan of isolated MARGIN
     def get_max_loan(self, instId: Any, mgnMode: Any, mgnCcy: Any = None, tradeQuoteCcy: Any = None) -> Dict[str, Any]:
-        params = {'instId': instId, 'mgnMode': mgnMode, 'mgnCcy': mgnCcy}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
+        params = {'instId': instId, 'mgnMode': mgnMode, 'mgnCcy': mgnCcy, 'tradeQuoteCcy': tradeQuoteCcy}
         return self.request(GET, MAX_LOAN, params)
 
     # Get Fee Rates
     def get_fee_rates(self, instType: Any, instId: Any = None, uly: Any = None, category: Any = None, instFamily: Any = None, groupId: Any = None) -> Dict[str, Any]:
-        params = {'instType': instType, 'instId': instId, 'uly': uly, 'category': category, 'instFamily': instFamily}
-        if groupId is not None:
-            params['groupId'] = groupId
+        params = {'instType': instType, 'instId': instId, 'uly': uly, 'category': category, 'instFamily': instFamily,
+                  'groupId': groupId}
         return self.request(GET, FEE_RATES, params)
 
     # Get interest-accrued
@@ -244,90 +220,35 @@ class AccountAPI(OkxClient):
         return self.request(GET, BORROWING_LIMIT)
 
     def get_fix_loan_borrowing_quote(self, type: Any = None, ccy: Any = None, amt: Any = None, maxRate: Any = None, term: Any = None, ordId: Any = None) -> Dict[str, Any]:
-        params = {}
-        if type is not None:
-            params['type'] = type
-        if ccy is not None:
-            params['ccy'] =ccy
-        if amt is not None:
-            params['amt'] = amt
-        if maxRate is not None:
-            params['maxRate'] = maxRate
-        if term is not None:
-            params['term'] = term
-        if ordId is not None:
-            params['ordId'] = ordId
+        params = {'type': type, 'ccy': ccy, 'amt': amt, 'maxRate': maxRate, 'term': term, 'ordId': ordId}
         return self.request(GET, BORROWING_QUOTE, params)
 
     def place_fix_loan_borrowing_order(self, ccy: Any = None, amt: Any = None, maxRate: Any = None, term: Any = None, reborrow: Any=False, reborrowRate: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ccy is not None:
-            params['ccy'] =ccy
-        if amt is not None:
-            params['amt'] = amt
-        if maxRate is not None:
-            params['maxRate'] = maxRate
-        if term is not None:
-            params['term'] = term
-        if reborrow is not None:
-            params['reborrow'] = reborrow
-        if reborrowRate is not None:
-            params['reborrowRate'] = reborrowRate
+        params = {'ccy': ccy, 'amt': amt, 'maxRate': maxRate, 'term': term, 'reborrow': reborrow,
+                  'reborrowRate': reborrowRate}
         return self.request(POST, PLACE_BORROWING_ORDER, params)
 
     def amend_fix_loan_borrowing_order(self, ordId: Any = None, reborrow: Any = None, renewMaxRate: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ordId is not None:
-            params['ordId'] = ordId
-        if reborrow is not None:
-            params['reborrow'] = reborrow
-        if renewMaxRate is not None:
-            params['renewMaxRate'] = renewMaxRate
+        params = {'ordId': ordId, 'reborrow': reborrow, 'renewMaxRate': renewMaxRate}
         return self.request(POST, AMEND_BORROWING_ORDER, params)
 
     def fix_loan_manual_reborrow(self, ordId: Any = None, maxRate: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ordId is not None:
-            params['ordId'] = ordId
-        if maxRate is not None:
-            params['maxRate'] = maxRate
+        params = {'ordId': ordId, 'maxRate': maxRate}
         return self.request(POST, MANUAL_REBORROW, params)
 
     def repay_fix_loan_borrowing_order(self, ordId: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ordId is not None:
-            params['ordId'] = ordId
+        params = {'ordId': ordId}
         return self.request(POST, REPAY_BORROWING_ORDER, params)
     def get_fix_loan_borrowing_orders_list(self, ordId: Any = None, ccy: Any = None, state: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ordId is not None:
-            params['ordId'] = ordId
-        if ccy is not None:
-            params['ccy'] =ccy
-        if state is not None:
-            params['state'] = state
-        if after is not None:
-            params['after'] = after
-        if before is not None:
-            params['before'] = before
-        if limit is not None:
-            params['limit'] = limit
+        params = {'ordId': ordId, 'ccy': ccy, 'state': state, 'after': after, 'before': before, 'limit': limit}
         return self.request(GET, BORROWING_ORDERS_LIST, params)
 
     def spot_manual_borrow_repay(self, ccy: Any = None, side: Any = None, amt: Any = None) -> Dict[str, Any]:
-        params = {}
-        if ccy is not None:
-            params['ccy'] = ccy
-        if side is not None:
-            params['side'] = side
-        if amt is not None:
-            params['amt'] = amt
+        params = {'ccy': ccy, 'side': side, 'amt': amt}
         return self.request(POST, MANUAL_REBORROW_REPAY, params)
 
     def set_auto_repay(self, autoRepay: Any=False) -> Dict[str, Any]:
-        params = {}
-        if autoRepay is not None:
-            params['autoRepay'] = autoRepay
+        params = {'autoRepay': autoRepay}
         return self.request(POST, SET_AUTO_REPAY, params)
 
     def spot_borrow_repay_history(self, ccy: Any = None, type: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
@@ -335,17 +256,13 @@ class AccountAPI(OkxClient):
         return self.request(GET, GET_BORROW_REPAY_HISTORY, params)
 
     def set_auto_earn(self, ccy: Any, action: Any, earnType: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'action': action}
-        if earnType is not None:
-            params['earnType'] = earnType
+        params = {'ccy': ccy, 'action': action, 'earnType': earnType}
         return self.request(POST, SET_AUTO_EARN, params)
 
     # Set trading config (BROK-1724). type is required (e.g. 'stgyType');
     # stgyType (0=general, 1=delta neutral) applies only when type == 'stgyType'.
     def set_trading_config(self, type: Any = None, stgyType: Any = None) -> Dict[str, Any]:
-        params = {'type': type}
-        if stgyType is not None:
-            params['stgyType'] = stgyType
+        params = {'type': type, 'stgyType': stgyType}
         return self.request(POST, SET_TRADING_CONFIG, params)
 
     # Pre-check whether the delta-neutral switch is allowed (BROK-1724)
@@ -355,27 +272,17 @@ class AccountAPI(OkxClient):
 
     # Get the list of supported bill subtypes (BROK-1728)
     def get_bill_type(self, type: Any = None) -> Dict[str, Any]:
-        params = {}
-        if type is not None:
-            params['type'] = type
+        params = {'type': type}
         return self.request(GET, BILL_TYPE, params)
 
     # Apply for an asynchronous bill history archive by year + quarter (BROK-1728)
     def apply_bills(self, year: Any = None, quarter: Any = None, type: Any = None) -> Dict[str, Any]:
-        params = {'year': year, 'quarter': quarter}
-        if type is not None:
-            params['type'] = type
+        params = {'year': year, 'quarter': quarter, 'type': type}
         return self.request(POST, BILLS_APPLY, params)
 
     # Get GLP daily performance history for a program
     def get_glp_historical_performance(self, program: Any, begin: Any = None, end: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'program': program}
-        if begin is not None:
-            params['begin'] = begin
-        if end is not None:
-            params['end'] = end
-        if limit is not None:
-            params['limit'] = limit
+        params = {'program': program, 'begin': begin, 'end': end, 'limit': limit}
         return self.request(GET, GLP_HISTORICAL_PERFORMANCE, params)
 
     # Get current-day + MTD GLP snapshot for all enrolled programs

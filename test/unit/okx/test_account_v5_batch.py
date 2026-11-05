@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Account import AccountAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 # Placeholder client identifiers — every request is mocked; not real credentials.
 _STUB_ID = 'test_key'
@@ -27,8 +27,8 @@ class TestGetFeeRatesGroupId(_Base):
     def test_backward_compatible_omits_groupId(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_fee_rates('SPOT')
-        expected = {'instType': 'SPOT', 'instId': None, 'uly': None, 'category': None, 'instFamily': None}
-        mock_request.assert_called_once_with(c.GET, c.FEE_RATES, expected)
+        expected = {'instType': 'SPOT'}
+        assert_request(mock_request, c.GET, c.FEE_RATES, expected)
 
     @patch.object(AccountAPI, 'request')
     def test_groupId_written_when_set(self, mock_request):
@@ -52,9 +52,7 @@ class TestDeltaNeutralConfig(_Base):
     def test_set_trading_config_type_only(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.set_trading_config(type='stgyType')
-        mock_request.assert_called_once_with(
-            c.POST, c.SET_TRADING_CONFIG, {'type': 'stgyType'})
-
+        assert_request(mock_request, c.POST, c.SET_TRADING_CONFIG, {'type': 'stgyType'})
     @patch.object(AccountAPI, 'request')
     def test_precheck_set_delta_neutral(self, mock_request):
         mock_request.return_value = {'code': '0'}
@@ -70,7 +68,7 @@ class TestBillTypeAndApply(_Base):
     def test_get_bill_type(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_bill_type()
-        mock_request.assert_called_once_with(c.GET, c.BILL_TYPE, {})
+        assert_request(mock_request, c.GET, c.BILL_TYPE, {})
 
     @patch.object(AccountAPI, 'request')
     def test_get_bill_type_with_type(self, mock_request):
@@ -90,9 +88,6 @@ class TestBillTypeAndApply(_Base):
     def test_apply_bills_required_only(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.apply_bills(year='2023', quarter='Q1')
-        mock_request.assert_called_once_with(
-            c.POST, c.BILLS_APPLY, {'year': '2023', 'quarter': 'Q1'})
-
-
+        assert_request(mock_request, c.POST, c.BILLS_APPLY, {'year': '2023', 'quarter': 'Q1'})
 if __name__ == '__main__':
     unittest.main()

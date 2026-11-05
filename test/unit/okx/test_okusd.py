@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 from okx.Finance.Okusd import OkusdAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 _STUB_ID = 'test_key'
 _STUB_SIGN = 'test_secret'
@@ -34,7 +34,7 @@ class TestOkusdAPI(unittest.TestCase):
     def test_get_rate_history_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_rate_history()
-        mock_request.assert_called_once_with(c.GET, c.OKUSD_RATE_HISTORY, {})
+        assert_request(mock_request, c.GET, c.OKUSD_RATE_HISTORY, {})
 
     @patch.object(OkusdAPI, 'request')
     def test_get_rate_history_with_params(self, mock_request):
@@ -47,7 +47,7 @@ class TestOkusdAPI(unittest.TestCase):
     def test_get_subscribe_history_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_subscribe_history()
-        mock_request.assert_called_once_with(c.GET, c.OKUSD_SUBSCRIBE_HISTORY, {})
+        assert_request(mock_request, c.GET, c.OKUSD_SUBSCRIBE_HISTORY, {})
 
     @patch.object(OkusdAPI, 'request')
     def test_get_subscribe_history_with_params(self, mock_request):
@@ -60,7 +60,7 @@ class TestOkusdAPI(unittest.TestCase):
     def test_get_redeem_history_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_redeem_history()
-        mock_request.assert_called_once_with(c.GET, c.OKUSD_REDEEM_HISTORY, {})
+        assert_request(mock_request, c.GET, c.OKUSD_REDEEM_HISTORY, {})
 
     @patch.object(OkusdAPI, 'request')
     def test_get_redeem_history_with_type(self, mock_request):
@@ -74,7 +74,7 @@ class TestOkusdAPI(unittest.TestCase):
     def test_get_rewards_history_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_rewards_history()
-        mock_request.assert_called_once_with(c.GET, c.OKUSD_REWARDS_HISTORY, {})
+        assert_request(mock_request, c.GET, c.OKUSD_REWARDS_HISTORY, {})
 
     @patch.object(OkusdAPI, 'request')
     def test_get_rewards_history_with_params(self, mock_request):

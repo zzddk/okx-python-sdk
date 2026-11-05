@@ -16,14 +16,7 @@ class StakingDefiAPI(OkxClient):
     def purchase(self, productId: Any = None, investData: Any = None, term: Any = None, tag: Any = None) -> Dict[str, Any]:
         if investData is None:
             investData = []
-        params = {
-            'productId': productId,
-            'investData': investData
-        }
-        if term is not None:
-            params['term'] = term
-        if tag is not None:
-            params['tag'] = tag
+        params = {'productId': productId, 'investData': investData, 'term': term, 'tag': tag}
         return self.request(POST, STACK_DEFI_PURCHASE, params)
 
     def redeem(self, ordId: Any = None, protocolType: Any = None, allowEarlyRedeem: Any = None) -> Dict[str, Any]:

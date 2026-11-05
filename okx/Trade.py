@@ -12,15 +12,9 @@ class TradeAPI(OkxClient):
                     isElpTakerAccess: Any = None, instIdCode: Any = None) -> Dict[str, Any]:
         params = {'instId': instId, 'tdMode': tdMode, 'side': side, 'ordType': ordType, 'sz': sz, 'ccy': ccy,
                   'clOrdId': clOrdId, 'tag': tag, 'posSide': posSide, 'px': px, 'reduceOnly': reduceOnly,
-                  'tgtCcy': tgtCcy, 'stpMode': stpMode, 'pxUsd': pxUsd, 'pxVol': pxVol, 'banAmend': banAmend}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
-        if pxAmendType is not None:
-            params['pxAmendType'] = pxAmendType
-        if isElpTakerAccess is not None:
-            params['isElpTakerAccess'] = isElpTakerAccess
-        if instIdCode is not None:
-            params['instIdCode'] = instIdCode
+                  'tgtCcy': tgtCcy, 'stpMode': stpMode, 'pxUsd': pxUsd, 'pxVol': pxVol, 'banAmend': banAmend,
+                  'tradeQuoteCcy': tradeQuoteCcy, 'pxAmendType': pxAmendType, 'isElpTakerAccess': isElpTakerAccess,
+                  'instIdCode': instIdCode}
         params['attachAlgoOrds'] = attachAlgoOrds
         return self.request(POST, PLACE_ORDER, params)
 
@@ -45,13 +39,9 @@ class TradeAPI(OkxClient):
         params = {'instId': instId, 'cxlOnFail': cxlOnFail, 'ordId': ordId, 'clOrdId': clOrdId, 'reqId': reqId,
                   'newSz': newSz, 'newPx': newPx, 'newTpTriggerPx': newTpTriggerPx, 'newTpOrdPx': newTpOrdPx,
                   'newSlTriggerPx': newSlTriggerPx, 'newSlOrdPx': newSlOrdPx, 'newTpTriggerPxType': newTpTriggerPxType,
-                  'newSlTriggerPxType': newSlTriggerPxType, 'newTriggerPx': newTriggerPx, 'newOrdPx': newOrdPx}
-        if pxAmendType is not None:
-            params['pxAmendType'] = pxAmendType
-        if newTpTriggerRatio is not None:
-            params['newTpTriggerRatio'] = newTpTriggerRatio
-        if newSlTriggerRatio is not None:
-            params['newSlTriggerRatio'] = newSlTriggerRatio
+                  'newSlTriggerPxType': newSlTriggerPxType, 'newTriggerPx': newTriggerPx, 'newOrdPx': newOrdPx,
+                  'pxAmendType': pxAmendType, 'newTpTriggerRatio': newTpTriggerRatio,
+                  'newSlTriggerRatio': newSlTriggerRatio}
         params['attachAlgoOrds'] = attachAlgoOrds
         return self.request(POST, AMEND_ORDER, params)
 
@@ -114,23 +104,14 @@ class TradeAPI(OkxClient):
                   'posSide': posSide, 'reduceOnly': reduceOnly, 'tpTriggerPx': tpTriggerPx, 'tpOrdPx': tpOrdPx,
                   'slTriggerPx': slTriggerPx, 'slOrdPx': slOrdPx, 'triggerPx': triggerPx, 'orderPx': orderPx,
                   'tgtCcy': tgtCcy, 'pxVar': pxVar, 'szLimit': szLimit, 'pxLimit': pxLimit,
-                  'timeInterval': timeInterval,
-                  'pxSpread': pxSpread, 'tpTriggerPxType': tpTriggerPxType, 'slTriggerPxType': slTriggerPxType,
-                  'callbackRatio': callbackRatio, 'callbackSpread': callbackSpread, 'activePx': activePx,
-                  'tag': tag, 'triggerPxType': triggerPxType, 'closeFraction': closeFraction,
-                  'quickMgnType': quickMgnType, 'algoClOrdId': algoClOrdId,
-                  'tpOrdKind': tpOrdKind, 'cxlOnClosePos': cxlOnClosePos, 'chaseType': chaseType, 'chaseVal': chaseVal,
-                  'maxChaseType': maxChaseType, 'maxChaseVal': maxChaseVal, 'attachAlgoOrds': attachAlgoOrds}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
-        if pxAmendType is not None:
-            params['pxAmendType'] = pxAmendType
-        if advanceOrdType is not None:
-            params['advanceOrdType'] = advanceOrdType
-        if tpTriggerRatio is not None:
-            params['tpTriggerRatio'] = tpTriggerRatio
-        if slTriggerRatio is not None:
-            params['slTriggerRatio'] = slTriggerRatio
+                  'timeInterval': timeInterval, 'pxSpread': pxSpread, 'tpTriggerPxType': tpTriggerPxType,
+                  'slTriggerPxType': slTriggerPxType, 'callbackRatio': callbackRatio, 'callbackSpread': callbackSpread,
+                  'activePx': activePx, 'tag': tag, 'triggerPxType': triggerPxType, 'closeFraction': closeFraction,
+                  'quickMgnType': quickMgnType, 'algoClOrdId': algoClOrdId, 'tpOrdKind': tpOrdKind,
+                  'cxlOnClosePos': cxlOnClosePos, 'chaseType': chaseType, 'chaseVal': chaseVal,
+                  'maxChaseType': maxChaseType, 'maxChaseVal': maxChaseVal, 'attachAlgoOrds': attachAlgoOrds,
+                  'tradeQuoteCcy': tradeQuoteCcy, 'pxAmendType': pxAmendType, 'advanceOrdType': advanceOrdType,
+                  'tpTriggerRatio': tpTriggerRatio, 'slTriggerRatio': slTriggerRatio}
         return self.request(POST, PLACE_ALGO_ORDER, params)
 
     # Cancel Algo Order

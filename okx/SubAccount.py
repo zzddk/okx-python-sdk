@@ -15,15 +15,9 @@ class SubAccountAPI(OkxClient):
 
 
     def reset_subaccount_apikey(self, subAcct: Any,apiKey: Any, label: Any = None, perm: Any = None, ip: Any='-1') -> Dict[str, Any]:
-        params = {'subAcct': subAcct, 'apiKey': apiKey}
-
+        params = {'subAcct': subAcct, 'apiKey': apiKey, 'label': label, 'perm': perm}
         if ip != '-1':
             params['ip'] = ip
-        if label is not None:
-            params['label'] = label
-        if perm is not None:
-            params['perm'] = perm
-        #params = {'subAcct': subAcct, 'label': label, 'apiKey': apiKey, 'perm': perm, 'ip': ip}
         return self.request(POST, RESET, params)
 
 

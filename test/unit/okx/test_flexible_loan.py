@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 from okx.Finance.FlexibleLoan import FlexibleLoanAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 _STUB_ID = 'test_key'
 _STUB_SIGN = 'test_secret'
@@ -28,8 +28,8 @@ class TestFlexibleLoanBorrow(unittest.TestCase):
         collateral = [{'ccy': 'BTC', 'amt': '0.01'}]
         self.api.borrow(loanData=loan_data, clOrdId='abc123',
                         collateralData=collateral, eMode='0')
-        mock_request.assert_called_once_with(
-            c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
+        assert_request(
+            mock_request, c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
             {'loanData': loan_data, 'clOrdId': 'abc123',
              'collateralData': collateral, 'eMode': '0'})
 
@@ -38,8 +38,8 @@ class TestFlexibleLoanBorrow(unittest.TestCase):
         mock_request.return_value = {'code': '0'}
         loan_data = {'ccy': 'USDT', 'amt': '50'}
         self.api.borrow(loanData=loan_data, clOrdId='xyz')
-        mock_request.assert_called_once_with(
-            c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
+        assert_request(
+            mock_request, c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
             {'loanData': loan_data, 'clOrdId': 'xyz'})
 
     @patch.object(FlexibleLoanAPI, 'request')
@@ -47,8 +47,8 @@ class TestFlexibleLoanBorrow(unittest.TestCase):
         mock_request.return_value = {'code': '0'}
         loan_data = {'ccy': 'USDT', 'amt': '25'}
         self.api.borrow(loanData=loan_data, clOrdId='k2', ordId='ord-1')
-        mock_request.assert_called_once_with(
-            c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
+        assert_request(
+            mock_request, c.POST, c.FINANCE_FLEXIBLE_LOAN_BORROW,
             {'loanData': loan_data, 'clOrdId': 'k2', 'ordId': 'ord-1'})
 
 

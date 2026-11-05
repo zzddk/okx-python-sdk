@@ -30,10 +30,8 @@ class FundingAPI(OkxClient):
 
     # Withdrawal
     def withdrawal(self, ccy: Any, amt: Any, dest: Any, toAddr: Any, chain: Any = None, areaCode: Any = None, clientId: Any = None, toAddrType: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'amt': amt, 'dest': dest, 'toAddr': toAddr, 'chain': chain,
-                  'areaCode': areaCode, 'clientId': clientId}
-        if toAddrType is not None:
-            params['toAddrType'] = toAddrType
+        params = {'ccy': ccy, 'amt': amt, 'dest': dest, 'toAddr': toAddr, 'chain': chain, 'areaCode': areaCode,
+                  'clientId': clientId, 'toAddrType': toAddrType}
         return self.request(POST, WITHDRAWAL_COIN, params)
 
     # Get Deposit History
@@ -107,8 +105,7 @@ class FundingAPI(OkxClient):
 
     #Get withdrawal history
     def get_withdrawal_history(self, ccy: Any = None, wdId: Any = None, clientId: Any = None, txId: Any = None, type: Any = None, state: Any = None, after: Any = None, before: Any = None, limit: Any = None, toAddrType: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'wdId': wdId, 'clientId': clientId, 'txId': txId, 'type': type, 'state': state, 'after': after, 'before': before, 'limit': limit}
-        if toAddrType is not None:
-            params['toAddrType'] = toAddrType
+        params = {'ccy': ccy, 'wdId': wdId, 'clientId': clientId, 'txId': txId, 'type': type, 'state': state,
+                  'after': after, 'before': before, 'limit': limit, 'toAddrType': toAddrType}
         return self.request(GET, GET_WITHDRAWAL_HISTORY, params)
 

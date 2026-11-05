@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Funding import FundingAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request, sent_params
 
 
 class TestFundingAPIWithdrawal(unittest.TestCase):
@@ -37,12 +37,9 @@ class TestFundingAPIWithdrawal(unittest.TestCase):
             'ccy': 'USDT',
             'amt': '100',
             'dest': '4',
-            'toAddr': '0x1234567890abcdef',
-            'chain': None,
-            'areaCode': None,
-            'clientId': None
+            'toAddr': '0x1234567890abcdef'
         }
-        mock_request.assert_called_once_with(c.POST, c.WITHDRAWAL_COIN, expected_params)
+        assert_request(mock_request, c.POST, c.WITHDRAWAL_COIN, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(FundingAPI, 'request')
@@ -136,7 +133,7 @@ class TestFundingAPIGetWithdrawalHistory(unittest.TestCase):
         result = self.funding_api.get_withdrawal_history()
 
         # Assert
-        call_args = mock_request.call_args[0][2]
+        call_args = sent_params(mock_request)
         self.assertNotIn('toAddrType', call_args)
         self.assertEqual(result, mock_response)
 

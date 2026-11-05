@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Account import AccountAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request, sent_params
 
 # Test constants
 IDX_VOL_NEGATIVE_5_PERCENT = '-0.05'
@@ -91,7 +91,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {
             'idxVol': '0.1'
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -112,7 +112,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
         expected_params = {
             'idxVol': IDX_VOL_NEGATIVE_5_PERCENT
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -131,7 +131,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         # Should pass empty params dict
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, {})
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, {})
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -172,7 +172,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
             'simAsset': sim_asset,
             'idxVol': '0.1'
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -187,7 +187,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'greeksType': 'PA'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_greeks_type_bs(self, mock_request):
@@ -201,7 +201,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'greeksType': 'BS'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_includes_real_positions(self, mock_request):
@@ -221,7 +221,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
             'inclRealPosAndEq': True,
             'idxVol': '0.05'
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_excludes_real_positions(self, mock_request):
@@ -243,7 +243,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
             'inclRealPosAndEq': False,
             'simPos': sim_pos
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_with_account_level(self, mock_request):
@@ -257,7 +257,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'acctLv': '3'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_with_leverage(self, mock_request):
@@ -271,7 +271,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'lever': '10'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_extreme_volatility_positive(self, mock_request):
@@ -285,7 +285,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'idxVol': '1'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_extreme_volatility_negative(self, mock_request):
@@ -299,7 +299,7 @@ class TestAccountAPIPositionBuilder(unittest.TestCase):
 
         # Assert
         expected_params = {'idxVol': '-0.99'}
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_position_builder_complex_scenario(self, mock_request):
@@ -382,7 +382,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
             'greeksType': 'PA',
             'idxVol': '0.05'
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_false_value_for_inclRealPosAndEq_is_included(self, mock_request):
@@ -398,7 +398,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
         expected_params = {
             'inclRealPosAndEq': False
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_empty_lists_are_included(self, mock_request):
@@ -418,7 +418,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
             'simPos': [],
             'simAsset': []
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_zero_idxVol_is_included(self, mock_request):
@@ -434,7 +434,7 @@ class TestAccountAPIPositionBuilderParameterHandling(unittest.TestCase):
         expected_params = {
             'idxVol': '0'
         }
-        mock_request.assert_called_once_with(c.POST, c.POSITION_BUILDER, expected_params)
+        assert_request(mock_request, c.POST, c.POSITION_BUILDER, expected_params)
 
 
 class TestAccountAPISetAutoEarn(unittest.TestCase):
@@ -526,7 +526,7 @@ class TestAccountAPISetAutoEarn(unittest.TestCase):
             'ccy': 'USDT',
             'action': 'turn_on'
         }
-        mock_request.assert_called_once_with(c.POST, c.SET_AUTO_EARN, expected_params)
+        assert_request(mock_request, c.POST, c.SET_AUTO_EARN, expected_params)
 
     @patch.object(AccountAPI, 'request')
     def test_set_auto_earn_different_currencies(self, mock_request):
@@ -566,13 +566,8 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
             tdMode='cash'
         )
 
-        expected_params = {
-            'instId': 'BTC-USDT',
-            'tdMode': 'cash',
-            'ccy': None,
-            'px': None
-        }
-        mock_request.assert_called_once_with(c.GET, c.MAX_TRADE_SIZE, expected_params)
+        expected_params = {'instId': 'BTC-USDT', 'tdMode': 'cash'}
+        assert_request(mock_request, c.GET, c.MAX_TRADE_SIZE, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -607,7 +602,7 @@ class TestAccountAPIGetMaxOrderSize(unittest.TestCase):
             tdMode='cash'
         )
 
-        call_args = mock_request.call_args[0][2]
+        call_args = sent_params(mock_request)
         self.assertNotIn('tradeQuoteCcy', call_args)
 
 
@@ -629,15 +624,8 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
             tdMode='cash'
         )
 
-        expected_params = {
-            'instId': 'BTC-USDT',
-            'tdMode': 'cash',
-            'ccy': None,
-            'reduceOnly': None,
-            'unSpotOffset': None,
-            'quickMgnType': None
-        }
-        mock_request.assert_called_once_with(c.GET, c.MAX_AVAIL_SIZE, expected_params)
+        expected_params = {'instId': 'BTC-USDT', 'tdMode': 'cash'}
+        assert_request(mock_request, c.GET, c.MAX_AVAIL_SIZE, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(AccountAPI, 'request')
@@ -674,7 +662,7 @@ class TestAccountAPIGetMaxAvailSize(unittest.TestCase):
             tdMode='cash'
         )
 
-        call_args = mock_request.call_args[0][2]
+        call_args = sent_params(mock_request)
         self.assertNotIn('tradeQuoteCcy', call_args)
 
 
@@ -764,9 +752,7 @@ class TestAccountAPIGlpPerformance(unittest.TestCase):
     def test_glp_historical_performance_required_only(self, mock_request):
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}
         self.account_api.get_glp_historical_performance(program='SPOT')
-        mock_request.assert_called_once_with(
-            c.GET, c.GLP_HISTORICAL_PERFORMANCE, {'program': 'SPOT'})
-
+        assert_request(mock_request, c.GET, c.GLP_HISTORICAL_PERFORMANCE, {'program': 'SPOT'})
     @patch.object(AccountAPI, 'request')
     def test_glp_historical_performance_with_all_params(self, mock_request):
         mock_request.return_value = {'code': '0', 'msg': '', 'data': []}

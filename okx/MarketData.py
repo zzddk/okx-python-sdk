@@ -8,10 +8,7 @@ class MarketAPI(OkxClient):
 
     # Get Tickers
     def get_tickers(self, instType: Any, uly: Any = None, instFamily: Any = None) -> Dict[str, Any]:
-        if uly is not None:
-            params = {'instType': instType, 'uly': uly, 'instFamily': instFamily}
-        else:
-            params = {'instType': instType, 'instFamily': instFamily}
+        params = {'instType': instType, 'uly': uly, 'instFamily': instFamily}
         return self.request(GET, TICKERS_INFO, params)
 
     # Get Ticker

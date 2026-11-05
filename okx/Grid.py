@@ -10,9 +10,7 @@ class GridAPI(OkxClient):
         params = {'instId': instId, 'algoOrdType': algoOrdType, 'maxPx': maxPx, 'minPx': minPx, 'gridNum': gridNum,
                   'runType': runType, 'tpTriggerPx': tpTriggerPx, 'slTriggerPx': slTriggerPx, 'tag': tag,
                   'quoteSz': quoteSz, 'baseSz': baseSz, 'sz': sz, 'direction': direction, 'lever': lever,
-                  'basePos': basePos}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
+                  'basePos': basePos, 'tradeQuoteCcy': tradeQuoteCcy}
         return self.request(POST, GRID_ORDER_ALGO, params)
 
     def grid_amend_order_algo(self, algoId: Any = None, instId: Any = None, slTriggerPx: Any = None, tpTriggerPx: Any = None) -> Dict[str, Any]:
@@ -84,11 +82,8 @@ class GridAPI(OkxClient):
         if recurringList is None:
             recurringList = []
         params = {'stgyName': stgyName, 'recurringList': recurringList, 'period': period, 'recurringDay': recurringDay,
-                  'recurringTime': recurringTime,
-                  'timeZone': timeZone, 'amt': amt, 'investmentCcy': investmentCcy, 'tdMode': tdMode,
-                  'algoClOrdId': algoClOrdId, 'tag': tag}
-        if tradeQuoteCcy is not None:
-            params['tradeQuoteCcy'] = tradeQuoteCcy
+                  'recurringTime': recurringTime, 'timeZone': timeZone, 'amt': amt, 'investmentCcy': investmentCcy,
+                  'tdMode': tdMode, 'algoClOrdId': algoClOrdId, 'tag': tag, 'tradeQuoteCcy': tradeQuoteCcy}
         return self.request(POST, PLACE_RECURRING_BUY_ORDER, params)
 
     # - Amend recurring buy order

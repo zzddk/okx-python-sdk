@@ -35,6 +35,29 @@ class FakeTransport(Transport):
         self.closed = True
 
 
+def sent_params(mock, call=0):
+    """The arguments a mocked `request` would actually put on the wire.
+
+    `Transport` drops `None` values, so `None` means "not supplied" whether
+    the endpoint passed the key or left it out. Tests should assert against this
+    view: it says which arguments are sent, not how the endpoint spells "unset".
+    """
+    args = mock.call_args_list[call].args
+    params = args[2] if len(args) > 2 else {}
+    if not isinstance(params, dict):
+        return params
+    return {key: value for key, value in params.items() if value is not None}
+
+
+def assert_request(mock, method, path, params=None):
+    """Assert the single call a mocked `request` received."""
+    mock.assert_called_once()
+    args = mock.call_args.args
+    assert args[0] == method, f"expected {method!r}, sent {args[0]!r}"
+    assert args[1] == path, f"expected {path!r}, sent {args[1]!r}"
+    assert sent_params(mock) == ({} if params is None else params)
+
+
 def mock_transport(handler=None, **config):
     """A real Transport wired to `httpx.MockTransport` instead of the network."""
     if handler is None:

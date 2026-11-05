@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.Affiliate import AffiliateAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 _STUB_ID = 'test_key'
 _STUB_SIGN = 'test_secret'
@@ -36,9 +36,7 @@ class TestAffiliateAPI(unittest.TestCase):
     def test_get_tvb_invitee_list_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_invitee_list()
-        mock_request.assert_called_once_with(
-            c.GET, c.AFFILIATE_TVB_INVITEE_LIST, {})
-
+        assert_request(mock_request, c.GET, c.AFFILIATE_TVB_INVITEE_LIST, {})
     @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_invitee_list_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
@@ -57,9 +55,7 @@ class TestAffiliateAPI(unittest.TestCase):
     def test_get_tvb_link_list_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_link_list()
-        mock_request.assert_called_once_with(
-            c.GET, c.AFFILIATE_TVB_LINK_LIST, {})
-
+        assert_request(mock_request, c.GET, c.AFFILIATE_TVB_LINK_LIST, {})
     @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_link_list_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
@@ -75,9 +71,7 @@ class TestAffiliateAPI(unittest.TestCase):
     def test_get_tvb_performance_summary_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_performance_summary()
-        mock_request.assert_called_once_with(
-            c.GET, c.AFFILIATE_TVB_PERFORMANCE_SUMMARY, {})
-
+        assert_request(mock_request, c.GET, c.AFFILIATE_TVB_PERFORMANCE_SUMMARY, {})
     @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_performance_summary_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
@@ -90,9 +84,7 @@ class TestAffiliateAPI(unittest.TestCase):
     def test_get_tvb_tier_breakdown_default(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.get_tvb_tier_breakdown()
-        mock_request.assert_called_once_with(
-            c.GET, c.AFFILIATE_TVB_TIER_BREAKDOWN, {})
-
+        assert_request(mock_request, c.GET, c.AFFILIATE_TVB_TIER_BREAKDOWN, {})
     @patch.object(AffiliateAPI, 'request')
     def test_get_tvb_tier_breakdown_with_params(self, mock_request):
         mock_request.return_value = {'code': '0'}

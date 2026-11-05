@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import patch
 from okx.Trade import TradeAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, sent_params
 
 # Placeholder client identifiers — every request is mocked (see @patch.object),
 # so these dummy strings are never signed or transmitted; not real credentials.
@@ -32,11 +32,11 @@ class TestPlaceOrderNewParams(_Base):
     def test_place_order_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_order(**_REQUIRED_PLACE_ORDER)
-        params = mock_request.call_args[0][2]
+        params = sent_params(mock_request)
         self.assertNotIn('isElpTakerAccess', params)
         self.assertNotIn('instIdCode', params)
         self.assertNotIn('tradeQuoteCcy', params)
-        self.assertIn('attachAlgoOrds', params)
+        self.assertNotIn('attachAlgoOrds', params)
 
     @patch.object(TradeAPI, 'request')
     def test_place_order_isElpTakerAccess_written_when_set(self, mock_request):
@@ -61,7 +61,7 @@ class TestPlaceAlgoOrderNewParams(_Base):
     def test_algo_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.place_algo_order(instId='BTC-USDT', tdMode='cash', side='buy', ordType='conditional', sz='1')
-        params = mock_request.call_args[0][2]
+        params = sent_params(mock_request)
         self.assertNotIn('advanceOrdType', params)
         self.assertNotIn('tpTriggerRatio', params)
         self.assertNotIn('slTriggerRatio', params)
@@ -92,7 +92,7 @@ class TestAmendOrderNewParams(_Base):
     def test_amend_backward_compatible_omits_new_params(self, mock_request):
         mock_request.return_value = {'code': '0'}
         self.api.amend_order(instId='BTC-USDT', ordId='1')
-        params = mock_request.call_args[0][2]
+        params = sent_params(mock_request)
         self.assertNotIn('newTpTriggerRatio', params)
         self.assertNotIn('newSlTriggerRatio', params)
 

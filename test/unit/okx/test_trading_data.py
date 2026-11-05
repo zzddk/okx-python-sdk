@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.TradingData import TradingDataAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 
 class TestTradingDataAPIContractsOpenInterestHistory(unittest.TestCase):
@@ -39,7 +39,7 @@ class TestTradingDataAPIContractsOpenInterestHistory(unittest.TestCase):
         expected_params = {
             'instId': 'BTC-USDT-SWAP'
         }
-        mock_request.assert_called_once_with(c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(TradingDataAPI, 'request')
@@ -93,7 +93,7 @@ class TestTradingDataAPIContractsOpenInterestHistory(unittest.TestCase):
             'instId': 'ETH-USDT-SWAP',
             'period': '5m'
         }
-        mock_request.assert_called_once_with(c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
 
     @patch.object(TradingDataAPI, 'request')
     def test_get_open_interest_history_different_periods(self, mock_request):
@@ -152,7 +152,7 @@ class TestTradingDataAPIContractsOpenInterestHistory(unittest.TestCase):
             'end': '1609545600000',
             'limit': '100'
         }
-        mock_request.assert_called_once_with(c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.CONTRACTS_OPEN_INTEREST_HISTORY, expected_params)
 
     @patch.object(TradingDataAPI, 'request')
     def test_get_open_interest_history_utc_periods(self, mock_request):

@@ -59,15 +59,7 @@ class TradingDataAPI(OkxClient):
         :param limit: Number of results per request. The maximum is 100. The default is 100
         :return: API response
         """
-        params = {'instId': instId}
-        if period is not None:
-            params['period'] = period
-        if begin is not None:
-            params['begin'] = begin
-        if end is not None:
-            params['end'] = end
-        if limit is not None:
-            params['limit'] = limit
+        params = {'instId': instId, 'period': period, 'begin': begin, 'end': end, 'limit': limit}
         return self.request(GET, CONTRACTS_OPEN_INTEREST_HISTORY, params)
 
 

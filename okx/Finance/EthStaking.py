@@ -37,17 +37,7 @@ class EthStakingAPI(OkxClient):
 
     def eth_purchase_redeem_history(self, type: Any = None, status: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
 
-        params = {}
-        if type is not None:
-            params['type'] = type
-        if status is not None:
-            params['status'] = status
-        if after is not None:
-            params['after'] = after
-        if before is not None:
-            params['before'] = before
-        if limit is not None:
-            params['limit'] = limit
+        params = {'type': type, 'status': status, 'after': after, 'before': before, 'limit': limit}
         return self.request(GET, STACK_ETH_PURCHASE_REDEEM_HISTORY, params)
 
     def eth_apy_history(self, days: Any) -> Dict[str, Any]:

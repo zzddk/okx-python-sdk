@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from okx.PublicData import PublicAPI
 from okx import consts as c
-from .fakes import FakeTransport
+from .fakes import FakeTransport, assert_request
 
 
 class TestPublicAPIMarketDataHistory(unittest.TestCase):
@@ -45,7 +45,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
             'begin': '1609459200000',
             'end': '1609545600000'
         }
-        mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.MARKET_DATA_HISTORY, expected_params)
         self.assertEqual(result, mock_response)
 
     @patch.object(PublicAPI, 'request')
@@ -109,7 +109,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
             'end': '1609545600000',
             'instIdList': 'BTC-USDT'
         }
-        mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.MARKET_DATA_HISTORY, expected_params)
 
     @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_with_inst_family_list(self, mock_request):
@@ -137,7 +137,7 @@ class TestPublicAPIMarketDataHistory(unittest.TestCase):
             'end': '1612137600000',
             'instFamilyList': 'BTC-USD'
         }
-        mock_request.assert_called_once_with(c.GET, c.MARKET_DATA_HISTORY, expected_params)
+        assert_request(mock_request, c.GET, c.MARKET_DATA_HISTORY, expected_params)
 
     @patch.object(PublicAPI, 'request')
     def test_get_market_data_history_different_inst_types(self, mock_request):
