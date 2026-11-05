@@ -6,9 +6,18 @@ direction (polling for new records) and is deliberately not supported here —
 mixing the two makes "which page am I on" meaningless.
 
 This module owns both halves of that contract: what makes a call meaningful
-(`cursor` is required, and a few endpoints page by number instead) and how the
-walk moves (`after`, `limit`, the stop conditions). `OkxClient.paginate` only
-forwards.
+and how the walk moves. `paginate()` projects the caller's request once, before
+any page is fetched, and `_walk()` only carries out the result:
+
+* `cursor` is required — `after` refers to a different response field per
+  endpoint, and a few endpoints page by number instead.
+* `before` is rejected: `after` is the only direction this module walks.
+* `limit` comes from `page_size` alone; a `limit` in `params` is rejected so
+  the walk has one knob. `page_size=None` sends no `limit` at all.
+* `params['after']` seeds the walk; every other key (`begin`, `end`,
+  `instType`, …) is sent unchanged on every page.
+
+`OkxClient.paginate` only forwards.
 """
 
 import inspect
@@ -35,6 +44,11 @@ def paginate(fetch: Callable[..., Dict[str, Any]], cursor: Optional[str] = None,
     raises here, before the first page is requested, so a wrong call fails at
     the call site rather than in the middle of the loop.
 
+    `params` is the filter set sent with every page. `after` in it resumes the
+    walk from that cursor; `before` and `limit` are rejected here, before the
+    first page is requested, because the walk owns direction and page size. The
+    caller's dict is copied, never modified.
+
     The walk stops at an empty page or when the cursor stops advancing. It does
     **not** stop on a short page: endpoints cap `limit` at their own maximum, so
     a short page means the cap was hit, not that the data ran out. The cost is
@@ -42,7 +56,31 @@ def paginate(fetch: Callable[..., Dict[str, Any]], cursor: Optional[str] = None,
     """
     if not cursor:
         raise ValueError(_missing_cursor_message(fetch))
-    return _walk(fetch, cursor, params, page_size, max_pages)
+    filters, after = _project(fetch, params, page_size)
+    return _walk(fetch, cursor, filters, after, max_pages)
+
+
+def _project(fetch: Callable[..., Any], params: Optional[Dict[str, Any]],
+             page_size: Optional[int]):
+    """Turn the caller's params into the filters and cursor `_walk` may use."""
+    filters = dict(params or {})
+    if 'before' in filters:
+        raise ValueError(
+            f"before is not supported by paginate({_callable_name(fetch)}); "
+            "walk forward with after")
+    if 'limit' in filters:
+        raise ValueError(
+            f"limit is not accepted by paginate({_callable_name(fetch)}); "
+            "set page_size instead")
+    after = filters.pop('after', None)
+    if page_size is not None:
+        filters['limit'] = page_size
+    return filters, after
+
+
+def _callable_name(fetch: Callable[..., Any]) -> str:
+    name = getattr(fetch, '__name__', None)
+    return name if isinstance(name, str) else str(fetch)
 
 
 def _missing_cursor_message(fetch: Callable[..., Any]) -> str:
@@ -59,22 +97,17 @@ def _missing_cursor_message(fetch: Callable[..., Any]) -> str:
 
 
 def _walk(fetch: Callable[..., Dict[str, Any]], cursor: str,
-          params: Optional[Dict[str, Any]],
-          page_size: Optional[int],
+          filters: Dict[str, Any], after: Any,
           max_pages: Optional[int]) -> Iterator[Dict[str, Any]]:
-    base = dict(params or {})
-    after = base.pop('after', None)
-    if page_size is not None:
-        base['limit'] = page_size
     seen = set()
     pages = 0
     while True:
         if max_pages is not None and pages >= max_pages:
             return
         if after is None:
-            payload = fetch(**base)
+            payload = fetch(**filters)
         else:
-            payload = fetch(after=after, **base)
+            payload = fetch(after=after, **filters)
         pages += 1
         data = (payload or {}).get('data') or []
         if not data:

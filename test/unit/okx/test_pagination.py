@@ -74,8 +74,41 @@ class TestPaginateWalk(unittest.TestCase):
 
     def test_resumes_from_a_supplied_cursor(self):
         fetch = MagicMock(return_value=_page())
-        list(pagination.paginate(fetch, cursor='billId', params={'after': '42'}))
+        params = {'after': '42'}
+        list(pagination.paginate(fetch, cursor='billId', params=params))
         self.assertEqual(fetch.call_args.kwargs['after'], '42')
+        self.assertEqual(params, {'after': '42'})
+
+    def test_before_is_rejected_before_the_first_page(self):
+        """`before` walks the other direction; the caller must be told at the call."""
+        calls = []
+
+        def get_bills(**kwargs):
+            calls.append(kwargs)
+            return _page()
+
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(get_bills, cursor='billId', params={'before': 'x'})
+        message = str(caught.exception)
+        self.assertIn('before is not supported', message)
+        self.assertIn('get_bills', message)
+        self.assertIn('walk forward with after', message)
+        self.assertEqual(calls, [])
+
+    def test_limit_in_params_is_rejected_in_favour_of_page_size(self):
+        """`page_size` is the only knob for page size."""
+        calls = []
+
+        def get_bills(**kwargs):
+            calls.append(kwargs)
+            return _page()
+
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(get_bills, cursor='billId', params={'limit': 10})
+        message = str(caught.exception)
+        self.assertIn('get_bills', message)
+        self.assertIn('page_size', message)
+        self.assertEqual(calls, [])
 
     def test_empty_result_yields_nothing(self):
         fetch = MagicMock(return_value={'code': '0', 'data': []})
