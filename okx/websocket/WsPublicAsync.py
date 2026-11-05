@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from okx import consts
 from okx.transport import Transport
+from okx.websocket.config import require_transport, session_config
 from okx.websocket.WsBaseAsync import WsBaseAsync
 
 
 class WsPublicAsync(WsBaseAsync):
+    # channel -> {"is demo trading": endpoint}. A channel is only meaningful for
+    # a real transport, so the transport is checked first.
+    _CHANNELS: ClassVar[dict[str, dict[bool, str]]] = {
+        'public': {False: consts.WS_PUBLIC_URL, True: consts.WS_PUBLIC_DEMO_URL},
+        'business': {False: consts.WS_BUSINESS_URL, True: consts.WS_BUSINESS_DEMO_URL},
+    }
+
     @classmethod
     def from_transport(
         cls,
@@ -20,36 +28,16 @@ class WsPublicAsync(WsBaseAsync):
     ) -> "WsPublicAsync":
         """Build from the `Transport` that configures the REST side.
 
-        Credentials, proxy and environment are shared: `transport.flag == '1'`
-        (demo trading) selects the demo host, and `channel` selects the public
-        or business endpoint. `debug` falls back to the transport's value
-        unless given explicitly.
-
-        Only `transport.proxy` is inherited. `Transport(http=...)` turning off
-        environment-proxy detection is a REST rule and does not extend here:
-        with no proxy set, the WebSocket still follows the environment.
+        `channel` picks the public or business host table; credentials,
+        environment and proxy come from the transport (see
+        `okx.websocket.config.session_config`). `url` overrides the host.
         """
-        if not isinstance(transport, Transport):
-            raise TypeError(
-                "transport must be an okx.transport.Transport instance, "
-                f"got {type(transport).__name__}"
-            )
-        if channel not in ('public', 'business'):
-            raise ValueError(f"channel must be 'public' or 'business', got {channel!r}")
-        demo = str(transport.flag) == '1'
-        if url is None:
-            if channel == 'business':
-                url = consts.WS_BUSINESS_DEMO_URL if demo else consts.WS_BUSINESS_URL
-            else:
-                url = consts.WS_PUBLIC_DEMO_URL if demo else consts.WS_PUBLIC_URL
-        return cls(
-            url=url,
-            apiKey=transport.API_KEY,
-            passphrase=transport.PASSPHRASE,
-            secretKey=transport.API_SECRET_KEY,
-            debug=transport.debug if debug is None else debug,
-            proxy=transport.proxy,
-        )
+        require_transport(transport)
+        try:
+            hosts = cls._CHANNELS[channel]
+        except KeyError:
+            raise ValueError(f"channel must be 'public' or 'business', got {channel!r}") from None
+        return cls(**session_config(transport, hosts, url=url, debug=debug))
 
     def __init__(
         self,

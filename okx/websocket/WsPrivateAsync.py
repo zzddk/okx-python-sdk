@@ -2,15 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 from okx import consts
 from okx.transport import Transport
+from okx.websocket.config import session_config
 from okx.websocket.WsBaseAsync import Callback, WsBaseAsync
 
 
 class WsPrivateAsync(WsBaseAsync):
     _LOGIN_REQUIRED = True
+
+    # "is demo trading" -> endpoint; the mapping itself lives in
+    # okx.websocket.config.session_config.
+    _HOSTS: ClassVar[dict[bool, str]] = {
+        False: consts.WS_PRIVATE_URL,
+        True: consts.WS_PRIVATE_DEMO_URL,
+    }
 
     @classmethod
     def from_transport(
@@ -21,30 +29,11 @@ class WsPrivateAsync(WsBaseAsync):
     ) -> "WsPrivateAsync":
         """Build from the `Transport` that configures the REST side.
 
-        Credentials, environment and proxy are shared: `flag='1'` on the
-        transport means demo trading, so the demo host and `transport.proxy`
-        are picked up automatically. `debug` falls back to the transport's
-        value unless given explicitly.
-
-        Only `transport.proxy` is inherited. `Transport(http=...)` turning off
-        environment-proxy detection is a REST rule and does not extend here:
-        with no proxy set, the WebSocket still follows the environment.
+        Credentials, environment and proxy come from it; the field mapping and
+        the demo switch live in `okx.websocket.config.session_config`. `url`
+        overrides the host.
         """
-        if not isinstance(transport, Transport):
-            raise TypeError(
-                "transport must be an okx.transport.Transport instance, "
-                f"got {type(transport).__name__}"
-            )
-        if url is None:
-            url = consts.WS_PRIVATE_DEMO_URL if str(transport.flag) == '1' else consts.WS_PRIVATE_URL
-        return cls(
-            apiKey=transport.API_KEY,
-            passphrase=transport.PASSPHRASE,
-            secretKey=transport.API_SECRET_KEY,
-            url=url,
-            debug=transport.debug if debug is None else debug,
-            proxy=transport.proxy,
-        )
+        return cls(**session_config(transport, cls._HOSTS, url=url, debug=debug))
 
     def __init__(
         self,

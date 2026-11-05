@@ -15,6 +15,9 @@ All notable changes to `python-okx` are documented in this file.
 - Pagination validates the cursor in `okx.pagination`; `OkxClient.paginate`
   only forwards. Both entries raise the same message, naming the method
   (ADR-0013).
+- The two WebSocket clients share one `Transport` → session-config mapping in
+  `okx.websocket.config`; each client now only supplies its host table.
+  Behaviour is unchanged (ADR-0014).
 
 ### Fixed
 - `FundingAPI.get_deposit_lightning` sent only `to`: `ccy` and `amt` were

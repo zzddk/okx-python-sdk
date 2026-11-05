@@ -8,12 +8,16 @@ import unittest
 from unittest.mock import patch
 
 from okx import consts
+from okx.websocket.config import session_config
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
 from ..fakes import mock_transport
 
 PROXY = 'http://127.0.0.1:8080'
+
+# An arbitrary host table: session_config only chooses between the two entries.
+HOSTS = {False: 'wss://live.example', True: 'wss://demo.example'}
 
 
 def _transport(flag='0', debug=False, proxy=None):
@@ -41,6 +45,43 @@ class TestDefaultUrls(unittest.TestCase):
     def test_public_defaults_to_live(self):
         ws = WsPublicAsync()
         self.assertEqual(ws.url, consts.WS_PUBLIC_URL)
+
+
+class TestSessionConfig(unittest.TestCase):
+    def test_fields_come_from_the_transport(self):
+        config = session_config(_transport(debug=True, proxy=PROXY), HOSTS)
+        self.assertEqual(config, {
+            'url': 'wss://live.example',
+            'apiKey': 'key',
+            'passphrase': 'pass',
+            'secretKey': 'secret',
+            'debug': True,
+            'proxy': PROXY,
+        })
+
+    def test_demo_flag_selects_the_demo_host(self):
+        config = session_config(_transport(flag='1'), HOSTS)
+        self.assertEqual(config['url'], 'wss://demo.example')
+
+    def test_url_overrides_the_host_table(self):
+        config = session_config(_transport(flag='1'), HOSTS, url='wss://explicit.example')
+        self.assertEqual(config['url'], 'wss://explicit.example')
+
+    def test_explicit_debug_wins(self):
+        config = session_config(_transport(debug=False), HOSTS, debug=True)
+        self.assertTrue(config['debug'])
+
+    def test_non_transport_is_rejected_with_the_argument_type(self):
+        with self.assertRaises(TypeError) as ctx:
+            session_config(object(), HOSTS)
+        self.assertIn('Transport', str(ctx.exception))
+        self.assertIn('object', str(ctx.exception))
+
+    def test_client_host_tables_have_a_live_and_a_demo_entry(self):
+        tables = [WsPrivateAsync._HOSTS, *WsPublicAsync._CHANNELS.values()]
+        for hosts in tables:
+            self.assertEqual(set(hosts), {False, True})
+            self.assertNotEqual(hosts[False], hosts[True])
 
 
 class TestFromTransport(unittest.TestCase):
