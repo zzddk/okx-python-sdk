@@ -88,14 +88,16 @@ class TestRemovalAndReplay(unittest.TestCase):
         subs = Subscriptions()
         subs.add([TICKERS], object())
 
-        self.assertEqual(len(subs.remove([TICKERS])), 1)
+        subs.remove([TICKERS])
+
         self.assertIsNone(subs.take({'arg': dict(TICKERS)}))
         self.assertEqual(subs.replay(), [])
 
     def test_removing_an_unknown_arg_is_harmless(self):
         subs = Subscriptions()
 
-        self.assertEqual(subs.remove([TICKERS]), ())
+        self.assertIsNone(subs.remove([TICKERS]))
+        self.assertEqual(subs.replay(), [])
 
     def test_replay_follows_add_order_and_excludes_requests(self):
         subs = Subscriptions()
@@ -125,6 +127,62 @@ class TestRemovalAndReplay(unittest.TestCase):
 
         self.assertIsNone(subs.take({'id': 'o1'}))
         self.assertIs(subs.take({'arg': dict(TICKERS)}), callback)
+
+
+class TestArgValidation(unittest.TestCase):
+    """Contract 10: only a routable arg enters the table, checked per batch."""
+
+    UNROUTABLE = (
+        'text',
+        42,
+        None,
+        ['channel'],
+        {},
+        {'instId': 'BTC-USDT'},
+        {'channel': ''},
+        {'channel': '   '},
+        {'channel': 1},
+    )
+
+    def test_add_rejects_every_unroutable_arg_and_keeps_the_table(self):
+        subs = Subscriptions()
+        for arg in self.UNROUTABLE:
+            with self.subTest(arg=arg):
+                with self.assertRaises(ValueError):
+                    subs.add([arg])
+                self.assertEqual(subs.replay(), [])
+
+    def test_add_rejects_a_batch_atomically(self):
+        subs = Subscriptions()
+        first, second = object(), object()
+        subs.add([TICKERS], first)
+
+        with self.assertRaises(ValueError):
+            subs.add([TICKERS, {'channel': '  '}], second)
+        with self.assertRaises(ValueError):
+            subs.add([{'channel': 'books'}, {'channel': ''}])
+
+        self.assertEqual(subs.replay(), [TICKERS])
+        self.assertIs(subs.take({'arg': dict(TICKERS)}), first)
+
+    def test_remove_rejects_every_unroutable_arg_and_keeps_the_table(self):
+        subs = Subscriptions()
+        for arg in self.UNROUTABLE:
+            with self.subTest(arg=arg):
+                with self.assertRaises(ValueError):
+                    subs.remove([arg])
+                self.assertEqual(subs.replay(), [])
+
+    def test_remove_rejects_a_batch_atomically(self):
+        subs = Subscriptions()
+        subs.add([TICKERS, BOOKS])
+
+        with self.assertRaises(ValueError):
+            subs.remove([TICKERS, 'x'])
+        with self.assertRaises(ValueError):
+            subs.remove([TICKERS, {'channel': '  '}])
+
+        self.assertEqual(subs.replay(), [TICKERS, BOOKS])
 
 
 class TestDirtyPayloads(unittest.TestCase):

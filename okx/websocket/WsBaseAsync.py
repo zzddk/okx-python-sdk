@@ -52,13 +52,6 @@ DEFAULT_RECONNECT_BACKOFF = 1.0
 DEFAULT_RECONNECT_MAX_BACKOFF = 60.0
 
 
-def _require_channel(arg: Dict[str, Any]) -> None:
-    """Reject an arg the server cannot route: a blank or missing channel."""
-    channel = arg.get("channel")
-    if not isinstance(channel, str) or not channel.strip():
-        raise ValueError(f"channel must be a non-blank string, got {channel!r}")
-
-
 class WsBaseAsync:
     """One OKX WebSocket session with heartbeat, reconnect and replay.
 
@@ -314,17 +307,14 @@ class WsBaseAsync:
     ) -> None:
         """Subscribe and route messages for these args to `callback`.
 
-        Every dict arg needs a non-blank `channel`; anything else raises
-        `ValueError` before the table or the socket is touched, since the
+        Every arg needs a non-blank `channel`; the table rejects anything else
+        with `ValueError` before the table or the socket is touched, since the
         server would reject it later without a traceable owner.
 
         The table is updated before the frame goes out: if the send fails the
         subscription is still replayed on the next connection, which is the
         safe direction.
         """
-        for arg in params:
-            if isinstance(arg, dict):
-                _require_channel(arg)
         self._subs.add(params, callback)
         await self._ensure_login()
         await self._send_payload("subscribe", params, id)
@@ -335,7 +325,11 @@ class WsBaseAsync:
         callback: Optional[Callback] = None,
         id: Optional[str] = None,
     ) -> None:
-        """Unsubscribe; messages for these args fall back to `callback`."""
+        """Unsubscribe; messages for these args fall back to `callback`.
+
+        The table applies the same arg rule as subscribe(), so an unroutable
+        arg raises `ValueError` before anything is removed or sent.
+        """
         self._subs.remove(params)
         await self._ensure_login()
         await self._send_payload("unsubscribe", params, id)
