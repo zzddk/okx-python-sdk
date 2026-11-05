@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>python-okx 架构评审 · 2026-11-05</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", flowchart: { htmlLabels: true, curve: "basis" } });
+</script>
+<style>
+  .seam { stroke-dasharray: 5 5; }
+  .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+  .chip { font-variant-ligatures: none; }
+  .band-before { background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #f1f5f9 6px, #f1f5f9 12px); }
+  .fade-in { opacity: .35; }
+  .mermaid { font-size: 12px; }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans antialiased">
+<main class="max-w-5xl mx-auto px-6 py-12 space-y-14">
+
+  <header class="space-y-4">
+    <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Architecture review</div>
+    <h1 class="font-serif text-4xl leading-tight">python-okx · 把浅模块加深</h1>
+    <p class="text-slate-600 max-w-2xl">0.14.1，六个候选，都落在最近 30 个提交触碰过的路径上。上一轮评审的 01–06 已全部落地，本轮的编号接在它后面。</p>
+    <div class="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-2 border-t border-slate-200">
+      <span class="flex items-center gap-2"><span class="inline-block w-8 h-5 border border-slate-400 bg-white"></span>模块</span>
+      <span class="flex items-center gap-2"><svg width="34" height="6"><line x1="0" y1="3" x2="34" y2="3" stroke="#64748b" stroke-width="2" class="seam"/></svg>接缝</span>
+      <span class="flex items-center gap-2"><svg width="34" height="6"><line x1="0" y1="3" x2="34" y2="3" stroke="#dc2626" stroke-width="2"/></svg>跨接缝泄漏</span>
+      <span class="flex items-center gap-2"><span class="inline-block w-8 h-5 deep rounded-sm"></span>深模块</span>
+    </div>
+  </header>
+
+  <section id="candidates" class="space-y-16">
+
+    <!-- ============ 01 ============ -->
+    <article id="c01" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">01 · 让 <span class="font-mono text-xl">None</span> 只有一种解释：收回 14 份「None → []」</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/utils.py:47-52 · okx/utils.py:65-70 · okx/Account.py:138 · okx/BlockTrading.py:14,16,27,29,39,45 · okx/Trade.py:153,176,211 · okx/Grid.py:82 · okx/SubAccount.py:57 · okx/Finance/FlexibleLoan.py:16 · okx/Finance/StakingDefi.py:17</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 同一个 None，两种线上行为</div>
+          <div class="grid grid-cols-3 gap-1 chip text-[9px] font-mono">
+            <span class="border border-slate-300 px-1 py-1 text-center">Account:138<span class="block text-slate-400">simPos</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:14<span class="block text-slate-400">counterparties</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:16<span class="block text-slate-400">legs</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:27<span class="block text-slate-400">rfqIds</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:29<span class="block text-slate-400">clRfqIds</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:39<span class="block text-slate-400">legs</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Block:45<span class="block text-slate-400">legs</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Trade:153<span class="block text-slate-400">fromCcy</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Trade:176<span class="block text-slate-400">debtCcy</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Trade:211<span class="block text-slate-400">repayCcyList</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Grid:82<span class="block text-slate-400">recurringList</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">SubAcct:57<span class="block text-slate-400">alloc</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Loan:16<span class="block text-slate-400">supCollateral</span></span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Stake:17<span class="block text-slate-400">investData</span></span>
+            <span class="border border-dashed border-slate-200 px-1 py-1 text-center text-slate-300">…</span>
+          </div>
+          <div class="text-center text-[10px] text-slate-500">每个格子都在做 <span class="font-mono">if X is None: X = []</span></div>
+          <svg width="100%" height="52" class="block">
+            <line x1="20" y1="6" x2="20" y2="30" stroke="#dc2626" stroke-width="2"/>
+            <path d="M20 30 L20 40" stroke="#dc2626" stroke-width="2"/>
+            <path d="M14 34 L20 42 L26 34" fill="none" stroke="#dc2626" stroke-width="2"/>
+            <text x="34" y="24" font-size="9" fill="#b91c1c" font-family="ui-monospace">线上发出 simPos: []，合同要求「不设置」时却发了空数组</text>
+          </svg>
+          <div class="rounded border border-slate-300 bg-slate-50 px-3 py-2 text-[10px] font-mono">
+            Transport · drop_none_params<br/>
+            <span class="text-slate-400">if value is None: 省略</span>
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 一种解释，一个 owner</div>
+          <div class="grid grid-cols-3 gap-1 text-[9px] font-mono fade-in">
+            <span class="border border-slate-300 px-1 py-1 text-center">Account</span>
+            <span class="border border-slate-300 px-1 py-1 text-center">BlockTrading</span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Trade</span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Grid</span>
+            <span class="border border-slate-300 px-1 py-1 text-center">SubAccount</span>
+            <span class="border border-slate-300 px-1 py-1 text-center">Finance</span>
+          </div>
+          <div class="rounded border-2 border-slate-900 deep text-slate-100 px-3 py-4 text-xs text-center leading-relaxed">
+            端点声明：必填集合字段<br/>
+            <span class="text-slate-400 text-[10px]">签名默认值即声明，没有 if 分支</span>
+          </div>
+          <div class="text-center text-[10px] text-slate-400">▼ 投影一次</div>
+          <div class="rounded border border-slate-900 bg-white px-3 py-2 text-[10px] font-mono text-center">
+            Transport：<span class="text-slate-500">None = 省略</span>（唯一解释）
+          </div>
+          <p class="text-[10px] text-slate-500 leading-relaxed">调用方写 <span class="font-mono">get_simulated_margin()</span> 和不写 <span class="font-mono">simPos</span>，语义重新一致。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>ADR-0010 把「未设置」的解释收在 Transport，但 14 处端点仍在把同一个 <span class="font-mono">None</span> 改写成空数组，接口无法表达「必填」与「可选」的差别。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>让「必填集合字段」成为端点声明的一部分，把 <span class="font-mono">None</span> 的解释权收回一个模块。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· locality：语义只在一处</li>
+        <li>· 14 份副本消失</li>
+        <li>· 该分支今天 CI 覆盖为 0</li>
+        <li>· 表驱动测试能一次覆盖</li>
+        <li>· 接口多一个显式概念</li>
+        <li>· 不新增 seam</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">与 ADR-0010 同向：这是那条决定的遗留执行，不需要重开 ADR。<span class="text-amber-700">okx/SubAccount.py:19 的 <span class="font-mono">ip != '-1'</span> 是第三种拼法，规格要求保留，不在本候选内。</span></div>
+    </article>
+
+    <!-- ============ 02 ============ -->
+    <article id="c02" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">02 · 分页模块只守住了 <span class="font-mono text-xl">cursor</span>，没守住它自己声明的 <span class="font-mono text-xl">before</span> / <span class="font-mono text-xl">limit</span></h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/pagination.py:1-12 · :43-45 · :61-68 · :84-88 · test/unit/okx/test_pagination.py</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Before · 契约写在 docstring 里，实现只查了一个名字</div>
+          <pre class="mermaid">
+flowchart TB
+  A["paginate(params={before: x, limit: 10})"] --> B{cursor 非空？}
+  B -- 是 --> C["base = dict(params)"]
+  C --> D["每页都带 before"]
+  C --> E["limit 被 page_size=100 覆盖"]
+  C --> F["再注入 after 继续走"]
+  D --> G["同一页两个方向"]
+  F --> G
+  classDef bad fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  class C,D,E,F,G bad
+          </pre>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700 mb-2">After · 投影整个翻页请求，再交给行走</div>
+          <pre class="mermaid">
+flowchart TB
+  A["调用方参数"] --> P["翻页请求投影"]
+  P -- "before → 拒绝" --> E1["ValueError"]
+  P -- "limit：显式参数优先" --> Q["只走 after"]
+  Q --> W["_walk：游标推进与停止"]
+  classDef good fill:#0f172a,stroke:#0f172a,color:#f8fafc
+  class P good
+          </pre>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>模块声明「<span class="font-mono">before</span> 不支持、<span class="font-mono">limit</span> 由本模块决定」，实现却原样转发 <span class="font-mono">params</span>；调用方拿到错序数据，而不是一个错误。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>把「一次翻页请求长什么样」整体收进模块——反方向游标拒绝、<span class="font-mono">limit</span> 优先级写死，行走只接收已经合法的输入。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 静默错数据变成显式异常</li>
+        <li>· 契约与 docstring 对齐</li>
+        <li>· 一个接缝覆盖完整投影</li>
+        <li>· 调用方少背一条规则</li>
+        <li>· 测试补 2 个用例即可</li>
+        <li>· 模块已存在，不新增抽象</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">ADR-0013 定的是「校验与行走同属 pagination」，本候选是同一决定的收尾。</div>
+    </article>
+
+    <!-- ============ 03 ============ -->
+    <article id="c03" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">03 · 把连接生命周期从会话类里拆出去</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/WsBaseAsync.py:75-124 · :141-189 · :193-252 · :391-484 · okx/websocket/WsPublicAsync.py:40-56 · test/unit/okx/websocket/test_ws_session.py:66,104,208,346</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-3">Before · 484 行，六个状态字段，一条注释契约</div>
+          <div class="space-y-1 text-[10px]">
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">建立连接 · <span class="font-mono">websocket</span></div>
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">读循环 · <span class="font-mono">_consumer</span></div>
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">心跳 · <span class="font-mono">_heartbeat, _pong</span></div>
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">重连与退避 · <span class="font-mono">_task, _stopping</span></div>
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">停止 · 特例：我是不是被读循环调用</div>
+            <div class="band-before border-l-4 border-slate-400 px-2 py-1.5">订阅 · 登录 · 发送</div>
+          </div>
+          <div class="mt-3 rounded border border-red-200 bg-red-50 px-2 py-2 text-[10px] text-red-800 leading-relaxed">
+            心跳直接关 socket 来叫醒读循环（:465）；<span class="font-mono">stop()</span> 要先判断自己被谁调用（:171）。两条跨方法契约只由注释承载。
+          </div>
+          <div class="mt-2 text-[10px] text-slate-500">测试只能写内部字段：<span class="font-mono">ws._pong = asyncio.Event()</span>，并手写三种 socket 替身。</div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700 mb-3">After · 状态机集中，会话只留操作</div>
+          <div class="rounded border-2 border-slate-900 deep text-slate-100 px-3 py-4">
+            <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">连接监督者（深模块）</div>
+            <div class="grid grid-cols-2 gap-1 text-[9px] text-slate-400 font-mono">
+              <span>socket</span><span>读循环</span>
+              <span>心跳</span><span>退避</span>
+              <span>停止</span><span>重连</span>
+            </div>
+            <div class="mt-2 text-[10px] text-slate-300">一个接口：起、停、换连接。</div>
+          </div>
+          <svg width="100%" height="26"><line x1="50%" y1="0" x2="50%" y2="26" stroke="#64748b" stroke-width="2" class="seam"/></svg>
+          <div class="rounded border border-slate-900 bg-white px-3 py-3">
+            <div class="text-[10px] uppercase tracking-widest text-slate-500 mb-1">会话模块</div>
+            <div class="text-[10px] font-mono text-slate-600">subscribe · unsubscribe · login</div>
+            <div class="text-[10px] text-slate-400 mt-1">不再知道任务图，不再有 stop 特例</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>一个模块同时是会话、任务状态机和订阅入口，socket 与任务图的六个字段散在类上，跨方法契约没有 owner。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>让「连接监督者」独占 socket 与任务图，会话只保留发送、订阅与登录。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· locality：状态机一处可见</li>
+        <li>· stop 的两个特例消失</li>
+        <li>· 三种 socket 替身收成一种</li>
+        <li>· 测试只面对一个接缝</li>
+        <li>· 子类构造不再是纯转发</li>
+        <li>· 心跳→读循环的隐式契约消失</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">ADR-0007 把 <em>连接如何建立</em> 放到 connector 接缝；本候选处理 <em>连接如何存活</em>，两者不冲突。</div>
+    </article>
+
+    <!-- ============ 04 ============ -->
+    <article id="c04" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">04 · 签名原语有三份，其中一份零调用</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/utils.py:14-23 · :55-88 · okx/websocket/WsUtils.py:11-23 · okx/transport.py:140</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Before · 加密与协议串混在一起</div>
+          <pre class="mermaid">
+flowchart LR
+  T["Transport.request"] --> S1["utils.sign + pre_hash"]
+  W["WsUtils.initLoginParams"] --> S2["内联 hmac + base64"]
+  X["utils.signature"] -. "零调用" .-> Z["9 行死代码"]
+  classDef dup fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  classDef dead fill:#f1f5f9,stroke:#94a3b8,color:#475569,stroke-dasharray:4 4
+  class S2 dup
+  class Z dead
+          </pre>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700 mb-2">After · 一份原语，两侧各自拼装</div>
+          <pre class="mermaid">
+flowchart LR
+  T["Transport.request"] --> U["utils.sign(message, secret)"]
+  P["WS：ts + GET + path"] --> U
+  U --> H["hmac + base64"]
+  classDef good fill:#0f172a,stroke:#0f172a,color:#f8fafc
+  class U good
+          </pre>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>同一段 hmac 出现在 <span class="font-mono">utils.sign</span>、<span class="font-mono">utils.signature</span>（零调用）和 <span class="font-mono">WsUtils.initLoginParams</span> 里，协议串拼装与加密原语没有分开。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>原语只留一份，WS 侧只保留时间戳、路径与 op 的拼装。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 净删 9 行死代码</li>
+        <li>· 一处实现，两处调用</li>
+        <li>· 名字说明属于哪一侧</li>
+        <li>· 改算法只改一处</li>
+        <li>· 可随下次相关改动顺手做</li>
+        <li>· 无行为变化</li>
+      </ul>
+    </article>
+
+    <!-- ============ 05 ============ -->
+    <article id="c05" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">05 · 「这条连接要不要登录」由三个状态位、三个调用点各自解释</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200">Worth exploring</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/WsBaseAsync.py:75 · :107 · :118 · :265-268 · :290-306 · :438-443</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Before · 同一问题三处作答，答案略有不同</div>
+          <pre class="mermaid">
+flowchart TB
+  L["_LOGIN_REQUIRED"] --> S["_should_login（首登后锁存）"]
+  L --> C1["subscribe 前"]
+  S --> C1
+  S --> C2["重连之后"]
+  I["isLoggedIn（公开可写）"] --> C1
+  I --> C2
+  G["login() 再校验一次凭证"] -. "为了不抛" .-> C1
+  C1 --> L2["login()"]
+  C2 --> L2
+  classDef bad fill:#fffbeb,stroke:#d97706,color:#78350f
+  class C1,C2 bad
+          </pre>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-white p-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700 mb-2">After · 一个谓词回答，三处只问不判</div>
+          <pre class="mermaid">
+flowchart TB
+  A["凭证 + 客户端类型 + 本次是否已登录"] --> P["needs_login()"]
+  P --> C1["首连"]
+  P --> C2["重连"]
+  P --> C3["subscribe 前"]
+  C1 --> L["login()"]
+  C2 --> L
+  C3 --> L
+  classDef good fill:#0f172a,stroke:#0f172a,color:#f8fafc
+  class P good
+          </pre>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>「要不要登录」写在 <span class="font-mono">_LOGIN_REQUIRED</span>、<span class="font-mono">_should_login</span>、<span class="font-mono">isLoggedIn</span> 三个地方和三个调用点，<span class="font-mono">login()</span> 里还要再校验一次凭证以避免调用点抛错——改一处必须记得改另一处。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>让这个问题由一个谓词回答，三个调用点只问不判。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 一条规则一个落点</li>
+        <li>· 首连与重连走同一判断</li>
+        <li>· <span class="font-mono">isLoggedIn</span> 不再被四处写</li>
+        <li>· 断言落在谓词上，易测</li>
+        <li>· 与候选 03 同区，可合并排期</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">「公共客户端登录后，重连仍需登录」是真实需求（:294 的锁存），谓词要保留它，不能退回成只看 <span class="font-mono">_LOGIN_REQUIRED</span>。</div>
+    </article>
+
+    <!-- ============ 06 ============ -->
+    <article id="c06" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">06 · 订阅表：接口宽于实现，arg 契约却留在表外</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200">Worth exploring</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/subscriptions.py:33-49 · :70-99 · :133-139 · okx/websocket/WsBaseAsync.py:316-342</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-3">Before · 接口面几乎与实现等高</div>
+          <div class="flex items-end gap-3 h-48">
+            <div class="flex-1 flex flex-col justify-end">
+              <div class="text-[9px] uppercase tracking-wider text-slate-500 mb-1">接口</div>
+              <div class="border border-slate-400 bg-white h-40 flex flex-col justify-center gap-0.5 px-2 text-[9px] font-mono text-slate-600">
+                <span>add(params, cb) → tuple</span>
+                <span>remove(params) → tuple</span>
+                <span>add_request / drop_requests</span>
+                <span>take(payload)</span>
+                <span>replay()</span>
+                <span class="text-slate-400">params: Tuple[Dict] （恒 1 个）</span>
+              </div>
+            </div>
+            <div class="flex-1 flex flex-col justify-end">
+              <div class="text-[9px] uppercase tracking-wider text-slate-500 mb-1">实现</div>
+              <div class="border border-slate-400 bg-slate-100 h-16 flex items-center justify-center text-[9px] font-mono text-slate-500">dict + key()</div>
+            </div>
+          </div>
+          <div class="mt-3 rounded border border-red-200 bg-red-50 px-2 py-2 text-[10px] text-red-800 leading-relaxed">两个 <span class="font-mono">tuple</span> 返回值没有调用方接收；条目恒为单元素 tuple，只为对齐线上帧形状（<span class="font-mono">:139</span> 再拆回 <span class="font-mono">[0]</span>）。</div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700 mb-3">After · 表吸收格式与校验，接口只剩被用到的行为</div>
+          <div class="flex items-end gap-3 h-48">
+            <div class="flex-1 flex flex-col justify-end">
+              <div class="text-[9px] uppercase tracking-wider text-emerald-700 mb-1">接口</div>
+              <div class="border border-slate-900 bg-white h-20 flex flex-col justify-center gap-0.5 px-2 text-[9px] font-mono text-slate-700">
+                <span>add(arg, cb)</span>
+                <span>remove(arg)</span>
+                <span>take(payload) / replay()</span>
+              </div>
+            </div>
+            <div class="flex-1 flex flex-col justify-end">
+              <div class="text-[9px] uppercase tracking-wider text-emerald-700 mb-1">实现</div>
+              <div class="border-2 border-slate-900 deep h-40 flex flex-col justify-center gap-1 px-2 text-[9px] font-mono text-slate-300">
+                <span>路由键</span>
+                <span>一次性请求</span>
+                <span class="text-slate-400">arg 合法性（channel 非空）</span>
+                <span class="text-slate-400">重放顺序</span>
+              </div>
+            </div>
+          </div>
+          <p class="mt-3 text-[10px] text-slate-600 leading-relaxed">会话层的 <span class="font-mono">_require_channel</span> 循环消失；直接使用表的人得到同一保证，<span class="font-mono">unsubscribe</span> 也自动获得校验。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>条目恒为单元素 tuple、两个无人接收的返回值让接口宽于实现；而「arg 必须可路由」这条属于表的规则写在会话里，且只覆盖 dict（<span class="font-mono">unsubscribe</span> 完全不校验）。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>条目就是一个 arg 加一个 callback，把「什么算可订阅的 arg」变成表入口的唯一前置条件。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 接口收窄，实现吸收格式</li>
+        <li>· 规则回到它所属的模块</li>
+        <li>· 两个入口共享一次校验</li>
+        <li>· <span class="font-mono">replay()</span> 少一次 <span class="font-mono">[0]</span></li>
+        <li>· docstring 承诺与实现一致</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">与 ADR-0009 同向：那条决定把路由搬进表，本候选把 arg 的合法性也搬进去。</div>
+    </article>
+  </section>
+
+  <section id="top-recommendation">
+    <div class="rounded-xl border-2 border-slate-900 bg-white p-6 space-y-3">
+      <div class="text-[10px] uppercase tracking-widest text-slate-500">Top recommendation</div>
+      <h2 class="font-serif text-2xl">先做 02 · 分页请求投影</h2>
+      <p class="text-sm text-slate-700 max-w-2xl">它是唯一一个「模块已经存在、契约已经写下、只差执行」的候选：改动落在 <span class="font-mono">okx/pagination.py</span> 一个文件，两个测试用例就能覆盖，却能把「静默拿到错序数据」变成调用点的显式异常——每单位工作量换来的 leverage 最高。01 的影响面最大（14 处端点 + 表驱动测试），建议紧随其后单独排期。</p>
+      <a href="#c02" class="inline-block text-xs font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">回到候选 02</a>
+    </div>
+  </section>
+
+  <footer class="text-xs text-slate-400 border-t border-slate-200 pt-4">
+    python-okx 0.14.1 · 探索范围：最近 30 个提交触碰的 WS / pagination / transport / endpoints 路径 · 上一轮 01–06 已落地，未重复计入
+  </footer>
+</main>
+</body>
+</html>
