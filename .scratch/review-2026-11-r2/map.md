@@ -8,7 +8,7 @@
 
 ## Notes
 
-- 评审源：`architecture-review-20261105-201639.html`（仓库根目录，未纳入版本控制）。候选编号 01–06 与上一批重名，本 effort 用 `review-2026-11-r2` 区分。
+- 评审源：`architecture-review-20261105-201639.html`（仓库根目录，随 02cfd55 入库）。候选编号 01–06 与上一批重名，本 effort 用 `review-2026-11-r2` 区分。
 - 上一批（0.14.0）的 01–06 已全部落地，见 `.scratch/endpoint-params`、`endpoint-table`、`ws-login`、`pagination-seam`、`ws-session-config`、`client-config`；本图不重复计入。
 - 所有工单都是 HITL grilling：按 `/grilling` 走，先讨论候选方案再拍板；每个会话只解一张。
 - 拍板后若动公共契约，补 `docs/adr/`（当前最大编号 0015，下一张 0016）。

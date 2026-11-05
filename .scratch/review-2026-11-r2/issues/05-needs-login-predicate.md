@@ -47,3 +47,4 @@ Blocked by: 03
 ## Comments
 
 - 2026-11-05 施工完成：3a6e1df（master）。全量 pytest 850 passed / 68 subtests；完成标准逐条核对见提交说明与 ADR-0016。
+- 2026-11-05 评审补记：完成标准 3 要的是四种布尔的全表，施工只写了 8 格，缺「无凭证 × 曾登录」「有凭证 × 已登录」等组合。已补到 16 格（`test_truth_table`），锁存那条仍由 (False, True, True, False → True) 守住。

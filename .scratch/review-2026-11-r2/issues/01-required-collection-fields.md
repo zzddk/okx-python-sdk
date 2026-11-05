@@ -41,3 +41,4 @@ Blocked by: —
 ## Comments
 
 - 2026-11-05 施工完成：ab0a840（master，合并入 0.15.0 未发布批次）。全量 pytest 853 passed / 46 subtests；完成标准逐条核对见提交说明与测试。
+- 2026-11-05 评审补记：本条拍板反转了 ADR-0001「可变默认参数是缺陷」与 `.scratch/sdk-redesign/issues/04` 的完成标准，当初没有按 `docs/agents/domain.md` 报冲突。反转的理由、适用边界与「默认 list 不得就地修改」的约束见 ADR-0017；结论是保留 `= []`，不回退到 `None` 哨兵（那会重新让 `None` 有两种解释）。
