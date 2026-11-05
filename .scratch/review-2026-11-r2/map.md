@@ -32,7 +32,7 @@
 
 收图（2026-11-05）时仍不作决策、留给施工的三件事：
 
-1. **发版节拍**：破坏面已经明确——03 删 `connect()/consume()`、04 删 `WsUtils.py`、05 `isLoggedIn` 只读、06 删 `Subscription` 类与返回值、01 显式 `None` 的行为变化。开工前按 ADR-0004 决定 0.15.0 单批还是拆 patch；六张工单的完成标准里已经各自标明要进 CHANGELOG 的条目。
+1. **发版节拍（已定，2026-11-05）：单批 0.15.0。** 破坏面——03 删 `connect()/consume()`、04 删 `WsUtils.py`、05 `isLoggedIn` 只读、06 删 `Subscription` 类与返回值、01 显式 `None` 的行为变化、02 `paginate()` 的 `ValueError`——能写进同一张迁移表，符合 ADR-0004 的「同一段迁移说明」判据。原写法「单批还是拆 patch」本身不成立：破坏性改动不能进 patch（语义版本），真正的选择只是「一个 minor」还是「两个 minor」，已取前者。迁移表见 `CHANGELOG.md` 的 Unreleased `### Migration`。
 2. **登录握手死路径**：03 之后 `LoginHandshake.read()` 没有调用点，删除属于施工顺手，不单独决策；删了要同步 `test_login.py` 与 ADR-0012 的描述。
 3. **文档面**：README 的 WS 示例不用改（`start/subscribe/stop` 签名不变）；CHANGELOG 汇总 01–06 的公开面变化；`docs/` 下凡出现 `WsUtils`、`connect()`、`consume()` 的说明一并更新。
 
