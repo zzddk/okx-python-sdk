@@ -6,7 +6,7 @@ Mirrors the structure: okx/websocket/WsPrivateAsync.py -> test/unit/okx/websocke
 import asyncio
 import json
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 
@@ -65,6 +65,24 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
     def test_default_url_is_the_private_host(self):
         ws = WsPrivateAsync(apiKey=_STUB_ID, passphrase=_STUB_PHRASE, secretKey=_STUB_SIGN)
         self.assertEqual(ws.url, WsPrivateAsync._DEFAULT_URL)
+
+
+class TestWsPrivateAsyncLogin(unittest.TestCase):
+    """The login frame is built by the shared primitive, not by a copy here."""
+
+    def test_login_goes_through_the_shared_payload_builder(self):
+        payload = json.dumps({"op": "login", "args": []})
+
+        async def run_test():
+            ws, _ = _session(answer_login=ACK)
+            await ws.start()
+            await ws.stop()
+
+        with patch("okx.websocket.WsBaseAsync.login_payload",
+                   return_value=payload) as build:
+            asyncio.run(run_test())
+
+        build.assert_called_once()
 
 
 class TestWsPrivateAsyncSubscribe(unittest.TestCase):

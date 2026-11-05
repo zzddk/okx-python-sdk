@@ -41,3 +41,4 @@ Blocked by: —
 ## Comments
 
 - 2026-11-05 施工完成：e606dc9（master，合并入 0.15.0 未发布批次）。全量 pytest 853 passed / 46 subtests；完成标准逐条核对见提交说明与测试。
+- 2026-11-05 评审补记：完成标准 4 字面要求 `patch('okx.websocket.WsBaseAsync.login_payload')`，施工时没有这条 patch，改由线上帧断言 `payloads[0]["op"] == "login"` 承担。两者不等价：只断言字节抓不到「又内联了一份能产出同样字节的实现」。已补 `test_login_goes_through_the_shared_payload_builder`，按字面锁住这条绑定。
