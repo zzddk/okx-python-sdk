@@ -11,6 +11,12 @@ All notable changes to `python-okx` are documented in this file.
   now default to `[]` in the signature, so a call without them still sends an
   empty array. Passing `None` explicitly now means "not sent" (ADR-0010):
   `create_rfq(legs=None)` no longer sends `legs`.
+- `Subscriptions.add()` and `remove()` return `None` instead of a tuple of
+  entries. Both check the whole batch first: a non-dict arg, or one whose
+  `channel` is missing or blank, now raises `ValueError` and leaves the table
+  as it was (it used to be skipped silently).
+- `WsBaseAsync.unsubscribe()` applies the same arg rule as `subscribe()`,
+  which it previously skipped.
 
 ### Removed
 - `okx.websocket.WsUtils` is gone. `initLoginParams` and `getLocalTime` had
@@ -18,6 +24,8 @@ All notable changes to `python-okx` are documented in this file.
   built by `okx.websocket.login.login_payload()`, which also takes the
   timestamp as an argument. The signature primitive stays in `okx.utils.sign`
   and is shared with the REST layer.
+- The `okx.websocket.subscriptions.Subscription` class. A table entry is the
+  `(arg, callback)` pair it always held.
 
 ## [0.14.1]
 

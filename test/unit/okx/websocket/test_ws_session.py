@@ -340,6 +340,40 @@ class TestSubscriptionRegistry(unittest.TestCase):
         self.assertEqual(ws.subscriptions, {})
         ws.websocket.send.assert_not_awaited()
 
+    def test_subscribe_rejects_the_whole_batch_before_touching_anything(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            await ws.subscribe([{'channel': 'tickers', 'instId': 'BTC-USDT'}], None)
+            with self.assertRaises(ValueError):
+                await ws.subscribe([{'channel': 'books'}, 'x'], None)
+            return ws
+
+        ws = asyncio.run(run())
+        self.assertEqual(
+            ws.subscriptions,
+            {json.dumps({'channel': 'tickers', 'instId': 'BTC-USDT'}, sort_keys=True):
+             {'channel': 'tickers', 'instId': 'BTC-USDT'}},
+        )
+        self.assertEqual(len(ws.websocket.send.await_args_list), 1)
+
+    def test_unsubscribe_rejects_an_unroutable_arg(self):
+        async def run():
+            ws = _public()
+            ws.websocket = AsyncMock()
+            arg = {'channel': 'tickers', 'instId': 'BTC-USDT'}
+            await ws.subscribe([arg], None)
+            for bad in ({'channel': '  '}, {'instId': 'BTC-USDT'}, 'x'):
+                with self.subTest(bad=bad):
+                    with self.assertRaises(ValueError):
+                        await ws.unsubscribe([bad], None)
+            return ws, arg
+
+        ws, arg = asyncio.run(run())
+        self.assertEqual(len(ws.subscriptions), 1)
+        self.assertIsNone(ws._subs.take({'arg': arg}))
+        self.assertEqual(len(ws.websocket.send.await_args_list), 1)
+
     def test_subscriptions_view_is_derived_from_the_table(self):
         ws = _public()
         arg = {'channel': 'tickers', 'instId': 'BTC-USDT'}

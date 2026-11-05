@@ -15,6 +15,10 @@ reconnect into the same table. When `arg` is absent or not registered, the
 its `id` is the only identity available. A miss returns `None` and the caller
 decides what the fallback is.
 
+Only a routable arg can enter the table: a dict whose `channel` is a non-blank
+string. `add` and `remove` check the whole batch first, so a rejected batch
+leaves the table untouched.
+
 A subscription may have no callback. Such an entry exists only so a reconnect
 can replay it, and `take` returns `None` for it like any other miss. Entries
 added with the same `arg` replace the previous callback; there is no second
@@ -30,25 +34,6 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 Callback = Callable[[Any], Any]
 
 
-class Subscription:
-    """One arg and the callback that receives messages for it.
-
-    `params` is a tuple because a subscribe frame carries a list; the table
-    keys entries one arg at a time, so an entry's tuple holds exactly that arg.
-    Replacing a subscription builds a new entry instead of mutating this one.
-    """
-
-    __slots__ = ("params", "callback")
-
-    def __init__(
-        self,
-        params: Tuple[Dict[str, Any], ...],
-        callback: Optional[Callback],
-    ) -> None:
-        self.params = params
-        self.callback = callback
-
-
 def key(arg: Dict[str, Any]) -> str:
     """The routing key for one arg: the whole dict, order-independent.
 
@@ -60,43 +45,53 @@ def key(arg: Dict[str, Any]) -> str:
     return json.dumps(arg, sort_keys=True)
 
 
+def _require_routable(arg: Any) -> None:
+    """Reject an arg the server cannot route: not a dict, or a blank channel.
+
+    Both entry points share this rule, so `add` and `remove` accept exactly
+    the same args and a batch is checked before it changes anything.
+    """
+    if not isinstance(arg, dict):
+        raise ValueError(f"subscription arg must be a dict, got {arg!r}")
+    channel = arg.get("channel")
+    if not isinstance(channel, str) or not channel.strip():
+        raise ValueError(f"channel must be a non-blank string, got {channel!r}")
+
+
 class Subscriptions:
     """The subscription table and the callback under which each was added."""
 
     def __init__(self) -> None:
-        self._entries: Dict[str, Subscription] = {}
+        self._entries: Dict[str, Tuple[Dict[str, Any], Optional[Callback]]] = {}
         self._requests: Dict[str, Callback] = {}
 
     def add(
         self,
         params: Sequence[Dict[str, Any]],
         callback: Optional[Callback] = None,
-    ) -> Tuple[Subscription, ...]:
+    ) -> None:
         """Register every arg in `params`, replacing any callback already there.
 
+        The whole batch is checked before the table is written: one unroutable
+        arg raises `ValueError` and leaves the table exactly as it was.
         Entries keep the order they were first added in; adding the same arg
-        again replaces the entry in place. Returns the entries added, one per
-        arg, so a caller can report what it accepted.
+        again replaces the entry in place.
         """
-        added: List[Subscription] = []
         for arg in params:
-            if not isinstance(arg, dict):
-                continue
-            entry = Subscription((dict(arg),), callback)
-            self._entries[key(arg)] = entry
-            added.append(entry)
-        return tuple(added)
+            _require_routable(arg)
+        for arg in params:
+            self._entries[key(arg)] = (dict(arg), callback)
 
-    def remove(self, params: Sequence[Dict[str, Any]]) -> Tuple[Subscription, ...]:
-        """Drop every arg in `params`; unknown args are ignored."""
-        removed: List[Subscription] = []
+    def remove(self, params: Sequence[Dict[str, Any]]) -> None:
+        """Drop every arg in `params`; args never added are ignored.
+
+        Like `add`, the whole batch is checked before anything is removed, so
+        an unroutable arg raises `ValueError` and the table stays as it was.
+        """
         for arg in params:
-            if not isinstance(arg, dict):
-                continue
-            entry = self._entries.pop(key(arg), None)
-            if entry is not None:
-                removed.append(entry)
-        return tuple(removed)
+            _require_routable(arg)
+        for arg in params:
+            self._entries.pop(key(arg), None)
 
     def add_request(self, request_id: str, callback: Callback) -> None:
         """Associate a one-shot response, matched by `id`, with `callback`."""
@@ -124,7 +119,7 @@ class Subscriptions:
             except (TypeError, ValueError):
                 entry = None
             if entry is not None:
-                return entry.callback
+                return entry[1]
         request_id = payload.get("id")
         if isinstance(request_id, str):
             return self._requests.pop(request_id, None)
@@ -136,4 +131,4 @@ class Subscriptions:
         Removed entries and pending requests do not appear. The copies are
         detached from the table, so a caller may modify them freely.
         """
-        return [dict(entry.params[0]) for entry in self._entries.values()]
+        return [dict(arg) for arg, _ in self._entries.values()]
