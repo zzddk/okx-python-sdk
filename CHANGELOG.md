@@ -2,7 +2,15 @@
 
 All notable changes to `python-okx` are documented in this file.
 
-## [Unreleased]
+## [0.15.0]
+
+Breaking release, the batch ADR-0004 keeps for changes that share one migration
+story. The WebSocket session hands its socket and task graph to a connection
+supervisor (ADR-0016); the login payload, the subscription entry and the
+connection-lost report each get a single owner; on the REST side, the required
+collection parameters declare `[]` in the signature (ADR-0017) and
+`paginate()` rejects the request it cannot walk. Every public change has a row
+under Migration.
 
 ### Changed
 - `WsBaseAsync.start()` now restores the session before returning: it opens the
