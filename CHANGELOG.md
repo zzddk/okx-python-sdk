@@ -4,27 +4,38 @@ All notable changes to `python-okx` are documented in this file.
 
 ## [0.14.0]
 
-Breaking release for how an API class exposes its configuration (ADR-0015).
+First release since 0.10.0. It rolls up four batches that were prepared but
+never published on their own — the WebSocket connection seam (planned as
+0.11.0), WebSocket message routing (0.12.0), the REST endpoint parameter
+surface (0.13.0) and the API configuration surface (0.14.0). ADR-0004 batches
+breaking changes by theme; this is the release that ships them together.
 
 ### Added
 - `OkxClient.transport` returns the `Transport` the API class was built with;
   it is the one place to read credentials, environment and retry policy from.
 
-### Removed
-- The nine configuration properties `OkxClient` forwarded: `API_KEY`,
-  `API_SECRET_KEY`, `PASSPHRASE`, `flag`, `debug`, `domain`,
-  `raise_on_error`, `max_retries` and `retry_backoff`. `proxy` had never
-  been forwarded, which is how the second interface started to drift.
-
-### Migration
-
-| Before | After |
-| --- | --- |
-| `api.debug` (and the other eight names above) | `api.transport.debug` |
-
-## [0.13.0]
-
 ### Changed
+- `WsPrivateAsync` and `WsPublicAsync` are built with
+  `from_transport(transport)` instead of `from_client(client)` (ADR-0008).
+  The argument must be an `okx.transport.Transport`; credentials, `flag`,
+  `debug` and `proxy` all come from it.
+- WebSocket connections go through an injectable `WebSocketConnector`
+  (`okx/websocket/connector.py`, ADR-0007). Both clients accept `connector=`
+  and `proxy=`; when both are given the connector wins, as
+  `Transport(proxy=, http=)` does.
+- `Transport` keeps `proxy` on the object, so the WebSocket layer can inherit
+  the REST proxy.
+- A message is delivered to the callback registered for its `arg` (ADR-0009),
+  so two channels on one connection no longer steal each other's messages. An
+  acknowledgement without `arg` (an order response) is matched by its `id`.
+  The table lives in `okx/websocket/subscriptions.py` (`Subscriptions`).
+- `WsBaseAsync.callback` is now only the fallback for messages that match
+  neither a subscription nor a request. It stays readable and writable and is
+  deprecated; it is removed before 1.0.
+- `WsBaseAsync.subscriptions` is a read-only view derived from the routing
+  table. Assigning to it raises `AttributeError`.
+- A callback passed with an `id` to `send()`/the order helpers answers that
+  request once. Without an `id` it still becomes the fallback.
 - Every REST endpoint method now passes all of its arguments to `Transport`,
   which drops the ones set to `None`. The 136 `if x is not None: params[x] = x`
   branches in the endpoint modules are gone; no request changes on the wire
@@ -40,68 +51,27 @@ Breaking release for how an API class exposes its configuration (ADR-0015).
   Behaviour is unchanged (ADR-0014).
 
 ### Fixed
+- A WebSocket proxy is never silently downgraded to a direct connection: when
+  the installed `websockets` does not accept `proxy=` (it arrived in 15.0),
+  `connect()` raises before opening anything. When no proxy is configured the
+  argument is not passed at all, so `websockets` keeps its own environment
+  detection.
 - `FundingAPI.get_deposit_lightning` sent only `to`: `ccy` and `amt` were
   dropped from the request.
-
-## [0.12.0]
-
-Breaking release for WebSocket message routing (ADR-0009).
-
-### Changed
-- A message is delivered to the callback registered for its `arg`, so two
-  channels on one connection no longer steal each other's messages. An
-  acknowledgement without `arg` (an order response) is matched by its `id`.
-  The table lives in `okx/websocket/subscriptions.py` (`Subscriptions`).
-- `WsBaseAsync.callback` is now only the fallback for messages that match
-  neither a subscription nor a request. It stays readable and writable and is
-  deprecated; it is removed before 1.0.
-- `WsBaseAsync.subscriptions` is a read-only view derived from the routing
-  table. Assigning to it raises `AttributeError`.
-- A callback passed with an `id` to `send()`/the order helpers answers that
-  request once. Without an `id` it still becomes the fallback.
-
-### Removed
-- `WsUtils.checkSocketParams`, `WsUtils.initSubscribeSet`,
-  `WsUtils.getParamKey` and `WsUtils.isNotBlankStr`. They had no production
-  callers and `getParamKey` could collide across channels; routing is now
-  `Subscriptions`' job.
-
-### Migration
-
-| Before | After |
-| --- | --- |
-| `ws.callback = f` for a single channel | `await ws.subscribe(params, f)` |
-| `ws.subscribe(a, fa); ws.subscribe(b, fb)` — `fb` got everything | each channel now reaches its own callback |
-| `ws.subscriptions = {...}` | `await ws.subscribe(...)`; the view is read-only |
-
-## [0.11.0]
-
-Breaking release for the WebSocket connection seam (ADR-0007, ADR-0008).
-
-### Changed
-- `WsPrivateAsync` and `WsPublicAsync` are built with
-  `from_transport(transport)` instead of `from_client(client)`. The argument
-  must be an `okx.transport.Transport`; credentials, `flag`, `debug` and
-  `proxy` all come from it.
-- WebSocket connections go through an injectable `WebSocketConnector`
-  (`okx/websocket/connector.py`). Both clients accept `connector=` and
-  `proxy=`; when both are given the connector wins, as
-  `Transport(proxy=, http=)` does.
-- `Transport` keeps `proxy` on the object, so the WebSocket layer can inherit
-  the REST proxy.
 
 ### Removed
 - `okx.websocket.WebSocketFactory.WebSocketFactory`. To open connections
   yourself, pass `connector=` with an object that has
   `async connect(url) -> Connection` and returns the socket without keeping
   a copy (`WsBaseAsync.websocket` stays the only holder).
-
-### Fixed
-- A WebSocket proxy is never silently downgraded to a direct connection: when
-  the installed `websockets` does not accept `proxy=` (it arrived in 15.0),
-  `connect()` raises before opening anything. When no proxy is configured the
-  argument is not passed at all, so `websockets` keeps its own environment
-  detection.
+- `WsUtils.checkSocketParams`, `WsUtils.initSubscribeSet`,
+  `WsUtils.getParamKey` and `WsUtils.isNotBlankStr`. They had no production
+  callers and `getParamKey` could collide across channels; routing is now
+  `Subscriptions`' job.
+- The nine configuration properties `OkxClient` forwarded (ADR-0015):
+  `API_KEY`, `API_SECRET_KEY`, `PASSPHRASE`, `flag`, `debug`, `domain`,
+  `raise_on_error`, `max_retries` and `retry_backoff`. `proxy` had never
+  been forwarded, which is how the second interface started to drift.
 
 ### Migration
 
@@ -110,6 +80,10 @@ Breaking release for the WebSocket connection seam (ADR-0007, ADR-0008).
 | `WsPrivateAsync.from_client(rest_api)` | `WsPrivateAsync.from_transport(transport)` |
 | `WsPublicAsync.from_client(rest_api, channel="business")` | `WsPublicAsync.from_transport(transport, channel="business")` |
 | `WebSocketFactory(url)` | `WsPrivateAsync(..., connector=YourConnector())` |
+| `ws.callback = f` for a single channel | `await ws.subscribe(params, f)` |
+| `ws.subscribe(a, fa); ws.subscribe(b, fb)` — `fb` got everything | each channel now reaches its own callback |
+| `ws.subscriptions = {...}` | `await ws.subscribe(...)`; the view is read-only |
+| `api.debug` (and the other eight configuration names) | `api.transport.debug` |
 
 ## [0.10.0]
 
