@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>架构评审 · okxsdk · 2026-11-07</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .card-diagram { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+      .pane { border: 1px solid #e2e8f0; border-radius: .6rem; background: #fff; padding: 1rem; min-height: 300px; }
+      .pane-title { font-size: .65rem; text-transform: uppercase; letter-spacing: .12em; color: #94a3b8; margin-bottom: .85rem; }
+      .box { border: 1px solid #cbd5e1; border-radius: .4rem; padding: .55rem .7rem; background: #f8fafc; }
+      .box.deep { background: linear-gradient(135deg, #0f172a, #1e293b); color: #f8fafc; border-color: #0f172a; }
+      .box.leaky { border-color: #fca5a5; background: #fef2f2; }
+      .lbl { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: #64748b; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .band { border-left: 4px solid #94a3b8; background: #f8fafc; }
+      .band.owner { border-left-color: #0f172a; background: linear-gradient(90deg,#0f172a,#1e293b); color: #f8fafc; }
+      .b { display: inline-block; padding: .15rem .6rem; border-radius: .4rem; font-size: .7rem; font-weight: 700; border: 1px solid; }
+      .b-strong { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+      .b-worth { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+      .b-spec { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+      .b-cat { background: #f1f5f9; color: #475569; border-color: #e2e8f0; font-family: ui-monospace, monospace; font-weight: 500; }
+      .adr { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+      .note { background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; }
+      .arrow { color: #94a3b8; }
+      pre.mermaid { background: transparent; margin: 0; text-align: center; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-6xl mx-auto px-6 py-12 space-y-12">
+
+      <header>
+        <div class="flex items-baseline justify-between flex-wrap gap-3">
+          <h1 class="font-serif text-4xl">架构评审 · okxsdk</h1>
+          <span class="text-sm text-slate-500">2026-11-07 · 深化候选</span>
+        </div>
+        <div class="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-600 border-y border-slate-200 py-3">
+          <span class="flex items-center gap-2"><span class="inline-block w-4 h-3 rounded-sm border border-slate-400 bg-slate-50"></span> 实线框 = module</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 border-t-2 border-dashed border-slate-400"></span> 虚线 = seam</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-6 border-t-2 border-red-600"></span> 红箭头 = leakage</span>
+          <span class="flex items-center gap-2"><span class="inline-block w-4 h-3 rounded-sm deep"></span> 深色粗框 = deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-12">
+
+        <!-- 01 -->
+        <article id="c1" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">01 · 让「无凭据」只有一个 owner</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-strong">Strong</span><span class="b b-cat">in-process</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/consts/http.py · okxsdk/transport.py · okxsdk/websocket/config.py · okxsdk/websocket/WsBaseAsync.py · WsPrivateAsync.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 三处 module，两种语义</div>
+                <pre class="mermaid">
+flowchart TB
+  H["http.py<br/>_NO_CREDENTIAL = '-1'"]
+  T["transport.py<br/>唯一解释：哨兵=无凭据"]
+  C["config.py<br/>session_config 裸拷贝"]
+  W["WsBaseAsync<br/>_has_credentials(): bool('-1')=True"]
+  X["WsPrivateAsync<br/>带 '-1' login → 被拒"]
+  H -->|定义| T
+  T -->|API_KEY/SECRET/PASSPHRASE='-1'| C
+  C -.leak.-> W
+  W -.leak.-> X
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#b91c1c;
+  class C,W,X leak
+                </pre>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 一个 owner 吸收翻译</div>
+                <pre class="mermaid">
+flowchart TB
+  H["http.py<br/>定义哨兵"]
+  T["transport.py<br/>REST 侧解释"]
+  C["config.py · DEEP<br/>哨兵 → 空值 / 显式拒绝"]
+  W["WsBaseAsync<br/>_has_credentials() 只看空值"]
+  P["Public：照常连接 · Private：清晰报错"]
+  H --> T
+  T --> C
+  C --> W
+  W --> P
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc,stroke-width:2px;
+  class C deep
+                </pre>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>哨兵在 http.py 定义、transport.py 解释，config.py 与 WsBaseAsync 却不解释——`bool('-1')` 为真，私有会话拿哨兵登录并永久被拒，这条路径无人测。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>让 ADR-0014 指定的唯一映射 owner 把哨兵翻成空值；会话模块不再独立判断凭据有无。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：无凭据只一处解释</li>
+                <li>leverage：两个 adapter 共用一份映射</li>
+                <li>接口不变，实现吸收哨兵</li>
+                <li>删除 test-only 盲区</li>
+              </ul>
+            </div>
+            <div class="note mt-4 rounded-lg px-4 py-2.5 text-xs">补完 ADR-0014：它指定 session_config 为唯一映射 owner，却没让它解释哨兵。不冲突。</div>
+          </div>
+        </article>
+
+        <!-- 02 -->
+        <article id="c2" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">02 · 收拢端点常量的接线面</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-strong">Strong</span><span class="b b-cat">in-process</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/consts/__init__.py · okxsdk/consts/endpoints/*（21 个）· Account.py / DualInvest.py / Affiliate.py / Finance/EthStaking.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 两份手写清单 + 扁平 namespace</div>
+                <div class="space-y-2 text-xs mono">
+                  <div class="box">import 块：21 个名字（手写第 1 份）</div>
+                  <div class="box">_MODULES：同样 21 个名字（手写第 2 份）</div>
+                  <div class="flex items-center gap-2 arrow justify-center">↓ 无测试守卫两份同步</div>
+                  <div class="box leaky">_collect_exports → 约 280 个公开名 → globals().update()</div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 text-xs mono">
+                  <div class="box">相对 import *</div>
+                  <div class="box">相对具名</div>
+                  <div class="box">绝对具名</div>
+                  <div class="box">绝对 import *</div>
+                </div>
+                <div class="lbl mt-3">四种到达同一 seam 的写法，无 owner</div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 一份清单驱动，一个接口</div>
+                <div class="flex flex-col items-center gap-3 pt-2">
+                  <div class="box deep w-full text-center py-4">
+                    <div class="lbl" style="color:#94a3b8">DEEP · consts</div>
+                    <div class="mono text-sm mt-1">_MODULES 唯一清单 → 驱动导入 → 合并导出</div>
+                  </div>
+                  <div class="text-slate-400 text-xs">撞名约束 / 全局唯一名 / 导入写法，全部收在这一处</div>
+                  <svg width="80%" height="46" viewBox="0 0 320 46">
+                    <line x1="10" y1="23" x2="310" y2="23" class="seam" stroke="#94a3b8" stroke-width="2"/>
+                    <text x="160" y="17" text-anchor="middle" class="lbl" fill="#64748b">唯一 seam</text>
+                  </svg>
+                  <div class="flex gap-3 text-xs mono">
+                    <div class="box">c.GET</div><div class="box">c.PLACE_ORDER</div><div class="box">c.…</div>
+                  </div>
+                  <div class="lbl">call site 只依赖一个接口</div>
+                </div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>21 个 endpoint module 是 shallow：interface 就是整个扁平 namespace，call site 无法只依赖一个产品区；两份手写清单无测试守卫，新增 module 漏改 `_MODULES` 常量静默消失。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>让 `_MODULES` 成为唯一清单并驱动导入，把全局唯一名约束与导入写法收进一处。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：加常量只改一处</li>
+                <li>leverage：一份声明回本到未来新增</li>
+                <li>删除第二份手写清单</li>
+                <li>deletion test：合并 21 文件不摊给 call site</li>
+              </ul>
+            </div>
+            <div class="adr mt-4 rounded-lg px-4 py-2.5 text-xs">按产品区限定常量名会动到 <span class="mono">ADR-0011</span> 快照表里的 <span class="mono">c.X</span> 引用，值得重开；本卡的最小加深（唯一清单）不动表，不冲突。</div>
+            <div class="note mt-2 rounded-lg px-4 py-2.5 text-xs">四种导入写法是 <span class="mono">ADR-0019</span> 改名后的未收口面；r4 审查 07 只处理了 F405。</div>
+          </div>
+        </article>
+
+        <!-- 03 -->
+        <article id="c3" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">03 · 把连接策略从会话构造器收走</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-worth">Worth exploring</span><span class="b b-cat">local-substitutable</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/websocket/WsBaseAsync.py · okxsdk/websocket/connection.py · WsPrivateAsync.py · WsPublicAsync.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 13 参，5 个纯转发</div>
+                <div class="space-y-1.5">
+                  <div class="band px-3 py-2 text-xs mono rounded">session.__init__(url, apiKey, passphrase, secretKey, debug, <b>ping_interval, ping_timeout, reconnect, reconnect_backoff, reconnect_max_backoff</b>, proxy, connector)</div>
+                  <div class="text-center arrow text-xs">↓ 原样塞给 ↓</div>
+                  <div class="box owner text-xs mono py-3">ConnectionSupervisor（ADR-0016 的真 owner）</div>
+                  <div class="lbl mt-3">默认值在 connection.py 定义，却在两个构造器各声明一次 → 三个声明点</div>
+                </div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 一层厚的 owner</div>
+                <div class="space-y-2 pt-1">
+                  <div class="box text-xs mono">session.__init__：只接会话关心的东西</div>
+                  <div class="text-center arrow text-xs">factory / from_transport 构造 ↓</div>
+                  <div class="box owner text-xs mono py-4">ConnectionSupervisor<br/><span style="color:#94a3b8">ping · timeout · reconnect · backoff · 默认值</span><br/>全部收在此一处</div>
+                  <div class="lbl">新增一条策略字段只改一个 module</div>
+                </div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>session module 的 interface 比 implementation 宽：5 个连接策略参数它不拥有也不消费，只是穿过构造器转发给 supervisor。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>让 factory 构造 supervisor，session 只保留会话关心的参数，把默认值声明收敛到唯一一处。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：默认值从三点收成一点</li>
+                <li>接口收窄，实现吸收策略</li>
+                <li>leverage：加字段不穿两个构造器</li>
+                <li>落实 ADR-0016 到构造层</li>
+              </ul>
+            </div>
+            <div class="note mt-4 rounded-lg px-4 py-2.5 text-xs">不推翻 <span class="mono">ADR-0016</span>（监督者独占 socket 与任务图），只是把它的所有权结论落到底：策略连声明带构造都归它。</div>
+          </div>
+        </article>
+
+        <!-- 04 -->
+        <article id="c4" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">04 · 让凭据掩码与 debug 决策只有一个 owner</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-worth">Worth exploring</span><span class="b b-cat">in-process</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/utils.py · okxsdk/transport.py · okxsdk/websocket/WsBaseAsync.py · test/unit/okxsdk/test_logging.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 两份掩码，三处 debug 形参</div>
+                <pre class="mermaid">
+flowchart TB
+  U["utils.py<br/>_masked_header() + _SENSITIVE_HEADER_KEYS"]
+  W["WsBaseAsync.py<br/>内联循环 mask(apiKey,passphrase,sign)"]
+  P["pre_hash / get_header / get_header_no_sign<br/>各带一个 debug 形参"]
+  S["transport._send<br/>if self.debug: 逐行打日志"]
+  U --> REST["REST header"]
+  W --> LOGIN["login payload"]
+  P -.-> S
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#b91c1c;
+  class W,P leak
+                </pre>
+                <div class="lbl mt-2">抽出来为可测性的纯函数仍带 debug，真决策散在别处</div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 清单与决策归一</div>
+                <pre class="mermaid">
+flowchart TB
+  O["utils.py · DEEP<br/>敏感字段清单 + 掩码 + debug 决策"]
+  S["transport._send<br/>唯一打日志处"]
+  REST["REST header"]
+  LOGIN["login payload"]
+  O --> S
+  S --> REST
+  S --> LOGIN
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc,stroke-width:2px;
+  class O deep
+                </pre>
+                <div class="lbl mt-2">utils 函数回归真正纯计算</div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>「哪些字段算敏感」有两个 owner（REST 一份、login 一份），WS 那份无人测；为可测性抽出的纯函数还各挂一个 debug 形参，真正的「何时打、打什么」没有 locality。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>把敏感字段清单、掩码与 debug 决策收进一处，让 utils 函数真正 pure，打日志只留一个 owner。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：掩码 bug 集中一处</li>
+                <li>删除内联第二份掩码</li>
+                <li>纯函数不再背 debug 形参</li>
+                <li>两条路径同一测试面</li>
+              </ul>
+            </div>
+            <div class="adr mt-4 rounded-lg px-4 py-2.5 text-xs">掩码 owner 归一符合 <span class="mono">ADR-0020</span>；但拿掉三个 <span class="mono">debug</span> 形参会改公开签名，与它「不改任何公开 API 签名」相抵——只有收口 debug 决策那一步值得重开。</div>
+          </div>
+        </article>
+
+        <!-- 05 -->
+        <article id="c5" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">05 · 让 request 的 interface 说真话</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-worth">Worth exploring</span><span class="b b-cat">in-process</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/okxclient.py · okxsdk/transport.py · okxsdk/Trade.py · test/unit/okxsdk/endpoints.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · interface 与实际形状错位</div>
+                <div class="space-y-3 pt-1">
+                  <div class="box mono text-xs">OkxClient.request(params: Optional[Dict[str, Any]])</div>
+                  <div class="text-center arrow text-xs">但 6 个端点传的是 ↓</div>
+                  <div class="box mono text-xs">place_multiple_orders(orders_data) → <b>list</b></div>
+                  <div class="box leaky mono text-xs">Transport.request(params: Any) ← 只有这里对</div>
+                  <div class="lbl mt-2">形状判别藏在 endpoints.py 的 PAYLOAD 约定里，不在 interface 里</div>
+                </div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 形状进 interface</div>
+                <div class="flex flex-col items-center gap-3 pt-4">
+                  <div class="box deep w-full text-center py-4 mono text-xs">
+                    request 的 interface 显式承认<br/>dict（具名参数）｜ list（PAYLOAD 转发）
+                  </div>
+                  <svg width="70%" height="40" viewBox="0 0 260 40">
+                    <line x1="10" y1="20" x2="250" y2="20" class="seam" stroke="#94a3b8" stroke-width="2"/>
+                    <text x="130" y="14" text-anchor="middle" class="lbl" fill="#64748b">同一 seam，形状可判别</text>
+                  </svg>
+                  <div class="text-xs text-slate-500">call site 与端点表跨同一 interface</div>
+                  <div class="lbl">locality：形状判别从约定搬进接口</div>
+                </div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>`params` 标注成 Dict，但转发端点实际传 list；interface 少描述了它真实的一种形状，`test_typing.py` 只查有没有注解、不查对不对。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>让 interface 显式表达 dict 与 PAYLOAD list 两种形状，形状判别不再只活在测试约定里。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：形状判别落在接口</li>
+                <li>interface 不再说谎</li>
+                <li>call site 与测试同一 seam</li>
+                <li>leverage：一处声明，24 个类受益</li>
+              </ul>
+            </div>
+            <div class="note mt-4 rounded-lg px-4 py-2.5 text-xs"><span class="mono">ADR-0011</span> 已把 6 个转发端点记为 PAYLOAD；本卡只是让 interface 跟上它已经发现的事实，不冲突。</div>
+          </div>
+        </article>
+
+        <!-- 06 -->
+        <article id="c6" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">06 · 给「够到常量」定一个 seam</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-spec">Speculative</span><span class="b b-cat">in-process</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/Account.py · DualInvest.py · Affiliate.py · Finance/EthStaking.py · 其余 20 个 API module · ruff.toml</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 四种写法，knowledge 摊在 24 文件</div>
+                <div class="grid grid-cols-2 gap-2 text-xs mono">
+                  <div class="box">Account.py<br/><span class="lbl">相对 import *</span></div>
+                  <div class="box">DualInvest.py<br/><span class="lbl">相对具名</span></div>
+                  <div class="box">Affiliate.py<br/><span class="lbl">绝对具名</span></div>
+                  <div class="box">EthStaking.py<br/><span class="lbl">绝对 import *</span></div>
+                </div>
+                <div class="mt-4 text-center arrow text-xs">↓ 都够到同一个 consts</div>
+                <div class="box leaky mt-3 text-xs">没有单一 interface；改名后混用残留</div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 一种写法，lint 锁住</div>
+                <div class="flex flex-col items-center gap-3 pt-3">
+                  <div class="box deep w-full text-center py-4 text-xs mono">
+                    一种导入写法<br/><span style="color:#94a3b8">由 02 的唯一清单驱动</span>
+                  </div>
+                  <svg width="60%" height="34" viewBox="0 0 200 34">
+                    <line x1="10" y1="17" x2="190" y2="17" class="seam" stroke="#94a3b8" stroke-width="2"/>
+                  </svg>
+                  <div class="box text-xs">ruff 规则守住这一种</div>
+                  <div class="lbl">24 个 module 同一个 seam</div>
+                </div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>一个 API module 怎么够到常量没有单一 interface，四种写法并存，knowledge 摊在 24 个文件里。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>定一种导入写法并在 lint 里锁住，让它成为 consts 这一 seam 上唯一的 adapter 形态。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：导入规则一处可查</li>
+                <li>与 02 的清单共用 owner</li>
+                <li>删掉四种写法的脑内映射</li>
+                <li>lint 让回归即时变红</li>
+              </ul>
+            </div>
+            <div class="note mt-4 rounded-lg px-4 py-2.5 text-xs">本卡最轻，依赖 02 先落地；单独做收益有限，故标 Speculative。</div>
+          </div>
+        </article>
+
+        <!-- 07 -->
+        <article id="c7" class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+              <h2 class="font-serif text-2xl leading-snug">07 · 删掉只给测试用的 replayable 逃生舱</h2>
+              <div class="flex gap-2 shrink-0"><span class="b b-spec">Speculative</span><span class="b b-cat">mock</span></div>
+            </div>
+            <div class="mt-3 mono text-xs text-slate-500">okxsdk/transport.py · okxsdk/okxclient.py · test/unit/okxsdk/test_okxclient.py · test_retry.py</div>
+          </div>
+          <div class="p-6">
+            <div class="card-diagram">
+              <div class="pane">
+                <div class="pane-title">Before · 单一 adapter 撑起假设 seam</div>
+                <pre class="mermaid">
+flowchart TB
+  R["request(replayable=...) 公开 override<br/>24 个 API 类共用 seam"]
+  D["_is_replayable() 派生规则<br/>GET / 幂等键"]
+  T["测试代码<br/>唯一调用方"]
+  P["生产代码<br/>零调用"]
+  T -.->|replayable=True| R
+  R -.绕过.-> D
+  P -.->|不用| R
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#b91c1c;
+  class R,T leak
+                </pre>
+                <div class="lbl mt-2">一个 adapter = hypothetical seam</div>
+              </div>
+              <div class="pane">
+                <div class="pane-title">After · 规则只有一个 owner</div>
+                <pre class="mermaid">
+flowchart TB
+  D["_is_replayable() · DEEP<br/>派生规则唯一 owner"]
+  R["request 的 interface 收窄<br/>不再暴露 override"]
+  ALL["全部 call site + 测试<br/>同一条规则"]
+  D --> R
+  R --> ALL
+  classDef deep fill:#0f172a,stroke:#0f172a,color:#f8fafc,stroke-width:2px;
+  class D deep
+                </pre>
+                <div class="lbl mt-2">接口比实现宽的那一段消失</div>
+              </div>
+            </div>
+            <dl class="mt-6 space-y-2 text-sm">
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">问题</dt><dd>`replayable` override 暴露在 24 个类共用的 seam 上，生产零调用、只有测试用，却能让无幂等键的 POST 变成可重放——单一 adapter 撑起一个假设 seam，interface 比 implementation 宽。</dd></div>
+              <div class="flex gap-3"><dt class="lbl w-16 shrink-0 pt-0.5">方案</dt><dd>把派生规则留在 `_is_replayable` 唯一 owner，去掉公开 override，让 interface 收窄。</dd></div>
+            </dl>
+            <div class="mt-4"><div class="lbl mb-2">收益</div>
+              <ul class="text-sm grid sm:grid-cols-2 gap-x-6 gap-y-1 list-disc list-inside">
+                <li>locality：可重放规则只一处</li>
+                <li>接口收窄，删假设 seam</li>
+                <li>locality：绕过口子消失</li>
+                <li>测试跨真实 interface</li>
+              </ul>
+            </div>
+            <div class="adr mt-4 rounded-lg px-4 py-2.5 text-xs">收紧的正是 <span class="mono">ADR-0003</span> 想守住的规则、不改规则本身；但去掉 override 是公开接口变更，需按 <span class="mono">ADR-0004</span> 的破坏性批次走，且要重开 ADR-0003 确认测试如何覆盖。</div>
+          </div>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation">
+        <div class="rounded-xl deep text-slate-50 p-8 shadow-lg">
+          <div class="lbl" style="color:#94a3b8">先做哪个</div>
+          <h2 class="font-serif text-3xl mt-2">先做 01 · 让「无凭据」只有一个 owner</h2>
+          <p class="mt-3 text-slate-300 max-w-3xl text-sm leading-relaxed">唯一一个已经踩到真实正确性 bug 的候选：`'-1'` 哨兵穿过 config.py 与 WsBaseAsync 两处不解释它的 module，私有会话拿哨兵登录被永久拒绝，且这条路径无人测。它同时是干净的深化——把「无凭据」的语义集中到 ADR-0014 已指定的唯一 owner，locality 立刻变好，接口一点不动。</p>
+          <a href="#c1" class="inline-block mt-5 text-sm font-semibold text-emerald-300 hover:text-emerald-200">看 01 的卡片 →</a>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-400 pt-4">词汇：module · interface · implementation · depth · seam · adapter · leverage · locality ｜ 候选基于近期提交热点，未重提三份前序评审已落地的 12 个候选</footer>
+
+    </main>
+  </body>
+</html>
