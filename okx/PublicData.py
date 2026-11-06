@@ -69,10 +69,6 @@ class PublicAPI(OkxClient):
     def get_interest_rate_loan_quota(self) -> Dict[str, Any]:
         return self.request(GET,INTEREST_LOAN)
 
-    #GET /api/v5/public/vip-interest-rate-loan-quota
-    def get_vip_interest_rate_loan_quota(self) -> Dict[str, Any]:
-        return self.request(GET, VIP_INTEREST_RATE_LOAN_QUOTA)
-
     #GET /api/v5/public/underlying
     def get_underlying(self,instType: Any = None) -> Dict[str, Any]:
         params = {

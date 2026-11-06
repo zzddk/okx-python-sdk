@@ -11,7 +11,6 @@ class FundingTest(unittest.TestCase):
         self.FundingAPI = Funding.FundingAPI(Transport(api_key, api_secret_key, passphrase, flag=flag))
     """
     CANCEL_WITHDRAWAL = '/api/v5/asset/cancel-withdrawal' #need add
-    CONVERT_DUST_ASSETS = '/api/v5/asset/convert-dust-assets' #need add
     ASSET_VALUATION = '/api/v5/asset/asset-valuation' #need add
     GET_SAVING_BALANCE = '/api/v5/asset/saving-balance' #need to add
     def test_asset_evluation(self):

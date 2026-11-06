@@ -9,17 +9,17 @@ All notable changes to `python-okx` are documented in this file.
   is deliberately not throttled, with one of two reasons: `ORDERS_BASED` (the
   published limit is in orders per window) or `NOT_IN_OFFICIAL_LIST` (the path
   is absent from the official endpoint list). The table and this map partition
-  the 274 declared paths, and a test fails when an endpoint is in neither.
+  the 256 declared paths, and a test fails when an endpoint is in neither.
 - `okx.exceptions.PermanentConnectionError` marks a connection failure that
   retrying the same endpoint cannot fix. `okx.websocket.login.LoginRejected`
   is one; it still subclasses `ConnectionError`, so handlers written against
   the previous exception keep working.
 
 ### Changed
-- `RATE_LIMITS` now records the limits published for 237 of the 274 declared
-  paths (up from 8), snapshot 2026-11-06. The other 37 are in
+- `RATE_LIMITS` now records the limits published for 244 of the 256 declared
+  paths (up from 8), snapshot 2026-11-06. The other 12 are in
   `RATE_LIMIT_EXEMPTIONS`: four batch-order endpoints whose limit is in orders
-  per window, and 33 paths absent from the official list.
+  per window, and 8 paths absent from the official list.
 - `50004` (request timeout) and `51149` (order timeout) are no longer retried.
   OKX documents both as "does not mean that the request was successful or
   failed, please check the request result", so a retry could execute the order
@@ -31,10 +31,25 @@ All notable changes to `python-okx` are documented in this file.
 - `get_timestamp()` uses timezone-aware UTC instead of the deprecated
   `datetime.utcnow()`. The wire format (ISO 8601, milliseconds, `Z`) is
   unchanged.
+- `MarketAPI.get_block_trades` calls `GET /api/v5/public/block-trades` and
+  `SpreadTradingAPI.get_ticker` calls `GET /api/v5/market/sprd-ticker`, the
+  paths OKX publishes today.
+- The affiliate methods use the public affiliate paths and signatures:
+  `get_invitee_detail`, `get_invitee_list`, `get_link_list` and
+  `get_performance_summary` replace the `get_tvb_*` methods.
+- `set_risk_offset_type` is replaced by
+  `set_risk_offset_amount(ccy, clSpotInUseAmt)`, matching
+  `POST /api/v5/account/set-riskOffset-amt`.
 
 ### Removed
 - `okx.exceptions.OkxRequestException` and `OkxParamsException`. Neither was
   raised anywhere in the SDK, so no handler could ever receive one.
+- Seventeen methods whose endpoints OKX has taken offline or that duplicated a
+  newer method: the seven fixed-loan methods, the four VIP-loan methods,
+  `get_order_lite_book`, `convert_dust_assets`, `borrow_repay`,
+  `get_borrow_repay_history`, `purchase_redempt` and the duplicate
+  `get_vip_interest_rate_loan_quota`. The constants behind them and
+  `LIQUIDATION_ORDERS` are gone too.
 
 ### Fixed
 - A WebSocket closed with a normal close code (1000/1001) during login now
@@ -55,6 +70,15 @@ All notable changes to `python-okx` are documented in this file.
 |---|---|
 | `from okx.exceptions import OkxRequestException` | Remove the import; the SDK never raised this class |
 | `from okx.exceptions import OkxParamsException` | Remove the import; the SDK never raised this class |
+| `get_tvb_invitee_detail(...)` | `get_invitee_detail(uid, periodType=None)` |
+| `get_tvb_invitee_list(...)` | `get_invitee_list(page, limit, periodType, begin, end, keyword, commissionCategory, orderBy, orderDir, kycStatus, subAffiliateUid, uid)` |
+| `get_tvb_link_list(...)` | `get_link_list(page, limit, linkType, linkStatus)` |
+| `get_tvb_performance_summary(...)` | `get_performance_summary(periodType, begin, end)` |
+| `set_risk_offset_type(type)` | `set_risk_offset_amount(ccy, clSpotInUseAmt)` |
+| `borrow_repay` / `get_borrow_repay_history` | `spot_manual_borrow_repay` / `spot_borrow_repay_history` |
+| `purchase_redempt` | `SavingsAPI.savings_purchase_redemption` |
+| `get_vip_interest_rate_loan_quota` | `get_interest_rate_loan_quota` |
+| fixed-loan / VIP-loan / books-lite / dust methods | No replacement; the endpoint is offline |
 
 ## [0.15.0]
 

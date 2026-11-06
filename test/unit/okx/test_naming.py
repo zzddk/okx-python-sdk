@@ -7,6 +7,7 @@ import pytest
 from okx import consts as c
 from okx import exceptions
 from okx.Account import AccountAPI
+from okx.Affiliate import AffiliateAPI
 from okx.PublicData import PublicAPI
 from okx.SubAccount import SubAccountAPI
 
@@ -25,19 +26,22 @@ RENAMED_CONSTANTS = {
     "GRID_COMPUTE_MARIGIN_BALANCE": "GRID_COMPUTE_MARGIN_BALANCE",
     "CANCEL_ALL_RSQS": "CANCEL_ALL_RFQS",
     "MARKER_INSTRUMENT_SETTING": "MAKER_INSTRUMENT_SETTING",
+    "AFFILIATE_TVB_INVITEE_DETAIL": "AFFILIATE_INVITEE_DETAIL",
+    "AFFILIATE_TVB_INVITEE_LIST": "AFFILIATE_INVITEE_LIST",
+    "AFFILIATE_TVB_LINK_LIST": "AFFILIATE_LINK_LIST",
+    "AFFILIATE_TVB_PERFORMANCE_SUMMARY": "AFFILIATE_PERFORMANCE_SUMMARY",
 }
 
 REMOVED_EXCEPTIONS = ["OkxRequestException", "OkxParamsException"]
 
 RENAMED_METHODS = [
-    (AccountAPI, "set_risk_offset_typel", "set_risk_offset_type"),
-    (AccountAPI, "get_VIP_interest_accrued_data", "get_vip_interest_accrued_data"),
-    (AccountAPI, "get_VIP_interest_deducted_data", "get_vip_interest_deducted_data"),
-    (AccountAPI, "get_VIP_loan_order_list", "get_vip_loan_order_list"),
-    (AccountAPI, "get_VIP_loan_order_detail", "get_vip_loan_order_detail"),
     (PublicAPI, "get_option_tickBands", "get_option_tickbands"),
     (SubAccountAPI, "subAccount_transfer", "subaccount_transfer"),
     (SubAccountAPI, "set_sub_accounts_VIP_loan", "set_sub_accounts_vip_loan"),
+    (AffiliateAPI, "get_tvb_invitee_detail", "get_invitee_detail"),
+    (AffiliateAPI, "get_tvb_invitee_list", "get_invitee_list"),
+    (AffiliateAPI, "get_tvb_link_list", "get_link_list"),
+    (AffiliateAPI, "get_tvb_performance_summary", "get_performance_summary"),
 ]
 
 

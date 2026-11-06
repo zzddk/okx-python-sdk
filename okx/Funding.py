@@ -47,11 +47,6 @@ class FundingAPI(OkxClient):
         params = {'ccy': ccy}
         return self.request(GET, CURRENCY_INFO, params)
 
-    # PiggyBank Purchase/Redemption
-    def purchase_redempt(self, ccy: Any, amt: Any, side: Any, rate: Any) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'amt': amt, 'side': side,'rate':rate}
-        return self.request(POST, PURCHASE_REDEMPT, params)
-
     # Get Withdrawal History
     def get_bills(self, ccy: Any = None, type: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
         params = {'ccy': ccy, 'type': type, 'after': after, 'before': before, 'limit': limit}
@@ -74,13 +69,6 @@ class FundingAPI(OkxClient):
             'wdId':wdId
         }
         return self.request(POST, CANCEL_WITHDRAWAL, params)
-
-    #POST /api/v5/asset/convert-dust-assets
-    def convert_dust_assets(self, ccy: Any = None) -> Dict[str, Any]:
-        params = {
-            'ccy':ccy
-        }
-        return self.request(POST, CONVERT_DUST_ASSETS, params)
 
     #GET /api/v5/asset/asset-valuation
     def get_asset_valuation(self,ccy: Any = None) -> Dict[str, Any]:

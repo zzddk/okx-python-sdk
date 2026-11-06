@@ -12,7 +12,6 @@ class publicDataTest(unittest.TestCase):
     TestCase For:
     INTEREST_LOAN = '/api/v5/public/interest-rate-loan-quota' #need to add
     UNDERLYING = '/api/v5/public/underlying' #need to add
-    VIP_INTEREST_RATE_LOAN_QUOTA = '/api/v5/public/vip-interest-rate-loan-quota' #need to add
     INSURANCE_FUND = '/api/v5/public/insurance-fund'#need to add
     CONVERT_CONTRACT_COIN = '/api/v5/public/convert-contract-coin' #need to add
     def test_interest_loan(self):

@@ -118,16 +118,6 @@ class AccountAPI(OkxClient):
         params = {'ccy': ccy}
         return self.request(GET, MAX_WITHDRAWAL, params)
 
-    # Get borrow repay
-    def borrow_repay(self, ccy: Any = None, side: Any = None, amt: Any = None, ordId: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'side': side, 'amt': amt, 'ordId': ordId}
-        return self.request(POST, BORROW_REPAY, params)
-
-    # Get borrow repay history
-    def get_borrow_repay_history(self, ccy: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, BORROW_REPAY_HISTORY, params)
-
     # Get Obtain borrowing rate and limit
     def get_interest_limits(self, type: Any = None, ccy: Any = None) -> Dict[str, Any]:
         params = {'type': type, 'ccy': ccy}
@@ -171,30 +161,10 @@ class AccountAPI(OkxClient):
         }
         return self.request(GET, GET_PM_LIMIT, params)
 
-    # - Get VIP interest accrued data
-    def get_vip_interest_accrued_data(self, ccy: Any = None, ordId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, GET_VIP_INTEREST_ACCRUED_DATA, params)
-
-    # - Get VIP interest deducted data
-    def get_vip_interest_deducted_data(self, ccy: Any = None, ordId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, GET_VIP_INTEREST_DEDUCTED_DATA, params)
-
-    # - Get VIP loan order list
-    def get_vip_loan_order_list(self, ordId: Any = None, state: Any = None, ccy: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ordId': ordId, 'state': state, 'ccy': ccy, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, GET_VIP_LOAN_ORDER_LIST, params)
-
-    # - Get VIP loan order detail
-    def get_vip_loan_order_detail(self, ccy: Any = None, ordId: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'ordId': ordId, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, GET_VIP_LOAN_ORDER_DETAIL, params)
-
-    # - Set risk offset type
-    def set_risk_offset_type(self, type: Any = None) -> Dict[str, Any]:
-        params = {'type': type}
-        return self.request(POST, SET_RISK_OFFSET_TYPE, params)
+    # - Set risk offset amount
+    def set_risk_offset_amount(self, ccy: Any, clSpotInUseAmt: Any) -> Dict[str, Any]:
+        params = {'ccy': ccy, 'clSpotInUseAmt': clSpotInUseAmt}
+        return self.request(POST, SET_RISK_OFFSET_AMT, params)
 
     # - Set auto loan
     def set_auto_loan(self, autoLoan: Any = None) -> Dict[str, Any]:
@@ -213,33 +183,6 @@ class AccountAPI(OkxClient):
     # - Activate option
     def activate_option(self) -> Dict[str, Any]:
         return self.request(POST, ACTIVATE_OPTION)
-
-    def get_fix_loan_borrowing_limit(self) -> Dict[str, Any]:
-        return self.request(GET, BORROWING_LIMIT)
-
-    def get_fix_loan_borrowing_quote(self, type: Any = None, ccy: Any = None, amt: Any = None, maxRate: Any = None, term: Any = None, ordId: Any = None) -> Dict[str, Any]:
-        params = {'type': type, 'ccy': ccy, 'amt': amt, 'maxRate': maxRate, 'term': term, 'ordId': ordId}
-        return self.request(GET, BORROWING_QUOTE, params)
-
-    def place_fix_loan_borrowing_order(self, ccy: Any = None, amt: Any = None, maxRate: Any = None, term: Any = None, reborrow: Any=False, reborrowRate: Any = None) -> Dict[str, Any]:
-        params = {'ccy': ccy, 'amt': amt, 'maxRate': maxRate, 'term': term, 'reborrow': reborrow,
-                  'reborrowRate': reborrowRate}
-        return self.request(POST, PLACE_BORROWING_ORDER, params)
-
-    def amend_fix_loan_borrowing_order(self, ordId: Any = None, reborrow: Any = None, renewMaxRate: Any = None) -> Dict[str, Any]:
-        params = {'ordId': ordId, 'reborrow': reborrow, 'renewMaxRate': renewMaxRate}
-        return self.request(POST, AMEND_BORROWING_ORDER, params)
-
-    def fix_loan_manual_reborrow(self, ordId: Any = None, maxRate: Any = None) -> Dict[str, Any]:
-        params = {'ordId': ordId, 'maxRate': maxRate}
-        return self.request(POST, MANUAL_REBORROW, params)
-
-    def repay_fix_loan_borrowing_order(self, ordId: Any = None) -> Dict[str, Any]:
-        params = {'ordId': ordId}
-        return self.request(POST, REPAY_BORROWING_ORDER, params)
-    def get_fix_loan_borrowing_orders_list(self, ordId: Any = None, ccy: Any = None, state: Any = None, after: Any = None, before: Any = None, limit: Any = None) -> Dict[str, Any]:
-        params = {'ordId': ordId, 'ccy': ccy, 'state': state, 'after': after, 'before': before, 'limit': limit}
-        return self.request(GET, BORROWING_ORDERS_LIST, params)
 
     def spot_manual_borrow_repay(self, ccy: Any = None, side: Any = None, amt: Any = None) -> Dict[str, Any]:
         params = {'ccy': ccy, 'side': side, 'amt': amt}

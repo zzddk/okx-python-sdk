@@ -26,9 +26,8 @@ from .fakes import FakeTransport
 
 OKX_ROOT = pathlib.Path(okx.__file__).parent
 
-# Constants that are intentionally not dispatched by an *API method:
-# - LIQUIDATION_ORDERS has no binding yet (tracked separately).
-_CONSTS_WITHOUT_API_METHOD = {"LIQUIDATION_ORDERS"}
+# Constants that are intentionally not dispatched by an *API method.
+_CONSTS_WITHOUT_API_METHOD = set()
 
 ENDPOINT_PATHS = {
     value

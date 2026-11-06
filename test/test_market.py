@@ -9,7 +9,7 @@ EXCHANGE_RATE = '/api/v5/market/exchange-rate' #need to add
 HISTORY_TRADES = '/api/v5/market/history-trades' #need to add
 BLOCK_TICKERS = '/api/v5/market/block-tickers' #need to add
 BLOCK_TICKER = '/api/v5/market/block-ticker'#need to add
-BLOCK_TRADES = '/api/v5/market/block-trades'#need to add
+BLOCK_TRADES = '/api/v5/public/block-trades'#need to add
 '''
 
 from test.config import get_api_credentials

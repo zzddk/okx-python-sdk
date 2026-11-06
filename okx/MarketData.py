@@ -104,19 +104,12 @@ class MarketAPI(OkxClient):
         }
         return self.request(GET, BLOCK_TICKERS, params)
 
-    #GET /api/v5/market/block-trades
+    #GET /api/v5/public/block-trades
     def get_block_trades(self,instId: Any = None) -> Dict[str, Any]:
         params = {
             'instId':instId
         }
         return self.request(GET, BLOCK_TRADES, params)
-
-    #- Get order lite book
-    def get_order_lite_book(self,instId: Any = None) -> Dict[str, Any]:
-        params = {
-            'instId':instId
-        }
-        return self.request(GET, GET_ORDER_LITE_BOOK, params)
 
     #- Get option trades
     def get_option_trades(self,instFamily: Any = None) -> Dict[str, Any]:

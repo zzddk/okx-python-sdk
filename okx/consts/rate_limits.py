@@ -11,8 +11,8 @@ re-checked against the official Change Log.
 
 `RATE_LIMIT_EXEMPTIONS` records why a declared path is not throttled:
 `ORDERS_BASED` for the four batch endpoints whose published limit is in
-**orders** per window, and `NOT_IN_OFFICIAL_LIST` for the 33 paths absent from
-the official endpoint list (including the one with no API binding yet).
+**orders** per window, and `NOT_IN_OFFICIAL_LIST` for the 8 paths absent from
+the official endpoint list.
 
 The client only consults these maps when constructed with `rate_limit=True`.
 """
@@ -51,12 +51,19 @@ RATE_LIMITS = {
     '/api/v5/account/set-isolated-mode': (5, 2),
     '/api/v5/account/set-leverage': (20, 2),
     '/api/v5/account/set-position-mode': (5, 2),
+    '/api/v5/account/set-riskOffset-amt': (10, 2),
     '/api/v5/account/set-trading-config': (1, 2),
     '/api/v5/account/spot-borrow-repay-history': (5, 2),
     '/api/v5/account/spot-manual-borrow-repay': (1, 3),
     '/api/v5/account/subaccount/balances': (6, 2),
     '/api/v5/account/subtypes': (20, 2),
     '/api/v5/account/trade-fee': (5, 2),
+
+    # affiliate
+    '/api/v5/affiliate/invitee/detail': (3, 1),
+    '/api/v5/affiliate/invitee/list': (3, 1),
+    '/api/v5/affiliate/link/list': (3, 1),
+    '/api/v5/affiliate/performance/summary': (3, 1),
 
     # asset
     '/api/v5/asset/asset-valuation': (1, 1),
@@ -157,11 +164,13 @@ RATE_LIMITS = {
     '/api/v5/market/mark-price-candles': (20, 2),
     '/api/v5/market/option/instrument-family-trades': (20, 2),
     '/api/v5/market/platform-24-volume': (2, 2),
+    '/api/v5/market/sprd-ticker': (20, 2),
     '/api/v5/market/ticker': (20, 2),
     '/api/v5/market/tickers': (20, 2),
     '/api/v5/market/trades': (100, 2),
 
     # public
+    '/api/v5/public/block-trades': (20, 2),
     '/api/v5/public/convert-contract-coin': (10, 2),
     '/api/v5/public/delivery-exercise-history': (40, 2),
     '/api/v5/public/discount-rate-interest-free-quota': (2, 2),
@@ -299,39 +308,13 @@ RATE_LIMIT_EXEMPTIONS = {
     '/api/v5/trade/cancel-batch-orders': ORDERS_BASED,
 
     # Absent from the official endpoint list (snapshot above), so there is no
-    # published value to enforce. LIQUIDATION_ORDERS is also unbound (see
-    # test_contract); its reason here is the missing official entry.
-    '/api/v5/account/borrow-repay': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/borrow-repay-history': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/amend-borrowing-order': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/borrowing-limit': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/borrowing-order': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/borrowing-orders-list': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/borrowing-quote': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/manual-reborrow': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/fixed-loan/repay-borrowing-order': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/set-riskOffset-type': NOT_IN_OFFICIAL_LIST,
+    # published value to enforce.
     '/api/v5/account/simulated_margin': NOT_IN_OFFICIAL_LIST,
     '/api/v5/account/subaccount/interest-limits': NOT_IN_OFFICIAL_LIST,
     '/api/v5/account/subaccount/set-loan-allocation': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/vip-interest-accrued': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/vip-interest-deducted': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/vip-loan-order-detail': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/account/vip-loan-order-list': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/affiliate/tvb/invitee/detail': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/affiliate/tvb/invitee/list': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/affiliate/tvb/link/list': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/affiliate/tvb/performance/summary': NOT_IN_OFFICIAL_LIST,
     '/api/v5/affiliate/tvb/tier-breakdown': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/asset/convert-dust-assets': NOT_IN_OFFICIAL_LIST,
     '/api/v5/asset/deposit-lightning': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/asset/purchase_redempt': NOT_IN_OFFICIAL_LIST,
     '/api/v5/asset/withdrawal-lightning': NOT_IN_OFFICIAL_LIST,
     '/api/v5/broker/fd/rebate-per-orders': NOT_IN_OFFICIAL_LIST,
     '/api/v5/finance/savings/set-lending-rate': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/market/block-trades': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/market/books-lite': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/public/liquidation-orders': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/public/vip-interest-rate-loan-quota': NOT_IN_OFFICIAL_LIST,
-    '/api/v5/sprd/ticker': NOT_IN_OFFICIAL_LIST,
 }
