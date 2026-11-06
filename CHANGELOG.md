@@ -35,6 +35,9 @@ All notable changes to `python-okx` are documented in this file.
   `LoginRejected` instead of retrying the same credentials forever. The task
   carries the reason, the channel `reconnect=False` already used for
   connection errors.
+- Concurrent `login()` calls now share one attempt instead of overwriting
+  each other's handshake. The second caller returns after a success, or retries
+  after a failure, instead of waiting out the login timeout.
 
 ## [0.15.0]
 

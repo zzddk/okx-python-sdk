@@ -10,6 +10,7 @@ from websockets.exceptions import ConnectionClosedOK
 
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
+from okx.websocket.login import LoginRejected
 
 from .fakes import FakeConnector, FakeSocket
 
@@ -59,6 +60,38 @@ class TestCleanClose(unittest.TestCase):
 
         with self.assertRaises(ConnectionClosedOK):
             asyncio.run(run())
+
+
+class TestConcurrentLogin(unittest.TestCase):
+    def test_concurrent_logins_send_one_request(self):
+        async def run():
+            ws, sock = _public_on(ACK)
+            await ws.start()
+            try:
+                results = await asyncio.gather(
+                    ws.login(timeout=0.5), ws.login(timeout=0.5))
+            finally:
+                await ws.stop()
+            return results, [p['op'] for p in sock.payloads]
+
+        results, ops = asyncio.run(run())
+        self.assertEqual(results, [True, True])
+        self.assertEqual(ops.count('login'), 1)
+
+    def test_a_failed_login_releases_the_lock(self):
+        async def run():
+            ws, sock = _public_on(REJECT)
+            await ws.start()
+            try:
+                return await asyncio.gather(
+                    ws.login(timeout=0.5), ws.login(timeout=0.5),
+                    return_exceptions=True)
+            finally:
+                await ws.stop()
+
+        results = asyncio.run(run())
+        self.assertEqual([type(result) for result in results],
+                         [LoginRejected, LoginRejected])
 
 
 class TestLoginAck(unittest.TestCase):

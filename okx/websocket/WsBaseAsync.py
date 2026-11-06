@@ -107,6 +107,8 @@ class WsBaseAsync:
         self._is_logged_in = False
         self._ever_logged_in = False
         self._handshake: Optional[LoginHandshake] = None
+        # Serializes login attempts; created in the running loop on first use.
+        self._login_lock: Optional[asyncio.Lock] = None
 
         self.ping_interval = ping_interval
         self.ping_timeout = ping_timeout
@@ -179,6 +181,7 @@ class WsBaseAsync:
         await self._connection.stop()
         self._subs.drop_requests()
         self._is_logged_in = False
+        self._login_lock = None
 
     def stop_sync(self) -> None:
         if self.loop is None:
@@ -262,6 +265,10 @@ class WsBaseAsync:
         The protocol lives in `okx.websocket.login.LoginHandshake`; this method
         only decides who feeds it — the reader always runs after `start()`, so
         the answer arrives through `_on_frame`.
+
+        Concurrent callers share one attempt: the lock serializes them, and a
+        caller that arrives after a success sees `_is_logged_in` and returns
+        without sending a second login.
         """
         if self._is_logged_in:
             return True
@@ -269,28 +276,38 @@ class WsBaseAsync:
             raise ValueError("apiKey, secretKey and passphrase are required for login")
         if self._connection.socket is None:
             raise RuntimeError("start() must be called before login()")
+        if self._login_lock is None:
+            # Created on first use, inside the running loop; stop() drops it so
+            # a session restarted on another loop does not reuse a stale lock.
+            self._login_lock = asyncio.Lock()
 
-        payload = login_payload(
-            api_key=self.apiKey,
-            passphrase=self.passphrase,
-            secret_key=self.secretKey,
-        )
-        if self.debug:
-            logger.debug("login: %s", payload)
+        async with self._login_lock:
+            if self._is_logged_in:
+                return True
+            if self._connection.socket is None:
+                raise RuntimeError("start() must be called before login()")
 
-        handshake = LoginHandshake(timeout)
-        self._handshake = handshake
-        try:
-            await self._connection.send(payload)
-            await handshake.wait()
-        except BaseException:
-            self._is_logged_in = False
-            raise
-        finally:
-            self._handshake = None
-        self._is_logged_in = True
-        self._ever_logged_in = True
-        return True
+            payload = login_payload(
+                api_key=self.apiKey,
+                passphrase=self.passphrase,
+                secret_key=self.secretKey,
+            )
+            if self.debug:
+                logger.debug("login: %s", payload)
+
+            handshake = LoginHandshake(timeout)
+            self._handshake = handshake
+            try:
+                await self._connection.send(payload)
+                await handshake.wait()
+            except BaseException:
+                self._is_logged_in = False
+                raise
+            finally:
+                self._handshake = None
+            self._is_logged_in = True
+            self._ever_logged_in = True
+            return True
 
     def _has_credentials(self) -> bool:
         return bool(self.apiKey and self.passphrase and self.secretKey)
