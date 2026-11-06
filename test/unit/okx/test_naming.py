@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from okx import consts as c
+from okx import exceptions
 from okx.Account import AccountAPI
 from okx.PublicData import PublicAPI
 from okx.SubAccount import SubAccountAPI
@@ -26,6 +27,8 @@ RENAMED_CONSTANTS = {
     "MARKER_INSTRUMENT_SETTING": "MAKER_INSTRUMENT_SETTING",
 }
 
+REMOVED_EXCEPTIONS = ["OkxRequestException", "OkxParamsException"]
+
 RENAMED_METHODS = [
     (AccountAPI, "set_risk_offset_typel", "set_risk_offset_type"),
     (AccountAPI, "get_VIP_interest_accrued_data", "get_vip_interest_accrued_data"),
@@ -36,6 +39,11 @@ RENAMED_METHODS = [
     (SubAccountAPI, "subAccount_transfer", "subaccount_transfer"),
     (SubAccountAPI, "set_sub_accounts_VIP_loan", "set_sub_accounts_vip_loan"),
 ]
+
+
+@pytest.mark.parametrize("name", REMOVED_EXCEPTIONS)
+def test_removed_exception_has_no_alias(name):
+    assert not hasattr(exceptions, name)
 
 
 @pytest.mark.parametrize("old, new", RENAMED_CONSTANTS.items())

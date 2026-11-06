@@ -31,19 +31,3 @@ class PermanentConnectionError(ConnectionError):
     """A connection failure that retrying the same endpoint cannot fix."""
 
 
-class OkxRequestException(Exception):
-
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return 'OkxRequestException: %s' % self.message
-
-
-class OkxParamsException(Exception):
-
-    def __init__(self, message):
-        self.message = message
-
-    def __str__(self):
-        return 'OkxParamsException: %s' % self.message

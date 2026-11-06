@@ -32,6 +32,10 @@ All notable changes to `python-okx` are documented in this file.
   `datetime.utcnow()`. The wire format (ISO 8601, milliseconds, `Z`) is
   unchanged.
 
+### Removed
+- `okx.exceptions.OkxRequestException` and `OkxParamsException`. Neither was
+  raised anywhere in the SDK, so no handler could ever receive one.
+
 ### Fixed
 - A WebSocket closed with a normal close code (1000/1001) during login now
   fails the handshake immediately instead of waiting out the login timeout.
@@ -44,6 +48,13 @@ All notable changes to `python-okx` are documented in this file.
 - Concurrent `login()` calls now share one attempt instead of overwriting
   each other's handshake. The second caller returns after a success, or retries
   after a failure, instead of waiting out the login timeout.
+
+### Migration
+
+| Before | After |
+|---|---|
+| `from okx.exceptions import OkxRequestException` | Remove the import; the SDK never raised this class |
+| `from okx.exceptions import OkxParamsException` | Remove the import; the SDK never raised this class |
 
 ## [0.15.0]
 
