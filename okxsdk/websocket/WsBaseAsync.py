@@ -42,6 +42,7 @@ import json
 import logging
 from typing import Any, ClassVar, Dict, List, Optional
 
+from okxsdk import utils
 from okxsdk.websocket.connection import (
     DEFAULT_PING_INTERVAL,
     DEFAULT_PING_TIMEOUT,
@@ -290,12 +291,7 @@ class WsBaseAsync:
                 secret_key=self.secretKey,
             )
             if self.debug:
-                masked = json.loads(payload)
-                for arg in masked.get("args", []):
-                    for field in ("apiKey", "passphrase", "sign"):
-                        if field in arg:
-                            arg[field] = "***"
-                logger.debug("login: %s", json.dumps(masked))
+                logger.debug("login: %s", json.dumps(utils.mask_sensitive(json.loads(payload))))
 
             handshake = LoginHandshake(timeout)
             self._handshake = handshake
@@ -399,7 +395,7 @@ class WsBaseAsync:
             payload_dict["id"] = id
         payload = json.dumps(payload_dict)
         if self.debug:
-            logger.debug("send: %s", payload)
+            logger.debug("send: %s", json.dumps(utils.mask_sensitive(payload_dict)))
         await self._connection.send(payload)
 
     async def _replay(self) -> None:

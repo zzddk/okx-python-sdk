@@ -1,6 +1,8 @@
 """Logging contract: the whole SDK uses one standard-library logging setup."""
 
+import asyncio
 import io
+import json
 import logging
 
 import httpx
@@ -8,8 +10,10 @@ import pytest
 
 from okxsdk import transport, utils
 from okxsdk.websocket.WsBaseAsync import WsBaseAsync
+from okxsdk.websocket.WsPublicAsync import WsPublicAsync
 
 from .fakes import mock_transport
+from .websocket.fakes import FakeConnector, FakeSocket
 
 
 class _CapturingHandler(logging.Handler):
@@ -102,3 +106,95 @@ def test_wsbase_instances_do_not_change_module_logger_level():
         assert ws_logger.level == baseline
     finally:
         ws_logger.setLevel(previous_level)
+
+
+# ------------------------------------------------------------------ WS masking
+
+WS_KEY = "WS_LEAK_KEY_abc123"
+WS_PASSPHRASE = "WS_LEAK_PASSPHRASE_xyz789"
+WS_SECRET = "WS_LEAK_SECRET_def456"
+WS_SIGN = "WS_LEAK_SIGN_def456"
+WS_ACK = '{"event":"login","code":"0"}'
+
+
+def _capture_ws_debug(coro):
+    """Drive one WS session under a capturing handler; return (sent, log text)."""
+    captured = _CapturingHandler()
+    sdk_logger = logging.getLogger("okxsdk")
+    sdk_logger.addHandler(captured)
+    previous_level = sdk_logger.level
+    sdk_logger.setLevel(logging.DEBUG)
+    try:
+        sent = asyncio.run(coro)
+    finally:
+        sdk_logger.removeHandler(captured)
+        sdk_logger.setLevel(previous_level)
+    return sent, "\n".join(captured.messages)
+
+
+def _ws_session(sock):
+    return WsPublicAsync(
+        url="wss://example.com",
+        connector=FakeConnector(sock),
+        debug=True,
+        apiKey=WS_KEY, passphrase=WS_PASSPHRASE, secretKey=WS_SECRET,
+    )
+
+
+def _login_values(sent):
+    """The credential values that actually went on the wire in the login frame."""
+    for payload in sent:
+        if payload == "ping":
+            continue
+        frame = json.loads(payload)
+        if frame.get("op") == "login":
+            arg = frame["args"][0]
+            return arg["apiKey"], arg["passphrase"], arg["sign"]
+    raise AssertionError("no login frame was sent")
+
+
+def test_ws_send_debug_log_does_not_leak_credentials():
+    """The public send() entry can carry a hand-built login frame; its debug
+    line must not print the credentials, and masking must be log-only."""
+    sock = FakeSocket()
+    ws = _ws_session(sock)
+
+    async def run():
+        await ws.start()
+        try:
+            await ws.send("login", [{"apiKey": WS_KEY,
+                                     "passphrase": WS_PASSPHRASE,
+                                     "sign": WS_SIGN}])
+            return list(sock.sent)
+        finally:
+            await ws.stop()
+
+    sent, log_text = _capture_ws_debug(run())
+
+    for value in (WS_KEY, WS_PASSPHRASE, WS_SIGN):
+        assert value not in log_text
+    assert "***" in log_text
+    assert "apiKey" in log_text
+    # Masking is log-only: the frame on the wire keeps the real values.
+    assert any(WS_KEY in frame for frame in sent)
+
+
+def test_ws_login_debug_log_does_not_leak_credentials():
+    """Invariant guard: the built-in login path was already masked."""
+    sock = FakeSocket(answer_login=WS_ACK)
+    ws = _ws_session(sock)
+
+    async def run():
+        await ws.start()
+        try:
+            await ws.login()
+            return list(sock.sent)
+        finally:
+            await ws.stop()
+
+    sent, log_text = _capture_ws_debug(run())
+
+    for value in _login_values(sent):
+        assert value not in log_text
+    assert "***" in log_text
+    assert "apiKey" in log_text

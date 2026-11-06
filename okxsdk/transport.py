@@ -154,7 +154,6 @@ class Transport:
         if self.debug:
             logger.debug(f'domain: {self.domain}')
             logger.debug(f'url: {full_path}')
-            logger.debug(f'body:{body}')
         if method == c.GET:
             response = self._http.get(full_path, headers=header)
         elif method == c.POST:

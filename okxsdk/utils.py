@@ -10,16 +10,37 @@ from . import consts as c
 
 logger = logging.getLogger(__name__)
 
-_SENSITIVE_HEADER_KEYS = (c.OK_ACCESS_KEY, c.OK_ACCESS_SIGN, c.OK_ACCESS_PASSPHRASE)
+# One field list for both naming systems: REST header keys are declared as
+# constants, WS login frames use JSON field names. ADR-0020 owns the "debug
+# does not print secrets" boundary; this is the one place that says which
+# fields are secret. See .scratch/credential-mask-owner/spec.md.
+_SENSITIVE_FIELDS = frozenset({
+    c.OK_ACCESS_KEY, c.OK_ACCESS_SIGN, c.OK_ACCESS_PASSPHRASE,
+    'apiKey', 'passphrase', 'sign',
+})
+
+
+def mask_sensitive(value: Any) -> Any:
+    """A copy for logging: field names stay, credential values do not.
+
+    Walks dicts and lists — a REST header is flat, a WS frame nests its args
+    — replacing the value of any sensitive field with ``***``. The input is
+    never mutated, so masking a frame for a debug line cannot change what is
+    sent on the wire.
+    """
+    if isinstance(value, dict):
+        return {
+            key: ('***' if key in _SENSITIVE_FIELDS else mask_sensitive(item))
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [mask_sensitive(item) for item in value]
+    return value
 
 
 def _masked_header(header: Dict[str, Any]) -> Dict[str, Any]:
     """A copy for logging: field names stay, credential values do not."""
-    masked = dict(header)
-    for key in _SENSITIVE_HEADER_KEYS:
-        if key in masked:
-            masked[key] = '***'
-    return masked
+    return mask_sensitive(header)
 
 
 def sign(message: str, secretKey: str) -> bytes:
