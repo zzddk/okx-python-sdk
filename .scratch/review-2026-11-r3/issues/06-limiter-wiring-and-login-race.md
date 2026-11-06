@@ -1,7 +1,8 @@
 # 06 · 限流接线与并发登录
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: 815b316
 Blocked by: —
 
 ## Question
@@ -23,10 +24,19 @@ Blocked by: —
 3. 第二个 `login()` 在第一个失败后仍能重新尝试（不因锁卡死）。
 4. `pytest test/unit` 全绿。
 
-## 未决
+## Answer
 
-- 锁的范围：只锁握手创建，还是锁整个 `login()`？后者更简单，但要验证 `_on_ready` 重入不会死锁。
+**拍板（2026-11-06）**：锁整个 `login()`（懒创建、`stop()` 丢弃）；限流接线补请求级测试。
+
+- 只锁「创建握手」不够：两个调用者仍可能各发一次 login；锁住整个尝试才能保证「并发只发一次」。
+- `_on_ready` 是顶层调用者，不在另一把锁里，重入不会死锁；从回调里调用 `login()` 本来就会卡住读循环（ACK 进不来），不是这次引入的问题。
+- 失败时锁释放，第二个调用者重新尝试（与「显式调用两次」语义一致）。
+- 锁在首次 `login()` 时创建（运行中的 loop 内），`stop()` 置空，避免会话换 loop 复用旧锁。
+- 限流：两个请求级用例证明 `request()` 每次尝试都 `acquire()`（含重试），不改运行时。
+
+**验收对照**：并发两个 `login()` 只发 1 个登录帧、都返回 True；被拒时两个都拿到 `LoginRejected`（证明锁已释放）；871 passed / 313 subtests。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 06。
+- 2026-11-06 施工完成：097e2ef（限流接线测试）、815b316（并发登录锁 + CHANGELOG）。两个并发用例在修复前均以 TimeoutError 红。

@@ -18,6 +18,7 @@
 - 2026-11-06 03 已落地（e7ce80a）：登录被拒是永久错误，重连不再无限循环；task 以 `LoginRejected` 结束。
 - 2026-11-06 04 已落地（1439a54）：REST 签名固定向量，GET query 与 POST body 各一条；不改生产代码。
 - 2026-11-06 05 已落地（7c3e7f1）：`raise_on_error` 只管错误 payload，不关闭网络重试；三处文档统一。
+- 2026-11-06 06 已落地（815b316）：`login()` 单写者锁；限流接线有请求级用例（097e2ef）。
 
 ## Decisions so far
 
@@ -26,6 +27,7 @@
 - [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md)：`PermanentConnectionError` + `LoginRejected`；`_reconnect` 遇永久错误直接结束 task，其余无限退避；不加尝试上限。Done in e7ce80a。
 - [04 · REST 签名路径没有测试](issues/04-rest-signature-test.md)：测试 patch `okx.utils.get_timestamp` 固定时间；GET query 与 POST body 的签名逐字节断言；不加 clock 参数。Done in 1439a54。
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md)：以代码为准；只改 README、spec 与 docstring，测试改名并补网络重试用例。Done in 7c3e7f1。
+- [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md)：`login()` 整段加锁（懒创建、`stop()` 丢弃）；`request()` 每次尝试都 `acquire()` 有用例。Done in 815b316。
 
 ## Not yet specified
 
@@ -46,7 +48,7 @@
 - [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md) — done (e7ce80a)
 - [04 · REST 签名路径没有测试](issues/04-rest-signature-test.md) — done (1439a54)
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md) — done (7c3e7f1)
-- [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — task
+- [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — done (815b316)
 - [07 · lint 门是装饰](issues/07-lint-gate.md) — grilling
 - [08 · 清理批次](issues/08-cleanup-batch.md) — task
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — research
