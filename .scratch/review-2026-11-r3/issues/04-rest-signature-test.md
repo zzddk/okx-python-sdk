@@ -1,7 +1,8 @@
 # 04 · REST 签名路径没有测试
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: 1439a54
 Blocked by: —
 
 ## Question
@@ -29,10 +30,20 @@ Blocked by: —
 3. 不触网、不需要真实私钥。
 4. `pytest test/unit` 全绿。
 
-## 未决
+## Answer
 
-- clock 注入放在 `Transport.__init__` 还是模块级函数替换？建议构造参数，和 `login_payload(timestamp=)` 同构。
+**拍板（2026-11-06）**：不加 clock 参数，测试直接 patch `okx.utils.get_timestamp`；生产代码零改动。
+
+- `Transport._send()` 在调用时解析 `utils.get_timestamp`，patch 模块即可固定时间；签名流水线（method、query、body、header）照常走。
+- 不给 `Transport.__init__` 加第 13 个参数：固定时钟在线上是误用口（签名过期 50102），而测试只需要一个 time double。
+- 向量：GET 带 query、POST 带 body 各一条；期望的 base64 用 stdlib `hmac`/`hashlib` 独立算出，不调用 `utils.sign`，避免自证。
+- 变异检查：从 `pre_hash` 删掉 body，只有 POST 用例红，GET 仍绿——证明向量确实钉住了 body 拼接。
+
+**验收对照**：`transport.py:148-150` 与 `utils.py:26-37` 不再为 0（`utils.py` 只剩 debug 分支未覆盖）；866 passed / 313 subtests；不触网、不需要真实私钥。
+
+**未决**：若将来要做服务器时间对齐（50102），再考虑显式的 time source；那是一个功能，不是测试接缝。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 04。
+- 2026-11-06 施工完成：1439a54（master）。两个固定向量用例；变异检查（删 body）只让 POST 红；全量 866 passed / 313 subtests。
