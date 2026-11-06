@@ -87,11 +87,11 @@
 
 **`replayable` 逃生口**：`Transport.request` / `OkxClient.request` 的 `replayable=` 保留，写进 README。
 
-**默认值**：`rate_limit=False`、`max_retries=0` 都保持 off。语义写死：`rate_limit=True` 只作用于表内 8 条路径；`max_retries=N` 只对 `replayable ∩ transient` 生效，且 `raise_on_error=False` 时不重试。默认值重开条件：表补全到验收线后的新破坏性批次，另立 effort。
+**默认值**：`rate_limit=False`、`max_retries=0` 都保持 off。语义写死：`rate_limit=True` 只作用于表内 8 条路径；`max_retries=N` 只对 `replayable ∩ transient` 生效，且 `raise_on_error=False` 时业务错误不重试（网络错误仍重试）。默认值重开条件：表补全到验收线后的新破坏性批次，另立 effort。
 
 **与 limiter 的交互**：重试的每次尝试都占一个限流配额；429 走固定指数退避，不与 limiter 显式联动（隐式配合已够）。
 
-**已知边界（不改）**：429/5xx 优先于业务码；`httpx.TransportError` 不走 `_is_transient`；`raise_on_error=False` 永不重试。
+**已知边界（不改）**：429/5xx 优先于业务码；`httpx.TransportError` 不走 `_is_transient`；`raise_on_error=False` 时业务错误不重试，网络错误仍重试。
 
 ## 6. 文档与迁移清单
 

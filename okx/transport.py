@@ -109,9 +109,10 @@ class Transport:
         failure when the request is replayable.
 
         With `raise_on_error=False` an HTTP error with a JSON body is returned
-        as a payload instead of raising. A body that is not JSON always raises
-        `ValueError` — an error status included, since there is no payload to
-        return. That has been the behaviour since 0.4.
+        as a payload instead of raising, so that error is not retried; network
+        failures still follow the retry policy. A body that is not JSON always
+        raises `ValueError` — an error status included, since there is no
+        payload to return. That has been the behaviour since 0.4.
         """
         if params is None:
             params = {}

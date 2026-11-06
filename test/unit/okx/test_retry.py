@@ -118,12 +118,20 @@ class TestRetryBusinessErrors(_ClientTestCase):
         self.assertEqual(ctx.exception.code, '51000')
         self.assertEqual(len(self.calls), 1)
 
-    def test_raise_on_error_false_never_retries(self):
+    def test_business_error_payload_is_returned_without_retry(self):
         client = self._make([_response(200, {'code': '50011'})],
                             max_retries=2, retry_backoff=0, raise_on_error=False)
         payload = client.request(c.GET, TEST_PATH, {})
         self.assertEqual(payload['code'], '50011')
         self.assertEqual(len(self.calls), 1)
+
+    def test_network_error_is_still_retried(self):
+        """raise_on_error governs payloads, not transport failures."""
+        client = self._make([httpx.ConnectError('boom')],
+                            max_retries=2, retry_backoff=0, raise_on_error=False)
+        with self.assertRaises(httpx.ConnectError):
+            client.request(c.GET, TEST_PATH, {})
+        self.assertEqual(len(self.calls), 3)
 
 
 class TestOutcomeUnknownCodes(_ClientTestCase):

@@ -114,7 +114,7 @@ Transient failures (network errors, HTTP 429/5xx, business codes `50001` / `5001
 
 `rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, a per-path `(requests, window_seconds)` table. It covers the endpoints whose limits this package has recorded — **a path missing from the table is not throttled, and that does not mean OKX publishes no limit for it**. Four batch-order endpoints are left out because their limit is in orders per window, not requests.
 
-`replayable=True` on `request()` overrides the derived safety for one call; `replayable=False` opts out. With `raise_on_error=False` nothing is retried — an error payload is returned as-is.
+`replayable=True` on `request()` overrides the derived safety for one call; `replayable=False` opts out. With `raise_on_error=False`, an HTTP or business error with a JSON body is returned as a payload instead of raising, so it is not retried; network failures are still retried, and a POST still needs an idempotency key to be replayable.
 
 ### Pagination
 
