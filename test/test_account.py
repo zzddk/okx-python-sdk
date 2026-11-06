@@ -1,8 +1,8 @@
 import unittest
 
-from okx import Account
+from okxsdk import Account
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class AccountTest(unittest.TestCase):

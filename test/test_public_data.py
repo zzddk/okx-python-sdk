@@ -1,7 +1,7 @@
 import unittest
-from okx import PublicData
+from okxsdk import PublicData
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class publicDataTest(unittest.TestCase):

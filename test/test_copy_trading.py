@@ -1,7 +1,7 @@
 import unittest
-from okx import CopyTrading
+from okxsdk import CopyTrading
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class CopyTradingTest(unittest.TestCase):

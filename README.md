@@ -4,7 +4,7 @@ This is an unofficial Python wrapper for the [OKX exchange v5 API](https://www.o
 If you came here looking to purchase cryptocurrencies from the OKX exchange, please go [here](https://www.okx.com/).
 
 #### Source code
-https://github.com/okxapi/python-okx
+https://github.com/zzddk/okx-python-sdk
 #### API trading tutorials
 - Spot trading: https://www.okx.com/help/how-can-i-do-spot-trading-with-the-jupyter-notebook
 - Derivative trading: https://www.okx.com/help/how-can-i-do-derivatives-trading-with-the-jupyter-notebook
@@ -27,10 +27,10 @@ Make sure you update often and check the [Changelog](https://www.okx.com/docs-v5
 - Register for an account: https://www.okx.com/account/register
 - Apply for an API key: https://www.okx.com/account/users/myApi
 
-#### Step 2: Install python-okx
+#### Step 2: Install okx-python-sdk
 
 ```bash
-pip install python-okx
+pip install okx-python-sdk
 ```
 
 ### API Credentials
@@ -38,8 +38,8 @@ pip install python-okx
 #### Option 1: Hardcoded credentials
 
 ```python
-from okx import Account
-from okx.transport import Transport
+from okxsdk import Account
+from okxsdk.transport import Transport
 
 account = Account.AccountAPI(Transport(
     api_key="your-api-key-here",
@@ -66,8 +66,8 @@ Then load it in your code:
 ```python
 import os
 from dotenv import load_dotenv
-from okx import Account
-from okx.transport import Transport
+from okxsdk import Account
+from okxsdk.transport import Transport
 
 load_dotenv()
 
@@ -85,8 +85,8 @@ and rate limits — and one instance can be handed to any number of API classes 
 they share one connection pool:
 
 ```python
-from okx import Account, Trade
-from okx.transport import Transport
+from okxsdk import Account, Trade
+from okxsdk.transport import Transport
 
 transport = Transport(api_key, secret, passphrase, flag="0")
 account = Account.AccountAPI(transport)   # same transport, one pool
@@ -101,8 +101,8 @@ environment variables; the caller owns that configuration.
 Both are off by default, so passing the new arguments is the only way to turn them on:
 
 ```python
-from okx import Trade
-from okx.transport import Transport
+from okxsdk import Trade
+from okxsdk.transport import Transport
 
 trade = Trade.TradeAPI(Transport(
     api_key, secret, passphrase, flag="0", max_retries=2, rate_limit=True))
@@ -112,7 +112,7 @@ Retries only replay requests that are safe to replay: every GET, and a POST only
 
 Transient failures (network errors, HTTP 429/5xx, business codes `50001` / `50011` / `50013`) are retried with exponential backoff; a rejection such as a parameter error is returned immediately. **Timeouts are not retried**: `50004` (request timeout) and `51149` (order timeout) mean OKX does not know whether the request was processed — "does not mean that the request was successful or failed, please check the request result". Query the order or the request result instead of replaying.
 
-`rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, a per-path `(requests, window_seconds)` table. It covers the endpoints whose limits this package has recorded — **a path missing from the table is not throttled, and that does not mean OKX publishes no limit for it**. Four batch-order endpoints are left out because their limit is in orders per window, not requests.
+`rate_limit=True` throttles calls using `okxsdk.consts.rate_limits.RATE_LIMITS`, a per-path `(requests, window_seconds)` table. It covers the endpoints whose limits this package has recorded — **a path missing from the table is not throttled, and that does not mean OKX publishes no limit for it**. Four batch-order endpoints are left out because their limit is in orders per window, not requests.
 
 `replayable=True` on `request()` overrides the derived safety for one call; `replayable=False` opts out. With `raise_on_error=False`, an HTTP or business error with a JSON body is returned as a payload instead of raising, so it is not retried; network failures are still retried, and a POST still needs an idempotency key to be replayable.
 
@@ -121,8 +121,8 @@ Transient failures (network errors, HTTP 429/5xx, business codes `50001` / `5001
 List endpoints page backwards with `after`. `paginate()` takes the response field that `after` refers to; it differs per endpoint, so it is required:
 
 ```python
-from okx import Account
-from okx.transport import Transport
+from okxsdk import Account
+from okxsdk.transport import Transport
 
 account = Account.AccountAPI(Transport(api_key, secret, passphrase, flag="0"))
 for bill in account.paginate(account.get_account_bills, cursor='billId',
@@ -139,9 +139,9 @@ The walk ends on an empty page or when the cursor stops advancing, and each page
 Endpoints default to the live host; pass `url=` for anything else. To share the REST client's credentials and environment:
 
 ```python
-from okx import Account
-from okx.transport import Transport
-from okx.websocket.WsPrivateAsync import WsPrivateAsync
+from okxsdk import Account
+from okxsdk.transport import Transport
+from okxsdk.websocket.WsPrivateAsync import WsPrivateAsync
 
 transport = Transport(api_key, secret, passphrase, flag="1")  # demo
 rest = Account.AccountAPI(transport)
@@ -155,7 +155,7 @@ A callback may be a plain function or an `async def`; a coroutine is awaited, so
 ```python
 import asyncio
 
-from okx.websocket.WsPrivateAsync import WsPrivateAsync
+from okxsdk.websocket.WsPrivateAsync import WsPrivateAsync
 
 async def on_message(message: str) -> None:
     print(message)
@@ -178,8 +178,8 @@ For contributors or local development:
 
 ```bash
 # Clone the repository
-git clone https://github.com/okxapi/python-okx.git
-cd python-okx
+git clone https://github.com/zzddk/okx-python-sdk.git
+cd okx-python-sdk
 
 # Install dependencies
 pip install -r dev_requirements.txt
@@ -229,3 +229,7 @@ Note
     https://github.com/Rapptz/discord.py/issues/1996
     https://github.com/aaugustin/websockets/issues/587
     ```
+
+### License
+
+MIT. This project is derived from [python-okx](https://github.com/okxapi/python-okx); the original copyright notice is kept in [LICENSE](LICENSE). It is unofficial and not affiliated with OKX.

@@ -1,8 +1,8 @@
 
 import unittest
-from okx import Grid
+from okxsdk import Grid
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class GridTest(unittest.TestCase):

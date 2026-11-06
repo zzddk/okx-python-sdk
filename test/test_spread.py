@@ -1,7 +1,7 @@
 import unittest
-from okx import SpreadTrading
+from okxsdk import SpreadTrading
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class TradeTest(unittest.TestCase):

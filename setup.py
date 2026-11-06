@@ -5,7 +5,7 @@ import setuptools
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Read version from package
-import okx
+import okxsdk
 
 # Read README
 with open(os.path.join(HERE, "README.md"), "r", encoding="utf-8") as fh:
@@ -35,16 +35,16 @@ def parse_requirements():
 
 
 setuptools.setup(
-    name="python-okx",
-    version=okx.__version__,
+    name="okx-python-sdk",
+    version=okxsdk.__version__,
     author="okxv5api",
     author_email="api@okg.com",
     description="Python SDK for OKX",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://okx.com/docs-v5/",
+    url="https://github.com/zzddk/okx-python-sdk",
     packages=setuptools.find_packages(exclude=["test", "test.*", "example"]),
-    package_data={"okx": ["py.typed"]},
+    package_data={"okxsdk": ["py.typed"]},
     python_requires=">=3.7",
     classifiers=[
         "Programming Language :: Python :: 3",

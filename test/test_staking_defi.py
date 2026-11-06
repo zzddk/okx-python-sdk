@@ -1,7 +1,7 @@
 import unittest
-from okx.Finance import StakingDefi
+from okxsdk.Finance import StakingDefi
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class StakingDefiTest(unittest.TestCase):

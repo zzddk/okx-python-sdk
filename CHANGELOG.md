@@ -2,6 +2,29 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [0.17.0]
+
+Breaking release for the independent distribution: the import package is now
+`okxsdk` and the distribution name is `okx-python-sdk`, so it can be installed
+alongside the upstream `python-okx`. Every import changes; see Migration.
+
+### Changed
+- The import package moved from `okx` to `okxsdk`: `from okx import Account`
+  becomes `from okxsdk import Account`.
+- The distribution name is `okx-python-sdk`: `pip install python-okx` becomes
+  `pip install okx-python-sdk`.
+- `setup.py` points at the independent repository.
+
+### Migration
+
+| Before | After |
+|---|---|
+| `import okx` | `import okxsdk` |
+| `from okx import Account` | `from okxsdk import Account` |
+| `from okx.transport import Transport` | `from okxsdk.transport import Transport` |
+| `from okx.websocket.WsPrivateAsync import WsPrivateAsync` | `from okxsdk.websocket.WsPrivateAsync import WsPrivateAsync` |
+| `pip install python-okx` | `pip install okx-python-sdk` |
+
 ## [0.16.0]
 
 Breaking release. Removes the public exceptions that were never raised and the endpoints OKX has taken offline, repoints the renamed ones, and has the affiliate methods follow the current docs; every public change has a row under Migration.

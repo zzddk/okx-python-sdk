@@ -109,8 +109,8 @@ class TestPackagingInstallRequires(unittest.TestCase):
 class TestTypingMarker(unittest.TestCase):
     def test_py_typed_is_shipped_in_the_package(self):
         kwargs = _capture_setup_kwargs()
-        self.assertIn("py.typed", kwargs.get("package_data", {}).get("okx", []))
-        self.assertTrue(os.path.exists(os.path.join(REPO_ROOT, "okx", "py.typed")))
+        self.assertIn("py.typed", kwargs.get("package_data", {}).get("okxsdk", []))
+        self.assertTrue(os.path.exists(os.path.join(REPO_ROOT, "okxsdk", "py.typed")))
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 import unittest
 
-from okx import Trade
+from okxsdk import Trade
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class TradeTest(unittest.TestCase):

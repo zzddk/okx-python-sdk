@@ -1,8 +1,8 @@
 
 import unittest
-from okx import BlockTrading
+from okxsdk import BlockTrading
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class BlockTradingTest(unittest.TestCase):

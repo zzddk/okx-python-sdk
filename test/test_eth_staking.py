@@ -1,7 +1,7 @@
 import unittest
-from okx.Finance import EthStaking
+from okxsdk.Finance import EthStaking
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class EthStakingTest(unittest.TestCase):

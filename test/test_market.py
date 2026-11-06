@@ -1,6 +1,6 @@
 
 import unittest
-from okx import MarketData
+from okxsdk import MarketData
 
 '''
 ORACLE = '/api/v5/market/open-oracle' #need to update? if it is open oracle
@@ -13,7 +13,7 @@ BLOCK_TRADES = '/api/v5/public/block-trades'#need to add
 '''
 
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class MarketAPITest(unittest.TestCase):

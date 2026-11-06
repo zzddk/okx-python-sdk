@@ -1,7 +1,7 @@
 import unittest
-from okx import SubAccount
+from okxsdk import SubAccount
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class SubAccountTest(unittest.TestCase):

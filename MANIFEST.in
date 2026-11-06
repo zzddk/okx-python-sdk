@@ -1,4 +1,4 @@
 include requirements.txt
 include README.md
-include okx/py.typed
+include okxsdk/py.typed
 

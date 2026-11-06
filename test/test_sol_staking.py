@@ -1,7 +1,7 @@
 import unittest
-from okx.Finance import SolStaking
+from okxsdk.Finance import SolStaking
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class SolStakingTest(unittest.TestCase):

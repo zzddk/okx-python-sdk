@@ -1,7 +1,7 @@
 import unittest
-from okx.Finance import Savings
+from okxsdk.Finance import Savings
 from test.config import get_api_credentials
-from okx.transport import Transport
+from okxsdk.transport import Transport
 
 
 class SavingsTest(unittest.TestCase):
