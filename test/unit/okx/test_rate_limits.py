@@ -1,10 +1,20 @@
-"""The rate-limit table must match the frozen acceptance set."""
+"""The rate-limit table must match the frozen acceptance set.
+
+The table is also one half of a partition: every path declared in okx/consts
+is either throttled or exempt with a known reason. A new endpoint therefore
+fails CI until it is classified.
+"""
 
 import unittest
 
-from okx.consts.rate_limits import RATE_LIMITS
+from okx.consts.rate_limits import (
+    RATE_LIMIT_EXEMPTIONS,
+    RATE_LIMIT_EXEMPTION_REASONS,
+    RATE_LIMITS,
+)
 
 from .rate_limit_acceptance import ACCEPTANCE_PATHS, ORDERS_ONLY_PATHS
+from .test_contract import ENDPOINT_PATHS, reachable_paths
 
 
 class TestRateLimitTable(unittest.TestCase):
@@ -22,3 +32,27 @@ class TestRateLimitTable(unittest.TestCase):
                 self.assertIsInstance(count, int)
                 self.assertGreater(count, 0)
                 self.assertGreater(window, 0)
+
+
+class TestCoveragePartition(unittest.TestCase):
+    """No declared path may escape the limiter without a recorded reason."""
+
+    def test_reachable_paths_are_limited_or_exempt(self):
+        uncovered = sorted(reachable_paths() - set(RATE_LIMITS) - set(RATE_LIMIT_EXEMPTIONS))
+        self.assertEqual(uncovered, [], f"paths with no rate-limit decision: {uncovered}")
+
+    def test_limited_and_exempt_paths_do_not_overlap(self):
+        both = sorted(set(RATE_LIMITS) & set(RATE_LIMIT_EXEMPTIONS))
+        self.assertEqual(both, [], f"paths both limited and exempt: {both}")
+
+    def test_exemptions_are_declared_paths(self):
+        unknown = sorted(set(RATE_LIMIT_EXEMPTIONS) - ENDPOINT_PATHS)
+        self.assertEqual(unknown, [], f"exempt paths not declared in okx/consts: {unknown}")
+
+    def test_exemptions_use_a_known_reason(self):
+        unknown = {
+            path: reason
+            for path, reason in RATE_LIMIT_EXEMPTIONS.items()
+            if reason not in RATE_LIMIT_EXEMPTION_REASONS
+        }
+        self.assertEqual(unknown, {}, f"exemptions with an unknown reason: {unknown}")

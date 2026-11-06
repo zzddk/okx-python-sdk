@@ -4,11 +4,18 @@ All notable changes to `python-okx` are documented in this file.
 
 ## [Unreleased]
 
+### Added
+- `okx.consts.rate_limits.RATE_LIMIT_EXEMPTIONS` names every declared path that
+  is deliberately not throttled, with one of two reasons: `ORDERS_BASED` (the
+  published limit is in orders per window) or `NOT_IN_OFFICIAL_LIST` (the path
+  is absent from the official endpoint list). The table and this map partition
+  the 274 declared paths, and a test fails when an endpoint is in neither.
+
 ### Changed
-- `RATE_LIMITS` now records the limits published for the endpoints this package
-  exposes: 237 paths (up from 8), snapshot 2026-11-06. The four batch-order
-  endpoints are left out because their limit is in orders per window, not
-  requests, which the table cannot express.
+- `RATE_LIMITS` now records the limits published for 237 of the 274 declared
+  paths (up from 8), snapshot 2026-11-06. The other 37 are in
+  `RATE_LIMIT_EXEMPTIONS`: four batch-order endpoints whose limit is in orders
+  per window, and 33 paths absent from the official list.
 - `50004` (request timeout) and `51149` (order timeout) are no longer retried.
   OKX documents both as "does not mean that the request was successful or
   failed, please check the request result", so a retry could execute the order

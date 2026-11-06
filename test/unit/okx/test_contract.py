@@ -30,7 +30,7 @@ OKX_ROOT = pathlib.Path(okx.__file__).parent
 # - LIQUIDATION_ORDERS has no binding yet (tracked separately).
 _CONSTS_WITHOUT_API_METHOD = {"LIQUIDATION_ORDERS"}
 
-_ENDPOINT_PATHS = {
+ENDPOINT_PATHS = {
     value
     for value in vars(consts).values()
     if isinstance(value, str) and value.startswith("/api/")
@@ -102,6 +102,15 @@ ALL_API_METHODS = sorted(
 )
 
 
+def reachable_paths() -> set:
+    """Every endpoint path a public API method can dispatch."""
+    return {
+        path
+        for cls, method_name in ALL_API_METHODS
+        for _, path in _capture_requests(cls, method_name)
+    }
+
+
 def test_constant_names_are_unique():
     """A later definition must never silently shadow an earlier one."""
     duplicates = sorted(
@@ -131,18 +140,14 @@ def test_api_method_uses_a_declared_endpoint(cls, method_name):
     assert calls, f"{cls.__name__}.{method_name} issued no request"
     for http_method, path in calls:
         assert http_method in (consts.GET, consts.POST)
-        assert path in _ENDPOINT_PATHS, (
+        assert path in ENDPOINT_PATHS, (
             f"{cls.__name__}.{method_name} requests {path!r}, "
             "which is not a path declared in okx/consts"
         )
 
 
 def test_every_declared_endpoint_is_reachable():
-    reached = {
-        path
-        for cls, method_name in ALL_API_METHODS
-        for _, path in _capture_requests(cls, method_name)
-    }
+    reached = reachable_paths()
     unreachable = sorted(
         name
         for name, value in vars(consts).items()

@@ -1,20 +1,20 @@
 """Per-endpoint rate limits, keyed by the request path.
 
 Values are `(requests, window_seconds)`, matching how OKX documents its
-limits. The table covers the endpoints whose limits this package has recorded;
-**paths missing from it are not throttled**.
+limits. Every path declared in `okx.consts` is either in this table or in
+`RATE_LIMIT_EXEMPTIONS`; a path in neither is not throttled, and the test suite
+fails until it is classified.
 
 Numbers come from each endpoint's `Rate Limit:` line in the official
 documentation. Snapshot: 2026-11-06 - update this date whenever an entry is
 re-checked against the official Change Log.
 
-"Missing from the table" means "not recorded here", not "OKX publishes no
-limit". Four endpoints are deliberately absent because their published limit is
-in **orders** per window, not requests, which a request-counting limiter cannot
-express: `/api/v5/trade/amend-batch-orders`, `/api/v5/trade/batch-orders`,
-`/api/v5/trade/cancel-algos`, `/api/v5/trade/cancel-batch-orders`.
+`RATE_LIMIT_EXEMPTIONS` records why a declared path is not throttled:
+`ORDERS_BASED` for the four batch endpoints whose published limit is in
+**orders** per window, and `NOT_IN_OFFICIAL_LIST` for the 33 paths absent from
+the official endpoint list (including the one with no API binding yet).
 
-The client only consults this table when constructed with `rate_limit=True`.
+The client only consults these maps when constructed with `rate_limit=True`.
 """
 
 RATE_LIMITS = {
@@ -282,4 +282,56 @@ RATE_LIMITS = {
     '/api/v5/users/subaccount/list': (20, 2),
     '/api/v5/users/subaccount/modify-apikey': (1, 1),
     '/api/v5/users/subaccount/set-transfer-out': (1, 1),
+}
+
+# Why a declared path is not throttled. The test suite accepts only these
+# values, so a new exemption needs a decision rather than a free-form note.
+ORDERS_BASED = 'orders-based'
+NOT_IN_OFFICIAL_LIST = 'not-in-official-list'
+RATE_LIMIT_EXEMPTION_REASONS = frozenset({ORDERS_BASED, NOT_IN_OFFICIAL_LIST})
+
+RATE_LIMIT_EXEMPTIONS = {
+    # Published in orders per window, which a request-counting limiter cannot
+    # express.
+    '/api/v5/trade/amend-batch-orders': ORDERS_BASED,
+    '/api/v5/trade/batch-orders': ORDERS_BASED,
+    '/api/v5/trade/cancel-algos': ORDERS_BASED,
+    '/api/v5/trade/cancel-batch-orders': ORDERS_BASED,
+
+    # Absent from the official endpoint list (snapshot above), so there is no
+    # published value to enforce. LIQUIDATION_ORDERS is also unbound (see
+    # test_contract); its reason here is the missing official entry.
+    '/api/v5/account/borrow-repay': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/borrow-repay-history': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/amend-borrowing-order': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/borrowing-limit': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/borrowing-order': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/borrowing-orders-list': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/borrowing-quote': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/manual-reborrow': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/fixed-loan/repay-borrowing-order': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/set-riskOffset-type': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/simulated_margin': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/subaccount/interest-limits': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/subaccount/set-loan-allocation': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/vip-interest-accrued': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/vip-interest-deducted': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/vip-loan-order-detail': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/account/vip-loan-order-list': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/affiliate/tvb/invitee/detail': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/affiliate/tvb/invitee/list': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/affiliate/tvb/link/list': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/affiliate/tvb/performance/summary': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/affiliate/tvb/tier-breakdown': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/asset/convert-dust-assets': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/asset/deposit-lightning': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/asset/purchase_redempt': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/asset/withdrawal-lightning': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/broker/fd/rebate-per-orders': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/finance/savings/set-lending-rate': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/market/block-trades': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/market/books-lite': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/public/liquidation-orders': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/public/vip-interest-rate-loan-quota': NOT_IN_OFFICIAL_LIST,
+    '/api/v5/sprd/ticker': NOT_IN_OFFICIAL_LIST,
 }
