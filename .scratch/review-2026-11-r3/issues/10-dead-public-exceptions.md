@@ -2,7 +2,7 @@
 
 Type: task
 Status: resolved
-Done in: 6a5fbc3 (unreleased 0.16.0 batch)
+Done in: 0.16.0 (6a5fbc3)
 Blocked by: —
 
 ## Question

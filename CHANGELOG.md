@@ -2,7 +2,9 @@
 
 All notable changes to `python-okx` are documented in this file.
 
-## [Unreleased]
+## [0.16.0]
+
+Breaking release. Removes the public exceptions that were never raised and the endpoints OKX has taken offline, repoints the renamed ones, and has the affiliate methods follow the current docs; every public change has a row under Migration.
 
 ### Added
 - `okx.consts.rate_limits.RATE_LIMIT_EXEMPTIONS` names every declared path that
