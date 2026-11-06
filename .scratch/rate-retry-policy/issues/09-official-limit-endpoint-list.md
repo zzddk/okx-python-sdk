@@ -1,7 +1,7 @@
 # 09 · 官方已公布限额的端点清单与 274/135 差异核对
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: 03
 
 ## Question
