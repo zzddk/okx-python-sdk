@@ -174,3 +174,20 @@ def test_consts_exposes_no_private_endpoint_strings():
         and value.startswith("/api/")
     )
     assert leaked == [], f"private names expose endpoint strings: {leaked}"
+
+
+def test_every_declared_constant_is_exported():
+    """A new endpoint module wired into neither list must not be silent.
+
+    `consts/__init__.py` binds the submodules in two places (the import block
+    and `_MODULES`). Forgetting one is already caught by ruff F401 or by an
+    import-time NameError; forgetting BOTH leaves a module on disk whose
+    constants never reach `vars(consts)`. This guard covers that last case.
+    """
+    exported = vars(consts)
+    missing = sorted(
+        f"{module}:{name}"
+        for module, name in _const_assignments()
+        if name not in exported
+    )
+    assert missing == [], f"constants declared but never exported: {missing}"
