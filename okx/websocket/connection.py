@@ -27,7 +27,7 @@ from contextlib import suppress
 from contextvars import ContextVar
 from typing import Any, Awaitable, Callable, Optional, Union
 
-from websockets.exceptions import ConnectionClosed, ConnectionClosedError
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError, ConnectionClosedOK
 
 from okx.websocket.connector import WebSocketConnector
 
@@ -177,7 +177,8 @@ class ConnectionSupervisor:
                 raise
             except Exception as exc:
                 error = exc
-                logger.warning("WebSocket stream ended: %s", exc)
+                level = logging.INFO if isinstance(exc, ConnectionClosedOK) else logging.WARNING
+                logger.log(level, "WebSocket stream ended: %s", exc)
             finally:
                 await self._stop_heartbeat()
 
@@ -229,11 +230,14 @@ class ConnectionSupervisor:
                     await self._on_frame(message)
                 finally:
                     _DISPATCHING.reset(token)
-        except ConnectionClosedError as exc:
+        except ConnectionClosed as exc:
             if self._stopping:
                 # stop() closed the socket on purpose; this is not a failure.
                 return
-            logger.error("WebSocket connection closed: %s", exc)
+            if isinstance(exc, ConnectionClosedError):
+                logger.error("WebSocket connection closed: %s", exc)
+            else:
+                logger.info("WebSocket connection closed normally: %s", exc)
             self._on_lost(exc)
             raise
 

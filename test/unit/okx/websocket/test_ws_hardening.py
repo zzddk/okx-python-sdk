@@ -6,6 +6,8 @@ Mirrors: okx/websocket/login.py, Ws*Async.login
 import asyncio
 import unittest
 
+from websockets.exceptions import ConnectionClosedOK
+
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 
@@ -25,6 +27,38 @@ def _public_on(answer_login=None, *frames):
 def _private_on(answer_login=None, *frames):
     sock = FakeSocket(*frames, answer_login=answer_login)
     return WsPrivateAsync(url=URL, connector=FakeConnector(sock), **CREDS), sock
+
+
+class CleanCloseOnLogin(FakeSocket):
+    """A socket that closes normally as soon as the login frame goes out."""
+
+    async def send(self, payload: str) -> None:
+        await super().send(payload)
+        if '"op": "login"' in payload:
+            self.drop(ConnectionClosedOK(None, None))
+
+
+class TestCleanClose(unittest.TestCase):
+    def test_clean_close_during_login_fails_fast(self):
+        async def run():
+            ws = WsPrivateAsync(url=URL, connector=FakeConnector(CleanCloseOnLogin()), **CREDS)
+            await asyncio.wait_for(ws.start(), 0.5)
+
+        with self.assertRaises(ConnectionError) as ctx:
+            asyncio.run(run())
+        self.assertIn('connection lost during login', str(ctx.exception))
+
+    def test_clean_close_with_reconnect_off_surfaces_from_the_task(self):
+        async def run():
+            sock = FakeSocket()
+            ws = WsPublicAsync(url=URL, connector=FakeConnector(sock),
+                               reconnect=False, **CREDS)
+            task = await ws.start()
+            sock.drop(ConnectionClosedOK(None, None))
+            await asyncio.wait_for(task, 0.5)
+
+        with self.assertRaises(ConnectionClosedOK):
+            asyncio.run(run())
 
 
 class TestLoginAck(unittest.TestCase):

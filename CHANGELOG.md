@@ -22,6 +22,12 @@ All notable changes to `python-okx` are documented in this file.
   twice. `50001` / `50011` / `50013` remain retryable. Only affects callers
   that turned `max_retries` on.
 
+### Fixed
+- A WebSocket closed with a normal close code (1000/1001) during login now
+  fails the handshake immediately instead of waiting out the login timeout.
+  The connection supervisor reports every close to `on_lost`, as documented,
+  and logs a normal close at info level rather than warning.
+
 ## [0.15.0]
 
 Breaking release, the batch ADR-0004 keeps for changes that share one migration
