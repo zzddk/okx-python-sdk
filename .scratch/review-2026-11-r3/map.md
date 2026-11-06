@@ -21,6 +21,7 @@
 - 2026-11-06 06 已落地（815b316）：`login()` 单写者锁；限流接线有请求级用例（097e2ef）。
 - 2026-11-06 07 已落地（4477b5d）：lint 门开 E4/E7/E9/F、锁 ruff 0.16.8、删 continue-on-error；格式化与显式导入另立批次。
 - 2026-11-06 08 已落地（43f929e）：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。
+- 2026-11-06 09 已收口（research）：33 条 = 已下线 15 + 改名 10 + 无法确认 8；施工清单转 11。
 
 ## Decisions so far
 
@@ -32,10 +33,11 @@
 - [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md)：`login()` 整段加锁（懒创建、`stop()` 丢弃）；`request()` 每次尝试都 `acquire()` 有用例。Done in 815b316。
 - [07 · lint 门是装饰](issues/07-lint-gate.md)：`ruff.toml` 开 E4/E7/E9/F，19 个星号导入模块 per-file-ignore，锁 `ruff==0.16.8`，删 `continue-on-error`。Done in 4477b5d。
 - [08 · 清理批次](issues/08-cleanup-batch.md)：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。Done in 43f929e。
+- [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md)：已下线 15、改名 10、无法确认 8；删除 16 方法 + 1 常量、改 7 条路径、1 条待设计。Research done。
 
 ## Not yet specified
 
-1. **33 条官方未收录路径的定性**：已立 research 09（废弃 / 拼错 / 未公开可用）；在 09 出结论前保持豁免，不删端点。
+（无——09 已给出 33 条的逐条结论；施工项见 11。）
 
 ## Out of scope
 
@@ -45,7 +47,7 @@
 - 0.16.0 的发版节拍：等 01–08 的破坏面清点后再按 ADR-0004 决定。
 - 整仓格式化（okx/ 59 个文件、全仓 115 个）与把 19 个星号导入改成显式导入：都属独立机械批次，不在本 effort。
 - jitter（退避抖动）：08 评估后不做；需要时另立。
-- 死异常删除：见 10，等 0.16.0 破坏性批次。
+- 死异常删除：见 10；端点删除/改名：见 11；两者同属 0.16.0 破坏性批次。
 
 ## 工单索引
 
@@ -57,5 +59,6 @@
 - [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — done (815b316)
 - [07 · lint 门是装饰](issues/07-lint-gate.md) — done (4477b5d)
 - [08 · 清理批次](issues/08-cleanup-batch.md) — done (43f929e)
-- [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — research
+- [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — done (research)
+- [11 · 0.16.0：删除已下线端点、修正改名路径](issues/11-endpoint-cleanup-016.md) — task
 - [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md) — task
