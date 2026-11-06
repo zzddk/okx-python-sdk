@@ -27,6 +27,10 @@ class OkxAPIException(Exception):
         return 'API Request Error(code=%s): %s' % (self.code, self.message)
 
 
+class PermanentConnectionError(ConnectionError):
+    """A connection failure that retrying the same endpoint cannot fix."""
+
+
 class OkxRequestException(Exception):
 
     def __init__(self, message):

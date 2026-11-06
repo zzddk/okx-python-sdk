@@ -11,7 +11,8 @@ import json
 import time
 import unittest
 
-from okx.websocket.login import LoginHandshake, login_payload
+from okx.exceptions import PermanentConnectionError
+from okx.websocket.login import LoginHandshake, LoginRejected, login_payload
 
 ACK = '{"event": "login", "code": "0"}'
 REJECTED = '{"event": "login", "code": "60009", "msg": "Login failed"}'
@@ -43,6 +44,28 @@ class TestLoginPayload(unittest.TestCase):
         self.assertIsInstance(stamp, int)
         self.assertGreaterEqual(stamp, before)
         self.assertLessEqual(stamp, after)
+
+
+class TestRejectionType(unittest.TestCase):
+    def test_rejection_is_a_permanent_connection_error(self):
+        error = LoginHandshake.rejection(
+            {"event": "login", "code": "60009", "msg": "Login failed"})
+        self.assertIsInstance(error, LoginRejected)
+        self.assertIsInstance(error, PermanentConnectionError)
+        self.assertIsInstance(error, ConnectionError)
+
+    def test_aborted_handshake_keeps_the_plain_connection_error(self):
+        async def run():
+            handshake = LoginHandshake(timeout=1)
+            error = ConnectionError("connection lost during login")
+            handshake.abort(error)
+            try:
+                await handshake.wait()
+            except ConnectionError as caught:
+                return caught
+
+        error = asyncio.run(run())
+        self.assertNotIsInstance(error, PermanentConnectionError)
 
 
 class TestFeedAndWait(unittest.TestCase):

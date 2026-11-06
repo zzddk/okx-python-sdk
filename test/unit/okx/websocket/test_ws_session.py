@@ -14,6 +14,7 @@ from websockets.exceptions import ConnectionClosedError
 from okx.websocket.WsPrivateAsync import WsPrivateAsync
 from okx.websocket.WsPublicAsync import WsPublicAsync
 from okx.websocket.connector import WebSocketConnector
+from okx.websocket.login import LoginRejected
 
 from .fakes import FakeConnector, FakeSocket
 
@@ -573,26 +574,25 @@ class TestReconnect(unittest.TestCase):
         self.assertEqual(payloads[0]['op'], 'login')
         self.assertEqual(payloads[1]['args'], [{'channel': 'account'}])
 
-    def test_a_failed_restore_enters_the_backoff(self):
-        """Login rejection on a reconnect is retried, not surfaced."""
+    def test_a_rejected_restore_ends_the_task(self):
+        """A rejected login is permanent: the task carries it, no third attempt."""
         async def run():
             first = FakeSocket(answer_login=ACK)
             rejected = FakeSocket(answer_login=REJECT)
-            recovered = FakeSocket(answer_login=ACK)
-            connector = FakeConnector(first, rejected, recovered)
+            unused = FakeSocket(answer_login=ACK)
+            connector = FakeConnector(first, rejected, unused)
             ws = _private(connector=connector, reconnect_backoff=0)
-            await ws.start()
+            task = await ws.start()
             await ws.subscribe([{'channel': 'account'}], None)
             first.drop()
 
-            await _until(lambda: len(connector.urls) == 3)
-            await _until(lambda: [p['op'] for p in recovered.payloads] == ['login', 'subscribe'])
-            await ws.stop()
-            return connector, recovered
+            with self.assertRaises(LoginRejected):
+                await asyncio.wait_for(task, 0.5)
+            return connector, ws
 
-        connector, recovered = asyncio.run(run())
-        self.assertEqual(len(connector.urls), 3)
-        self.assertEqual([p['op'] for p in recovered.payloads], ['login', 'subscribe'])
+        connector, ws = asyncio.run(run())
+        self.assertEqual(len(connector.urls), 2)
+        self.assertFalse(ws.isLoggedIn)
 
 
 class TestClosedConnectionReporting(unittest.TestCase):

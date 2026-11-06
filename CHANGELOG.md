@@ -10,6 +10,10 @@ All notable changes to `python-okx` are documented in this file.
   published limit is in orders per window) or `NOT_IN_OFFICIAL_LIST` (the path
   is absent from the official endpoint list). The table and this map partition
   the 274 declared paths, and a test fails when an endpoint is in neither.
+- `okx.exceptions.PermanentConnectionError` marks a connection failure that
+  retrying the same endpoint cannot fix. `okx.websocket.login.LoginRejected`
+  is one; it still subclasses `ConnectionError`, so handlers written against
+  the previous exception keep working.
 
 ### Changed
 - `RATE_LIMITS` now records the limits published for 237 of the 274 declared
@@ -27,6 +31,10 @@ All notable changes to `python-okx` are documented in this file.
   fails the handshake immediately instead of waiting out the login timeout.
   The connection supervisor reports every close to `on_lost`, as documented,
   and logs a normal close at info level rather than warning.
+- A login rejected during a reconnect now ends the supervisor task with
+  `LoginRejected` instead of retrying the same credentials forever. The task
+  carries the reason, the channel `reconnect=False` already used for
+  connection errors.
 
 ## [0.15.0]
 

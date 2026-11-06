@@ -25,8 +25,17 @@ import time
 from typing import Any
 
 from okx import utils
+from okx.exceptions import PermanentConnectionError
 
 DEFAULT_LOGIN_TIMEOUT = 10.0
+
+
+class LoginRejected(PermanentConnectionError):
+    """The server refused these credentials; replaying them cannot help.
+
+    Still a `ConnectionError` through its base, so callers that caught the
+    previous exception keep working.
+    """
 
 
 def login_payload(
@@ -77,10 +86,14 @@ class LoginHandshake:
         return isinstance(payload, dict) and payload.get("event") == "login"
 
     @staticmethod
-    def rejection(payload: dict[str, Any]) -> ConnectionError | None:
-        """The error a login answer carries, or None when it was accepted."""
+    def rejection(payload: dict[str, Any]) -> LoginRejected | None:
+        """The error a login answer carries, or None when it was accepted.
+
+        A rejection is permanent: the same credentials get the same answer, so
+        the reconnect loop must not retry it.
+        """
         if str(payload.get("code", "0")) != "0":
-            return ConnectionError(
+            return LoginRejected(
                 f"login rejected: code={payload.get('code')} msg={payload.get('msg')}"
             )
         return None

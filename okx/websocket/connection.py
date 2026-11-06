@@ -29,6 +29,7 @@ from typing import Any, Awaitable, Callable, Optional, Union
 
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError, ConnectionClosedOK
 
+from okx.exceptions import PermanentConnectionError
 from okx.websocket.connector import WebSocketConnector
 
 logger = logging.getLogger(__name__)
@@ -202,6 +203,11 @@ class ConnectionSupervisor:
                 await self._open()
                 return
             except asyncio.CancelledError:
+                raise
+            except PermanentConnectionError as exc:
+                # Retrying the same endpoint returns the same answer: end the
+                # supervisor so the task carries the reason to the caller.
+                logger.error("Reconnect failed permanently: %s", exc)
                 raise
             except Exception as exc:
                 logger.warning("Reconnect failed: %s; retrying in %.1fs", exc, delay)
