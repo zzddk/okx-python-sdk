@@ -15,18 +15,19 @@
 - 判据优先级：ADR 与工单 Answer > 评审 HTML > README/CHANGELOG 的叙述。本次评审只给证据与建议，未替代任何 ADR。
 - 2026-11-06 01 已落地（1469f30）：237 条表 + 37 条豁免 = 274 条已声明路径；新增端点未归类时测试会红。
 - 2026-11-06 02 已落地（a37e054）：正常关闭也进 `on_lost`，登录不再空等；`reconnect=False` 仍由 task 抛 `ConnectionClosedOK`。
+- 2026-11-06 03 已落地（e7ce80a）：登录被拒是永久错误，重连不再无限循环；task 以 `LoginRejected` 结束。
 
 ## Decisions so far
 
 - [01 · 限流覆盖不变量](issues/01-rate-limit-coverage-invariant.md)：豁免进 `okx/consts/rate_limits.py`（`RATE_LIMIT_EXEMPTIONS` + 原因码），可达集由 `test_contract.reachable_paths()` 派生；32 条标 `NOT_IN_OFFICIAL_LIST`，不删端点；逐条定性转 09。Done in 1469f30。
 - [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md)：捕 `ConnectionClosed` 基类；正常关闭也进 `on_lost`；`reconnect=False` 仍由 task 抛 `ConnectionClosedOK`。Done in a37e054。
+- [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md)：`PermanentConnectionError` + `LoginRejected`；`_reconnect` 遇永久错误直接结束 task，其余无限退避；不加尝试上限。Done in e7ce80a。
 
 ## Not yet specified
 
 1. **33 条官方未收录路径的定性**：已立 research 09（废弃 / 拼错 / 未公开可用）；在 09 出结论前保持豁免，不删端点。
-2. **重连失败的永久/瞬时判据**：用异常类型（`LoginRejected`）还是错误码？是否需要重试次数上限？影响 03 的对外行为。
-3. **lint 规则集与格式化**：只开 `E4,E7,E9,F`，还是一步到 `I/B/UP`？formatter 做不做？25 个星号导入改不改？影响 07 的规模。
-4. **`raise_on_error=False` 以文档还是代码为准**：评审建议以代码为准（网络错误仍重试），但需确认这不是原意的丢失。影响 05。
+2. **lint 规则集与格式化**：只开 `E4,E7,E9,F`，还是一步到 `I/B/UP`？formatter 做不做？25 个星号导入改不改？影响 07 的规模。
+3. **`raise_on_error=False` 以文档还是代码为准**：评审建议以代码为准（网络错误仍重试），但需确认这不是原意的丢失。影响 05。
 
 ## Out of scope
 
@@ -39,7 +40,7 @@
 
 - [01 · 限流表的覆盖不变量](issues/01-rate-limit-coverage-invariant.md) — done (1469f30)
 - [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md) — done (a37e054)
-- [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md) — grilling
+- [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md) — done (e7ce80a)
 - [04 · REST 签名路径没有测试](issues/04-rest-signature-test.md) — task
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md) — task
 - [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — task
