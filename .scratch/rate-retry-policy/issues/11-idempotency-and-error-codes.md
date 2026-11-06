@@ -1,7 +1,7 @@
 # 11 · OKX 官方幂等键、瞬时业务码与 GET 副作用端点核查
 
 Type: research
-Status: open
+Status: claimed
 Blocked by: —
 
 ## Question
