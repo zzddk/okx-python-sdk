@@ -1,6 +1,6 @@
 # 地图：限流与重试策略（rate-retry-policy）
 
-> **已收图（2026-11-06）**：14 张决策工单全部 resolved；fog 已清空；`spec.md` 与 `ADR-0018` 属 handoff 交付物（07 约定本图不落文件）。
+> **已收图（2026-11-06）**：14 张决策工单全部 resolved；fog 已清空；handoff 已产出 `.scratch/rate-retry-policy/spec.md` 与 `docs/adr/0018-outcome-unknown-not-retried.md`。
 
 Labels: wayfinder:map
 
