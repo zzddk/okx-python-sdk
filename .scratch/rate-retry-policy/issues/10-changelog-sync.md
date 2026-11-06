@@ -1,7 +1,7 @@
 # 10 · 官方 Change Log 变更时表怎么同步
 
 Type: grilling
-Status: open
+Status: resolved
 Blocked by: 03
 
 ## Question
@@ -19,3 +19,34 @@ Blocked by: 03
 解本工单时若 09 已 resolved 则 zoom 它的清单；维护流程不依赖清单的具体内容。只决策流程，不改 `okx/consts/rate_limits.py` / CHANGELOG。
 
 > **来自 07 的输入（2026-11-06）**：[文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 已定 CHANGELOG 结构——本图不新增版本段、不写 `### Migration` 行，只订正 CHANGELOG.md:336 的过期 Notes；并**预留**了「数值变更进 CHANGELOG 哪一段」的位置，由本工单拍板具体段落。解本工单时先 zoom 07 的 Answer。
+
+## Answer
+
+维护流程已定（2026-11-06，HITL grilling，`/grilling` + `/domain-modeling`）。**结论：随 SDK 端点更新顺带查 + 发版前复核 Change Log；只改已有条目、不自动扩表；数值变更进下一个版本的 `### Changed`；快照日期语义改为「最近一次核对日期」；09 清单是一次性输入、不长期维护。**
+
+**事实基线**：
+- CHANGELOG 顶部 `## [0.15.0]`、无 Unreleased，`### Changed`(`:15`) / `### Migration`(`:61`)；07 已定「本图不新增段 / 不写 Migration 行」，并预留「数值变更进哪一段」由 10 拍板。
+- findings 的 Change Log 条目：2026-05-08 `20/2s → 3/second`、2026-06-11 `12/day → 1/10s per user`，最新带日期 2026-10-27；官方页无统一版本号 / last updated。02 定「快照 2026-11-06 + 来源清单」、注释改为「数值来自端点详情页、随 Change Log 变动」。
+- [官方已公布限额的端点清单与 274/135 差异核对](09-official-limit-endpoint-list.md) 的 Context：findings 在 throwaway 分支 `research/official-limit-endpoint-list`，永不合并、不 push；08 却说 09 清单是「官方事实的唯一载体」——该张力已在本工单澄清。
+- 仓库无 `CONTRIBUTING.md` / `CODING_STANDARDS.md` / `pyproject.toml`。
+- 03 定「补全属施工、验收线 = 官方已公布限额且与项目路径常量对应」；[限额表条目要不要容纳计数维度与任意窗口](08-limit-entry-shape.md) 定「二元组 + `path` 单键、非 2 秒窗口按秒数记」；07 定「spec.md 不在本图产出、七节骨架第 ⑦ 节为施工项清单」。
+- `okx/consts/rate_limits.py:5-7` 注释仍是旧的（floor / stable 两句），02 的改写被 07 列为施工第一步。
+
+1. **触发机制**：三候选（定期核对 / 随 SDK 端点更新顺带查 / 等用户报障）取 **随 SDK 端点更新顺带查，并在每次发版前复核一次 Change Log**。理由：项目是「薄封装 + 全量端点镜像」，端点常量更新本来就要改 `okx/consts/endpoints/`，把限额核对挂在同一个动作上成本最低、不引入独立流程；findings 两次变更相隔一个月、无规律，不设固定周期；不等用户报障（05 定默认 off，用户根本感知不到限额变化）。**落点**：仓库无贡献者文档，故写进 `rate_limits.py` 模块注释一句 + 07 的 spec 骨架第 ⑦ 节施工项，不新建文件。
+2. **同步判据与权限**：**只对已在 `RATE_LIMITS` 表内的端点改数值；新增端点按 03 的验收线判定是否进表**（属施工，维护流程不自动扩表）。理由：03 定补全属施工、验收线不以 274 为分母，维护不该偷偷扩大表范围；08 定二元组，新端点若非 2 秒窗口按秒数记（08 的规则）。**谁有权改**：不设单独权限，按仓库既有 PR review；每次改动必须附「官方来源页 + Change Log 条目日期 + 新核对日期」以便留痕。
+3. **CHANGELOG 段落与公开面**（07 预留的位置由 10 填）：**数值变更进下一个版本的 `### Changed`，不写 `### Migration` 行、不建 0018**。理由：数值变化会改变 `rate_limit=True` 用户的行为，但 08 定表结构不变（二元组 + `path` 单键），不是 API 契约变化；07 已定本图不写 Migration / 不建 0018，数值变更延续同一判据。若将来 08 的表条目升级（新 effort）才需要 Migration / ADR。
+4. **快照日期**：**保留 `快照日期` 字段但语义改为「最近一次核对日期」，每次同步时更新**，并写进 02 定下的 `rate_limits.py` 模块注释。理由：「快照」听起来是一次性的，维护流程却是持续的；改语义不引入新字段、可追溯。02 的「快照 2026-11-06」作为**本次口径**不变，10 定的是后续怎么维护。
+5. **与 09 清单的关系**：**09 清单是一次性事实输入，不是长期维护对象**。它在 throwaway 分支（永不合并、不 push），长期维护以**官方 Change Log + 端点详情页**为唯一外部来源，每次同步时重新取证、并在 PR 与 CHANGELOG 留痕；不随表同步更新清单、不把该分支合并进 master。08 说的「唯一载体」指**本图内**这些事实记录在哪，不是长期数据库。
+6. **术语磨尖（`/domain-modeling`）**：「清单」分立为 02 的**取证来源清单**与 09 的**端点事实清单**；「维护」分立为**数值同步**（本工单流程）与**表范围扩充**（03 的施工）。
+
+## 边界
+
+- **两处施工落点**（写进本工单的边界段，不改已 resolved 的 02/07）：① 02 的 `okx/consts/rate_limits.py:5-7` 注释改写（07 列的施工第一步）要带上本工单的触发机制一句与「最近一次核对日期」语义；② 07 预留的「数值变更进 CHANGELOG 哪一段」由本工单填上答案 `### Changed`。
+- **两处「将来」口径**：Q1 的「发版前复核」是**流程触发点**、不是发版动作，与 Out of scope 的「本图不发版」不冲突；Q3 的「进下一个版本的 `### Changed`」是**将来发版时**的事，本图仍不新增版本段。
+- **10 自身无公开面变化**：不建 ADR、不写 `### Migration` 行、不新增 CHANGELOG 段；10 是纯流程决策、未触发任何新工单，也不回头改 07。
+- **不收图**：10 resolved 后还有 09/11/12/13 四张 open（12 被 11 阻塞），frontier 剩 09/11/13；10 不代解、不收图、不触发子代理（09/11 是 AFK，仍留在 frontier）。
+- 本图只决策，不改 CHANGELOG / `okx/consts/rate_limits.py` / `okx/` 代码；不发版、不 push。
+
+## Comments
+
+- 2026-11-06: claimed → resolved（HITL grilling，两轮前沿收敛，用户确认共享理解；本会话未触发任何子代理、未新建工单）。
