@@ -111,6 +111,57 @@ class TestTransportSerialization(unittest.TestCase):
         self.assertEqual(seen[0].url.query, b'')
 
 
+FIXED_TS = '2020-01-01T00:00:00.000Z'
+GET_PATH = '/api/v5/account/balance'
+GET_QUERY = {'ccy': 'BTC'}
+GET_SIGN = 'pZynVe0CTgbd68BxfwDK13LkoOLT3Z0TvdUm6ysFM1w='
+POST_PATH = '/api/v5/trade/order'
+POST_PARAMS = {'instId': 'BTC-USDT', 'sz': '1'}
+POST_BODY = b'{"instId": "BTC-USDT", "sz": "1"}'
+POST_SIGN = 'KGSgkgbrvFrIj20Kw8xJ0asjk4EcSaD9E55zn+vK7hI='
+
+
+def _signed_transport(handler):
+    return Transport(api_key='key', api_secret_key='secret', passphrase='pass',
+                     flag='0', http=httpx.MockTransport(handler))
+
+
+class TestTransportSigning(unittest.TestCase):
+    """The one path that authenticates a request: fixed vectors, no live API."""
+
+    def test_get_signs_the_method_path_and_query(self):
+        seen = []
+
+        def handler(request):
+            seen.append(request)
+            return httpx.Response(200, json={'code': '0'})
+
+        with patch('okx.utils.get_timestamp', return_value=FIXED_TS):
+            _signed_transport(handler).request(c.GET, GET_PATH, GET_QUERY)
+
+        headers = seen[0].headers
+        self.assertEqual(headers['OK-ACCESS-KEY'], 'key')
+        self.assertEqual(headers['OK-ACCESS-TIMESTAMP'], FIXED_TS)
+        self.assertEqual(headers['OK-ACCESS-PASSPHRASE'], 'pass')
+        self.assertEqual(headers['OK-ACCESS-SIGN'], GET_SIGN)
+        self.assertEqual(headers['x-simulated-trading'], '0')
+        self.assertEqual(seen[0].url.path, GET_PATH)
+        self.assertEqual(seen[0].url.query, b'ccy=BTC')
+
+    def test_post_signs_the_exact_body_it_sends(self):
+        seen = []
+
+        def handler(request):
+            seen.append(request)
+            return httpx.Response(200, json={'code': '0'})
+
+        with patch('okx.utils.get_timestamp', return_value=FIXED_TS):
+            _signed_transport(handler).request(c.POST, POST_PATH, POST_PARAMS)
+
+        self.assertEqual(seen[0].headers['OK-ACCESS-SIGN'], POST_SIGN)
+        self.assertEqual(seen[0].content, POST_BODY)
+
+
 class TestSharedConnectionPool(unittest.TestCase):
     def test_api_classes_share_one_connection_pool(self):
         """`client=` fans one pool out instead of building one per API class."""
