@@ -1,7 +1,8 @@
 # 08 · 清理批次
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: 43f929e
 Blocked by: —
 
 ## Question
@@ -23,10 +24,19 @@ Blocked by: —
 3. 公共异常的删除有版本策略与 Migration 行；不混进 patch。
 4. `pytest test/unit` 全绿。
 
-## 未决
+## Answer
 
-- jitter 与分页参数校验是行为变化，是否需要单独用例与 CHANGELOG 行？建议要。
+**拍板（2026-11-06）**：做 utcnow、ADR 指针、分页参数校验；死异常留到 0.16.0（转 10）；jitter 暂不做。
+
+- utcnow：改 `datetime.now(timezone.utc)`，用 `.replace("+00:00", "Z")` 保持线上格式；测试断言格式、UTC 偏差 <5s、且不再触发 DeprecationWarning。
+- 分页：`page_size <= 0` 与 `max_pages < 0` 在调用点抛 `ValueError`；用例断言 fetch 从未被调用。CHANGELOG 进 `### Changed`。
+- ADR-0003：在决定段后加一行指向 ADR-0018（`50004` 已移除，其余不变）。
+- 死异常：`OkxRequestException` / `OkxParamsException` 零引用，但删除是公共面破坏；留到 0.16.0，另立 10。
+- jitter：可选时序优化，本次不做，不留半成品。
+
+**验收对照**：875 passed / 315 subtests；测试 warning 从 56 降到 12（utcnow 警告消失）；两个分页用例在修复前失败、修复后通过。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 08。
+- 2026-11-06 施工完成：43f929e（master）。分页校验、时区时间戳、ADR 指针；死异常转 10。

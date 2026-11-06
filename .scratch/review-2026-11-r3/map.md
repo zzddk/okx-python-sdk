@@ -20,6 +20,7 @@
 - 2026-11-06 05 已落地（7c3e7f1）：`raise_on_error` 只管错误 payload，不关闭网络重试；三处文档统一。
 - 2026-11-06 06 已落地（815b316）：`login()` 单写者锁；限流接线有请求级用例（097e2ef）。
 - 2026-11-06 07 已落地（4477b5d）：lint 门开 E4/E7/E9/F、锁 ruff 0.16.8、删 continue-on-error；格式化与显式导入另立批次。
+- 2026-11-06 08 已落地（43f929e）：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。
 
 ## Decisions so far
 
@@ -30,6 +31,7 @@
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md)：以代码为准；只改 README、spec 与 docstring，测试改名并补网络重试用例。Done in 7c3e7f1。
 - [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md)：`login()` 整段加锁（懒创建、`stop()` 丢弃）；`request()` 每次尝试都 `acquire()` 有用例。Done in 815b316。
 - [07 · lint 门是装饰](issues/07-lint-gate.md)：`ruff.toml` 开 E4/E7/E9/F，19 个星号导入模块 per-file-ignore，锁 `ruff==0.16.8`，删 `continue-on-error`。Done in 4477b5d。
+- [08 · 清理批次](issues/08-cleanup-batch.md)：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。Done in 43f929e。
 
 ## Not yet specified
 
@@ -42,6 +44,8 @@
 - 0.15.0 的 push：共享状态操作，需单独确认，不随本 effort 进行。
 - 0.16.0 的发版节拍：等 01–08 的破坏面清点后再按 ADR-0004 决定。
 - 整仓格式化（okx/ 59 个文件、全仓 115 个）与把 19 个星号导入改成显式导入：都属独立机械批次，不在本 effort。
+- jitter（退避抖动）：08 评估后不做；需要时另立。
+- 死异常删除：见 10，等 0.16.0 破坏性批次。
 
 ## 工单索引
 
@@ -52,5 +56,6 @@
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md) — done (7c3e7f1)
 - [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — done (815b316)
 - [07 · lint 门是装饰](issues/07-lint-gate.md) — done (4477b5d)
-- [08 · 清理批次](issues/08-cleanup-batch.md) — task
+- [08 · 清理批次](issues/08-cleanup-batch.md) — done (43f929e)
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — research
+- [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md) — task
