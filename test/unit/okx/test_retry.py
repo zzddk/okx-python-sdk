@@ -197,6 +197,23 @@ class TestBackoff(_ClientTestCase):
         self.assertEqual([call.args[0] for call in sleep.call_args_list], [0.5, 1.0])
 
 
+class TestRateLimitWiring(_ClientTestCase):
+    """request() must ask the limiter before every attempt, not just once."""
+
+    def test_request_acquires_a_slot_for_its_path(self):
+        client = self._make([_response()], rate_limit=True)
+        with patch.object(client.transport._limiter, 'acquire') as acquire:
+            client.request(c.GET, TEST_PATH, {})
+        acquire.assert_called_once_with(TEST_PATH)
+
+    def test_every_retry_acquires_a_slot(self):
+        client = self._make([httpx.ConnectError('boom'), _response()],
+                            max_retries=1, retry_backoff=0, rate_limit=True)
+        with patch.object(client.transport._limiter, 'acquire') as acquire:
+            client.request(c.GET, TEST_PATH, {})
+        self.assertEqual(acquire.call_count, 2)
+
+
 class TestRateLimiter(unittest.TestCase):
     def test_unknown_path_is_not_throttled(self):
         sleep = MagicMock()
