@@ -14,10 +14,12 @@
 - 语言：中文；工单沿用 `.scratch/<effort>/issues/NN-*.md`，Comments 追加在文件末尾。
 - 判据优先级：ADR 与工单 Answer > 评审 HTML > README/CHANGELOG 的叙述。本次评审只给证据与建议，未替代任何 ADR。
 - 2026-11-06 01 已落地（1469f30）：237 条表 + 37 条豁免 = 274 条已声明路径；新增端点未归类时测试会红。
+- 2026-11-06 02 已落地（a37e054）：正常关闭也进 `on_lost`，登录不再空等；`reconnect=False` 仍由 task 抛 `ConnectionClosedOK`。
 
 ## Decisions so far
 
 - [01 · 限流覆盖不变量](issues/01-rate-limit-coverage-invariant.md)：豁免进 `okx/consts/rate_limits.py`（`RATE_LIMIT_EXEMPTIONS` + 原因码），可达集由 `test_contract.reachable_paths()` 派生；32 条标 `NOT_IN_OFFICIAL_LIST`，不删端点；逐条定性转 09。Done in 1469f30。
+- [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md)：捕 `ConnectionClosed` 基类；正常关闭也进 `on_lost`；`reconnect=False` 仍由 task 抛 `ConnectionClosedOK`。Done in a37e054。
 
 ## Not yet specified
 
@@ -36,7 +38,7 @@
 ## 工单索引
 
 - [01 · 限流表的覆盖不变量](issues/01-rate-limit-coverage-invariant.md) — done (1469f30)
-- [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md) — task
+- [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md) — done (a37e054)
 - [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md) — grilling
 - [04 · REST 签名路径没有测试](issues/04-rest-signature-test.md) — task
 - [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md) — task
