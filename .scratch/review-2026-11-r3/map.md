@@ -22,6 +22,7 @@
 - 2026-11-06 07 已落地（4477b5d）：lint 门开 E4/E7/E9/F、锁 ruff 0.16.8、删 continue-on-error；格式化与显式导入另立批次。
 - 2026-11-06 08 已落地（43f929e）：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。
 - 2026-11-06 09 已收口（research）：33 条 = 已下线 15 + 改名 10 + 无法确认 8；施工清单转 11。
+- 2026-11-06 10 已落地（6a5fbc3）：删除两个从未抛出的公共异常，Unreleased 进入 0.16.0 破坏性批次。
 
 ## Decisions so far
 
@@ -34,6 +35,7 @@
 - [07 · lint 门是装饰](issues/07-lint-gate.md)：`ruff.toml` 开 E4/E7/E9/F，19 个星号导入模块 per-file-ignore，锁 `ruff==0.16.8`，删 `continue-on-error`。Done in 4477b5d。
 - [08 · 清理批次](issues/08-cleanup-batch.md)：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。Done in 43f929e。
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md)：已下线 15、改名 10、无法确认 8；删除 16 方法 + 1 常量、改 7 条路径、1 条待设计。Research done。
+- [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md)：删除类、CHANGELOG Removed + Migration、契约测试钉住名字。Done in 6a5fbc3。
 
 ## Not yet specified
 
@@ -61,4 +63,4 @@
 - [08 · 清理批次](issues/08-cleanup-batch.md) — done (43f929e)
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — done (research)
 - [11 · 0.16.0：删除已下线端点、修正改名路径](issues/11-endpoint-cleanup-016.md) — task
-- [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md) — task
+- [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md) — done (6a5fbc3)
