@@ -27,11 +27,15 @@ Make sure you update often and check the [Changelog](https://www.okx.com/docs-v5
 - Register for an account: https://www.okx.com/account/register
 - Apply for an API key: https://www.okx.com/account/users/myApi
 
-#### Step 2: Install okx-python-sdk
+#### Step 2: Install from source
+
+This project is not published on PyPI. Install it from the repository:
 
 ```bash
-pip install okx-python-sdk
+pip install git+https://github.com/zzddk/okx-python-sdk.git
 ```
+
+For a local checkout, see [Development Setup](#development-setup).
 
 ### API Credentials
 

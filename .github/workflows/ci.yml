@@ -127,10 +127,11 @@ jobs:
           fail_ci_if_error: false
 
   # ============================================
-  # BUILD JOB
+  # PACKAGING SMOKE TEST
+  # Not published to PyPI: only prove the source install builds and imports.
   # ============================================
   build:
-    name: Build Package
+    name: Packaging smoke test
     runs-on: ubuntu-latest
     needs: [test]
 
@@ -151,12 +152,9 @@ jobs:
       - name: Build package
         run: python -m build --no-isolation
 
-      - name: Check package
-        run: twine check dist/*
-
       - name: Test install from wheel (clean environment)
         run: |
-          # Create a fresh venv and install the built wheel
+          # Prove the metadata is installable; the wheel is never published.
           python -m venv /tmp/test-install
           /tmp/test-install/bin/pip install dist/*.whl
           /tmp/test-install/bin/python -c "
@@ -164,10 +162,3 @@ jobs:
           from okxsdk import Account, Trade, Funding
           print(f'✅ Package installs correctly: okx-python-sdk {okxsdk.__version__}')
           "
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
-          retention-days: 7

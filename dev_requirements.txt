@@ -1,6 +1,7 @@
-# Development & Testing dependencies for python-okx.
-# Installs the runtime deps plus dev/release tooling in one step:
+# Development & Testing dependencies for okx-python-sdk.
+# Installs the runtime deps plus dev tooling in one step:
 #   pip install -r dev_requirements.txt
+# No release tooling: this project is distributed as source, not on PyPI.
 -r requirements.txt
 python-dotenv>=1.0.0
 pytest>=7.0.0
@@ -9,5 +10,5 @@ pytest-cov>=4.0.0
 # Pinned to the version the lint gate was tuned against; keep in sync with
 # ruff.toml and the CI lint job.
 ruff==0.16.8
+# Only used by the CI packaging smoke test (can it be built and installed?).
 build>=1.0.0
-twine>=4.0.0

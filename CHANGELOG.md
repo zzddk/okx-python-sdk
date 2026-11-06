@@ -2,9 +2,17 @@
 
 All notable changes to `okx-python-sdk` are documented in this file.
 
-## [Unreleased]
+## [0.18.0]
+
+First usable release. 0.17.0 pointed every REST and WebSocket request at
+`*.okxsdk.com`, a domain that does not exist; that is fixed here. See ADR-0022.
 
 ### Changed
+- **This project is no longer published on PyPI.** Install it from the repository
+  instead: `pip install git+https://github.com/zzddk/okx-python-sdk.git` (or clone
+  and `pip install -e .`). The release tooling (`twine`), the `twine check` CI
+  step and artifact uploads are gone; the CI packaging job now only proves the
+  source install can be built and imported. See ADR-0023.
 - The declared Python floor is now 3.9: `python_requires=">=3.9"`, the 3.7/3.8
   classifiers are gone, and `ruff.toml` targets `py39`. The CI matrix (3.9, 3.12)
   is unchanged, so the declaration now matches what is actually tested.
@@ -12,6 +20,10 @@ All notable changes to `okx-python-sdk` are documented in this file.
   deprecated `License ::` classifier. LICENSE still ships in the wheel.
 
 ### Fixed
+- **All REST and WebSocket hosts are the real OKX endpoints again.** The 0.17.0
+  import-package rename also replaced `okx` with `okxsdk` inside the hostname
+  literals, so every request went to a non-existent domain. The constants and
+  their call sites are now pinned by `test_network_hosts.py` (ADR-0022).
 - Debug logging no longer writes credentials. `OK-ACCESS-KEY`, `OK-ACCESS-SIGN`,
   `OK-ACCESS-PASSPHRASE` and the WebSocket login frame's `apiKey`/`passphrase`/
   `sign` are masked with `***`, and `debug=True` no longer changes the module
@@ -24,7 +36,20 @@ All notable changes to `okx-python-sdk` are documented in this file.
 - The source distribution no longer ships the un-runnable end-to-end test files
   (`prune test` in `MANIFEST.in`); the wheel is unchanged.
 
+### Migration
+
+| Before | After |
+|---|---|
+| `pip install okx-python-sdk` | `pip install git+https://github.com/zzddk/okx-python-sdk.git` |
+| Python 3.7 / 3.8 | Python 3.9 or newer |
+| 0.17.0 | 0.18.0 or newer |
+
 ## [0.17.0]
+
+> **⚠️ Broken and deprecated.** Every REST and WebSocket request in 0.17.0 targets
+> `*.okxsdk.com` instead of `*.okx.com`; the SDK cannot reach OKX at all. This
+> version was never published to PyPI, but the git tag is public -- do not install
+> from it. Use 0.18.0 or later; the fix is in ADR-0022.
 
 Breaking release for the independent distribution: the import package is now
 `okxsdk` and the distribution name is `okx-python-sdk`, so it can be installed

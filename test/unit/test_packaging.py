@@ -2,8 +2,7 @@
 Packaging-metadata unit test — TD 239 item #1 (dev-deps split).
 
 Verifies that setup.py's computed ``install_requires`` (derived from requirements.txt
-via parse_requirements) contains ONLY the 3 runtime dependencies and none of the dev /
-release packages. This guards against dev tooling leaking into end-user ``pip install``.
+via parse_requirements) contains ONLY the 3 runtime dependencies and none of the dev packages. This guards against dev tooling leaking into end-user ``pip install``.
 """
 import os
 import sys
@@ -23,7 +22,6 @@ _DEV_PACKAGES = (
     "pytest-cov",
     "ruff",
     "build",
-    "twine",
 )
 _RUNTIME_PACKAGES = (
     "httpx",
