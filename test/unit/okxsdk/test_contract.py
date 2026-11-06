@@ -156,3 +156,21 @@ def test_every_declared_endpoint_is_reachable():
         and value not in reached
     )
     assert unreachable == []
+
+
+def test_consts_exposes_no_private_endpoint_strings():
+    """The export loop must not leak loop variables into the namespace.
+
+    `ENDPOINT_PATHS` and the endpoint table harvest `/api/` strings from
+    `vars(consts)`. A private name whose value is whatever the loop happened
+    to see last would become an undeclared endpoint, so a row could reference
+    it and pass only by coincidence.
+    """
+    leaked = sorted(
+        name
+        for name, value in vars(consts).items()
+        if name.startswith("_")
+        and isinstance(value, str)
+        and value.startswith("/api/")
+    )
+    assert leaked == [], f"private names expose endpoint strings: {leaked}"

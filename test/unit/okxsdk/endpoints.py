@@ -279,7 +279,7 @@ ENDPOINTS = {
         'get_market_data_history': (
             c.GET, c.MARKET_DATA_HISTORY,
             'module instType dateAggrType begin end instIdList instFamilyList'),
-        'get_announcements': (c.GET, c._value, 'annType page'),
+        'get_announcements': (c.GET, c.ANNOUNCEMENTS, 'annType page'),
     },
     SavingsAPI: {
         'get_saving_balance': (c.GET, c.GET_SAVING_BALANCE, 'ccy'),

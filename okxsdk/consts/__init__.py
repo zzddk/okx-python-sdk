@@ -31,17 +31,25 @@ from .endpoints import (
 
 _MODULES = (http, websocket, account, affiliate, block_trading, convert, copy_trading, dual_invest, fd_broker, flexible_loan, funding, glp, market_data, okusd, public_data, spread_trading, stacking, status, subaccount, trade, trading_bot, trading_data)
 
-_EXPORTS = {}
-for _module in _MODULES:
-    for _name, _value in vars(_module).items():
-        if _name.startswith("_") or _name == "annotations":
-            continue
-        if _name in _EXPORTS:
-            raise ImportError(
-                f"duplicate constant {_name!r}: defined in both "
-                f"{_EXPORTS[_name][1]!r} and {_module.__name__!r}"
-            )
-        _EXPORTS[_name] = (_value, _module.__name__)
+def _collect_exports(modules):
+    """Build the export map in function scope so the loop variables do not
+    linger as module globals (a private name holding an endpoint string would
+    look like an undeclared constant to anything scanning `vars(consts)`)."""
+    exports = {}
+    for module in modules:
+        for name, value in vars(module).items():
+            if name.startswith("_") or name == "annotations":
+                continue
+            if name in exports:
+                raise ImportError(
+                    f"duplicate constant {name!r}: defined in both "
+                    f"{exports[name][1]!r} and {module.__name__!r}"
+                )
+            exports[name] = (value, module.__name__)
+    return exports
+
+
+_EXPORTS = _collect_exports(_MODULES)
 
 globals().update({name: value for name, (value, _) in _EXPORTS.items()})
 _NO_CREDENTIAL = http._NO_CREDENTIAL
