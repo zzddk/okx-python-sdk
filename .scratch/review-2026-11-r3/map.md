@@ -23,6 +23,7 @@
 - 2026-11-06 08 已落地（43f929e）：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。
 - 2026-11-06 09 已收口（research）：33 条 = 已下线 15 + 改名 10 + 无法确认 8；施工清单转 11。
 - 2026-11-06 10 已落地（6a5fbc3）：删除两个从未抛出的公共异常，Unreleased 进入 0.16.0 破坏性批次。
+- 2026-11-06 11 已落地（91272dd）：删 17 方法 + 18 常量、改 6 条路径、affiliate 改名对齐参数、risk offset 新方法；限流 244/256。
 
 ## Decisions so far
 
@@ -36,6 +37,7 @@
 - [08 · 清理批次](issues/08-cleanup-batch.md)：分页参数校验、时区时间戳、ADR-0003 指针；死异常转 10，jitter 不做。Done in 43f929e。
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md)：已下线 15、改名 10、无法确认 8；删除 16 方法 + 1 常量、改 7 条路径、1 条待设计。Research done。
 - [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md)：删除类、CHANGELOG Removed + Migration、契约测试钉住名字。Done in 6a5fbc3。
+- [11 · 0.16.0：删除已下线端点、修正改名路径](issues/11-endpoint-cleanup-016.md)：删 17 方法 + 18 常量、改 6 条路径、affiliate 改名对齐参数、risk offset 新方法；限流 244/256。Done in 91272dd。
 
 ## Not yet specified
 
@@ -46,10 +48,10 @@
 - 全量补齐 273 条限流值（属持续维护，不在本 effort）。
 - 端点返回类型建模（`Dict[str, Any]` → 类型化响应），本评审未展开。
 - 0.15.0 的 push：共享状态操作，需单独确认，不随本 effort 进行。
-- 0.16.0 的发版节拍：等 01–08 的破坏面清点后再按 ADR-0004 决定。
+- 0.16.0 的发版节拍：破坏面已清点（10 + 11），等版本号、tag 与 push 的拍板。
 - 整仓格式化（okx/ 59 个文件、全仓 115 个）与把 19 个星号导入改成显式导入：都属独立机械批次，不在本 effort。
 - jitter（退避抖动）：08 评估后不做；需要时另立。
-- 死异常删除：见 10；端点删除/改名：见 11；两者同属 0.16.0 破坏性批次。
+- 0.16.0 的版本号、tag 与 push：10/11 的破坏面已齐，等一次发版拍板。
 
 ## 工单索引
 
@@ -62,5 +64,5 @@
 - [07 · lint 门是装饰](issues/07-lint-gate.md) — done (4477b5d)
 - [08 · 清理批次](issues/08-cleanup-batch.md) — done (43f929e)
 - [09 · 33 条官方清单未收录路径的逐条定性](issues/09-unlisted-paths-research.md) — done (research)
-- [11 · 0.16.0：删除已下线端点、修正改名路径](issues/11-endpoint-cleanup-016.md) — task
+- [11 · 0.16.0：删除已下线端点、修正改名路径](issues/11-endpoint-cleanup-016.md) — done (91272dd)
 - [10 · 删除两个无引用的公共异常（0.16.0）](issues/10-dead-public-exceptions.md) — done (6a5fbc3)

@@ -1,7 +1,8 @@
 # 11 · 0.16.0：删除已下线端点、修正改名路径
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: 91272dd (unreleased 0.16.0 batch)
 Blocked by: —
 
 ## Question
@@ -46,10 +47,21 @@ Blocked by: —
 4. CHANGELOG 的 0.16.0 `### Migration` 覆盖删除与改名；与 10 写在同一段迁移说明里（ADR-0004）。
 5. `set_risk_offset_type` 的新旧参数差异有单独的决定记录。
 
-## 未决
+## Answer
 
-- 0.16.0 是否就是下一个版本？本单与 10 都等这个发版决策。
-- `broker/fd/rebate-per-orders` 若确认是 partner-only，是否提供 `broker=` 文档链接而不是删方法。
+**拍板（2026-11-06）**：按 09 清单施工，落进 0.16.0 批次；affiliate 改名并对齐参数，risk offset 删除旧方法新增 amount。
+
+**实际落地（与开工清单的差异）**
+
+- 删除 **17 个方法 + 18 个常量**（开工清单写 16+1）：`get_vip_interest_rate_loan_quota` 经查是重复端点——项目已有 `get_interest_rate_loan_quota` 指向正确路径——按重复删除，而不是改路径；另外 `LIQUIDATION_ORDERS` 是只删常量。
+- 改路径 **6 条**：`get_block_trades` → `/api/v5/public/block-trades`；`SpreadTradingAPI.get_ticker` → `/api/v5/market/sprd-ticker`；4 条 affiliate 去掉 `/tvb/`。
+- 新增 `set_risk_offset_amount(ccy, clSpotInUseAmt)`，删除 `set_risk_offset_type` 与 `SET_RISK_OFFSET_TYPE`；旧端点已下线，新参数完全不同。
+- 限流表新增 7 条官方路径（block、sprd、4 affiliate、risk offset），验收快照同步；现在是 **244 / 256**，12 条豁免（4 orders + 8 未收录）。
+- 端点表、契约测试、命名测试同步；CHANGELOG 的 Removed 与 Migration 已写。
+
+**验收对照**：846 passed / 322 subtests；`ruff check okx/` 通过；`okx/` 与 `test/unit` 中旧路径为 0；分区测试无未覆盖、无重叠。
+
+**未决**：0.16.0 的版本号、tag 与 push 仍待拍板；`broker/fd/rebate-per-orders` 维持豁免（partner-only 文档尚未取得）。
 
 ## Comments
 
