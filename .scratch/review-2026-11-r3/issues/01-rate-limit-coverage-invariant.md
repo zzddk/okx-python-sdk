@@ -1,7 +1,8 @@
 # 01 · 限流表的覆盖不变量
 
 Type: grilling
-Status: needs-triage
+Status: resolved
+Done in: 1469f30
 Blocked by: —
 
 ## Question
@@ -36,11 +37,19 @@ set(RATE_LIMITS) | set(EXEMPT) == reachable_paths
 4. `CHANGELOG.md:9` 与 `rate_limits.py` 的措辞不再声称覆盖全部暴露端点。
 5. 不改运行时，`pytest test/unit` 全绿。
 
-## 未决
+## Answer
 
-- 32 条 project-only 路径的定性：官方漏列、已下线，还是路径写错？这决定豁免措辞是「未收录」还是「待删除」。
-- 如果确认是错路径，删除它们会改变公开方法；按 ADR-0004 走 minor。
+**拍板（2026-11-06）**：豁免放进 `okx/consts/rate_limits.py`，与表同文件；本单只记录、不删端点；32 条官方清单未收录的路径另立研究工单 09。
+
+- `RATE_LIMIT_EXEMPTIONS`：`path → 原因码`。原因只有 `ORDERS_BASED`（4 条批量下单，限额按 orders 计）与 `NOT_IN_OFFICIAL_LIST`（33 条官方清单不出现，含尚无 API 绑定的 `LIQUIDATION_ORDERS`）；`RATE_LIMIT_EXEMPTION_REASONS` 是允许值的唯一来源。
+- 不变量（4 个用例）：可达集 ⊆ 表 ∪ 豁免；表 ∩ 豁免 = ∅；豁免 ⊆ 已声明路径；原因码合法。可达集由 `test_contract.reachable_paths()` 从公开方法派生，不再依赖第二份手工清单。
+- 不删端点、不改运行时、不写 ADR：这是把已有事实搬进数据，不是新的公共契约。
+
+**验收对照**：237 + 37 = 274 条已声明路径；273 条可达全部覆盖；移除任意一条豁免，测试点名该路径；CHANGELOG 改为 237/274。
+
+**未决（转 09）**：33 条路径是否废弃、是否拼错、是否未公开可用，由研究工单 09 逐条定性；确认删除属 minor，另开施工单。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 01。
+- 2026-11-06 施工完成：1469f30（master）。全量 pytest 860 passed / 313 subtests；分区数字 237 + 37 = 274，273 条可达全覆盖；移除豁免的变异检查点名路径。
