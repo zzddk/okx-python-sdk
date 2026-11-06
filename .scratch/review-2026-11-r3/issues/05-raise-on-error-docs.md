@@ -1,7 +1,8 @@
 # 05 · raise_on_error=False 的文档与行为相反
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: 7c3e7f1
 Blocked by: —
 
 ## Question
@@ -32,10 +33,19 @@ Transport(raise_on_error=False, max_retries=2)
 2. 两个用例分别覆盖业务码与网络错误的行为。
 3. 不改运行时行为，`pytest test/unit` 全绿。
 
-## 未决
+## Answer
 
-- 如果原意确实是「`raise_on_error=False` 完全不重试」，则改代码而不是文档；需要重新评估 GET 网络抖动只尝试一次的影响。
+**拍板（2026-11-06）**：以代码为准——`raise_on_error` 只决定「错误响应是抛还是作为 payload 返回」，不关闭网络错误的重试。
+
+- 业务 / HTTP 错误且有 JSON body → 返回 payload，因此不重试（没有异常可分类）。
+- `httpx.TransportError` → 仍走 `max_retries`；POST 仍受 `replayable` 约束（无幂等键不重放）。
+- 不改代码：关掉网络重试会让 `max_retries` 失去一半价值，且 GET 重试是安全的；真正需要防的重复下单已由 `replayable` 拦住。
+- 文档：README、`.scratch/rate-retry-policy/spec.md` 两处、`Transport.request` docstring 改为同一句话。
+- 测试：`test_raise_on_error_false_never_retries` 改名 `test_business_error_payload_is_returned_without_retry`；新增 `test_network_error_is_still_retried`。
+
+**验收对照**：867 passed / 313 subtests；变异检查（让 `_retry_allowed` 看 `raise_on_error`）只让新用例红；无运行时改动。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 05。
+- 2026-11-06 施工完成：7c3e7f1（master）。README/spec/docstring 统一措辞；测试改名 + 新增网络重试用例；全量 867 passed / 313 subtests。
