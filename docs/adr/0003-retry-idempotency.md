@@ -4,6 +4,8 @@ SDK 现在可以在 `_request` 层自动重试（`max_retries`，默认关闭）
 
 我们决定：**GET 一律可重试；POST 只在调用方提供了 `clOrdId`、`algoClOrdId` 或 `reqId` 时才可重试**，且只对瞬时故障重试（`httpx.TransportError`、HTTP 429/5xx、业务码 50001/50004/50011/50013）。参数错误、余额不足这类确定性拒绝永远不重试。
 
+> Update (2026-11-06): ADR-0018 removed `50004` from this set; `50001` / `50011` / `50013` remain retryable. The replayability rule above is unchanged.
+
 ## Considered Options
 
 - **所有请求都重试**：对一个交易 SDK 等于默认允许重复下单，这是最坏的一种「方便」。

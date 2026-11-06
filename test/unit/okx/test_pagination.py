@@ -121,6 +121,22 @@ class TestPaginateWalk(unittest.TestCase):
             pagination.paginate(fetch, cursor='')
         fetch.assert_not_called()
 
+    def test_page_size_must_be_positive(self):
+        fetch = MagicMock()
+        for page_size in (0, -1):
+            with self.subTest(page_size=page_size):
+                with self.assertRaises(ValueError) as caught:
+                    pagination.paginate(fetch, cursor='billId', page_size=page_size)
+                self.assertIn('page_size', str(caught.exception))
+        fetch.assert_not_called()
+
+    def test_max_pages_must_not_be_negative(self):
+        fetch = MagicMock()
+        with self.assertRaises(ValueError) as caught:
+            pagination.paginate(fetch, cursor='billId', max_pages=-1)
+        self.assertIn('max_pages', str(caught.exception))
+        fetch.assert_not_called()
+
     def test_missing_cursor_names_the_callable(self):
         def get_bills(**kwargs):
             return _page()

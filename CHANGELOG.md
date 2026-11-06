@@ -25,6 +25,12 @@ All notable changes to `python-okx` are documented in this file.
   failed, please check the request result", so a retry could execute the order
   twice. `50001` / `50011` / `50013` remain retryable. Only affects callers
   that turned `max_retries` on.
+- `paginate()` rejects `page_size <= 0` and a negative `max_pages` at the call
+  site. Previously a zero page size sent `limit=0` and a negative `max_pages`
+  silently yielded nothing.
+- `get_timestamp()` uses timezone-aware UTC instead of the deprecated
+  `datetime.utcnow()`. The wire format (ISO 8601, milliseconds, `Z`) is
+  unchanged.
 
 ### Fixed
 - A WebSocket closed with a normal close code (1000/1001) during login now

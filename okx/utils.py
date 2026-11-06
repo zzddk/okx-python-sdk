@@ -72,6 +72,5 @@ def drop_none_params(params: Any) -> Any:
 
 
 def get_timestamp() -> str:
-    now = datetime.datetime.utcnow()
-    t = now.isoformat("T", "milliseconds")
-    return t + "Z"
+    now = datetime.datetime.now(datetime.timezone.utc)
+    return now.isoformat("T", "milliseconds").replace("+00:00", "Z")

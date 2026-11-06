@@ -13,7 +13,8 @@ any page is fetched, and `_walk()` only carries out the result:
   endpoint, and a few endpoints page by number instead.
 * `before` is rejected: `after` is the only direction this module walks.
 * `limit` comes from `page_size` alone; a `limit` in `params` is rejected so
-  the walk has one knob. `page_size=None` sends no `limit` at all.
+  the walk has one knob. `page_size=None` sends no `limit` at all, while
+  `page_size <= 0` and a negative `max_pages` are rejected at the call site.
 * `params['after']` seeds the walk; every other key (`begin`, `end`,
   `instType`, …) is sent unchanged on every page.
 
@@ -56,6 +57,14 @@ def paginate(fetch: Callable[..., Dict[str, Any]], cursor: Optional[str] = None,
     """
     if not cursor:
         raise ValueError(_missing_cursor_message(fetch))
+    if page_size is not None and page_size <= 0:
+        raise ValueError(
+            f"page_size must be positive for paginate({_callable_name(fetch)}), "
+            f"got {page_size!r}")
+    if max_pages is not None and max_pages < 0:
+        raise ValueError(
+            f"max_pages must not be negative for paginate({_callable_name(fetch)}), "
+            f"got {max_pages!r}")
     filters, after = _project(fetch, params, page_size)
     return _walk(fetch, cursor, filters, after, max_pages)
 

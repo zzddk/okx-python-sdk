@@ -1,9 +1,12 @@
 """Unit tests for okx.utils."""
 
 import json
+import re
+import warnings
+from datetime import datetime, timezone
 from urllib.parse import parse_qs
 
-from okx.utils import drop_none_params, parse_params_to_str
+from okx.utils import drop_none_params, get_timestamp, parse_params_to_str
 
 
 def test_empty_params_return_empty_string():
@@ -56,3 +59,16 @@ def test_drop_none_params_passes_lists_through():
 
 def test_drop_none_params_turns_none_into_an_empty_body():
     assert drop_none_params(None) == {}
+
+
+def test_timestamp_is_utc_iso_with_milliseconds():
+    value = get_timestamp()
+    assert re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z', value)
+    stamp = datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=timezone.utc)
+    assert abs((datetime.now(timezone.utc) - stamp).total_seconds()) < 5
+
+
+def test_timestamp_does_not_use_deprecated_utcnow():
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        get_timestamp()
