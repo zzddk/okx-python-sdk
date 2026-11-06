@@ -19,3 +19,5 @@ Blocked by: 11
 只决策，不改 `okx/transport.py` / `okx/okxclient.py`。解本工单时先 zoom 11 的 Answer。
 
 > **来自 07 的输入（2026-11-06）**：[文档、CHANGELOG 与 ADR 怎么落](07-docs-and-adr.md) 定了 ADR / Migration 判据：本图不新建 0018、不改 ADR-0003、不写 `### Migration` 行；若本工单决定改动幂等键集合 / 可重试码 / GET 判定，届时按 `/domain-modeling` 三判据重新判断 ADR 与 Migration 归属，不重开 07。
+
+> **来自 11 的输入（2026-11-06）**：[OKX 官方幂等键、瞬时业务码与 GET 副作用端点核查](11-idempotency-and-error-codes.md) 已查明：① **50004 = 接口超时，官方明说「不代表请求成功或失败，请检查请求结果」**——`okx/transport.py:22-24` 的「rejected before it could be matched」无官方依据且对 50004 相反；② 即便带 `clOrdId`，它在 pending 内唯一、终态可复用，**不保证不重复下单**；③ 官方**没有**「可重试 / 不可重试」分类，也没有 429 与业务码的优先级说明（50011 同时出现 200/429；51115 是 429 + 确定性条件）；④ 255 个 GET 无一条被官方描述为改状态，但也未声明无副作用，唯一候选 `GET /api/v5/asset/deposit-address` 属推断。解本工单时先 zoom 11 的 Answer，**重点重评 50004 是否仍可重试**。
