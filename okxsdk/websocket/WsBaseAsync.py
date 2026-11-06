@@ -46,6 +46,7 @@ from okxsdk import utils
 from okxsdk.websocket.connection import (
     DEFAULT_PING_INTERVAL,
     DEFAULT_PING_TIMEOUT,
+    DEFAULT_RECONNECT,
     DEFAULT_RECONNECT_BACKOFF,
     DEFAULT_RECONNECT_MAX_BACKOFF,
     ConnectionSupervisor,
@@ -85,7 +86,7 @@ class WsBaseAsync:
         debug: bool = False,
         ping_interval: Optional[float] = DEFAULT_PING_INTERVAL,
         ping_timeout: float = DEFAULT_PING_TIMEOUT,
-        reconnect: bool = True,
+        reconnect: bool = DEFAULT_RECONNECT,
         reconnect_backoff: float = DEFAULT_RECONNECT_BACKOFF,
         reconnect_max_backoff: float = DEFAULT_RECONNECT_MAX_BACKOFF,
         proxy: Optional[str] = None,
@@ -110,12 +111,6 @@ class WsBaseAsync:
         self._handshake: Optional[LoginHandshake] = None
         # Serializes login attempts; created in the running loop on first use.
         self._login_lock: Optional[asyncio.Lock] = None
-
-        self.ping_interval = ping_interval
-        self.ping_timeout = ping_timeout
-        self.reconnect = reconnect
-        self.reconnect_backoff = reconnect_backoff
-        self.reconnect_max_backoff = reconnect_max_backoff
 
         self._connection = ConnectionSupervisor(
             connector=self._connector,

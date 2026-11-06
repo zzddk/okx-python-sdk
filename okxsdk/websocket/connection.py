@@ -44,6 +44,7 @@ DEFAULT_PING_INTERVAL = 25.0
 DEFAULT_PING_TIMEOUT = 10.0
 DEFAULT_RECONNECT_BACKOFF = 1.0
 DEFAULT_RECONNECT_MAX_BACKOFF = 60.0
+DEFAULT_RECONNECT = True
 
 # True while `on_frame` is running. A callback that calls stop() must not have
 # the reader (and therefore itself) cancelled from under it; outside a dispatch
@@ -68,7 +69,7 @@ class ConnectionSupervisor:
         *,
         ping_interval: Optional[float] = DEFAULT_PING_INTERVAL,
         ping_timeout: float = DEFAULT_PING_TIMEOUT,
-        reconnect: bool = True,
+        reconnect: bool = DEFAULT_RECONNECT,
         reconnect_backoff: float = DEFAULT_RECONNECT_BACKOFF,
         reconnect_max_backoff: float = DEFAULT_RECONNECT_MAX_BACKOFF,
         debug: bool = False,
