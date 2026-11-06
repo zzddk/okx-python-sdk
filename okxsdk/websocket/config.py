@@ -2,8 +2,10 @@
 
 Both WS clients inherit their credentials, environment and proxy from the REST
 client's `Transport`; only the host differs. This module owns that mapping —
-field names, the demo switch, the `debug` fallback, the proxy rule — so a new
-transport field is added in one place. Each client supplies its own host table.
+field names, the demo switch, the `debug` fallback, the proxy rule, and the
+translation of the REST no-credential sentinel into the WS empty contract —
+so a new transport field is added in one place. Each client supplies its own
+host table.
 
 Only `transport.proxy` is inherited. `Transport(http=...)` turning off
 environment-proxy detection is a REST rule and does not extend here: with no
@@ -14,6 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Mapping, Optional
 
+from okxsdk import consts
 from okxsdk.transport import Transport
 
 # "is demo trading" -> endpoint. Keyed by the boolean, not by name, so the
@@ -31,6 +34,16 @@ def require_transport(value: Any) -> Transport:
     return value
 
 
+def _ws_credential(value: str) -> str:
+    """Translate the REST no-credential sentinel into the WS empty contract.
+
+    Downstream the WS session has only one empty value (``''``), interpreted
+    by its credential predicate; the REST sentinel must not reach it as a
+    usable-looking key. See the Update in ADR-0014.
+    """
+    return '' if value == consts._NO_CREDENTIAL else value
+
+
 def session_config(transport: Transport, hosts: Hosts,
                    url: Optional[str] = None,
                    debug: Optional[bool] = None) -> Dict[str, Any]:
@@ -45,9 +58,9 @@ def session_config(transport: Transport, hosts: Hosts,
         url = hosts[str(transport.flag) == '1']
     return {
         'url': url,
-        'apiKey': transport.API_KEY,
-        'passphrase': transport.PASSPHRASE,
-        'secretKey': transport.API_SECRET_KEY,
+        'apiKey': _ws_credential(transport.API_KEY),
+        'passphrase': _ws_credential(transport.PASSPHRASE),
+        'secretKey': _ws_credential(transport.API_SECRET_KEY),
         'debug': transport.debug if debug is None else debug,
         'proxy': transport.proxy,
     }

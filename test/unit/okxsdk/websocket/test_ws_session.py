@@ -651,12 +651,14 @@ class TestStartWhileStopping(unittest.TestCase):
         self.assertIn("still stopping", errors[0])
 
 
-class TestNeedsLoginPredicate(unittest.TestCase):
-    """One predicate answers "should this connection authenticate?".
+class TestMustLoginPredicate(unittest.TestCase):
+    """One predicate answers "must this connection authenticate?".
 
     Truth table: client type x ever logged in x credentials x current login.
     The latch is what keeps a public client that logged in for the business
-    channel logging in again after a reconnect.
+    channel logging in again after a reconnect. Whether credentials exist is
+    NOT part of this predicate: `login()` owns that check, so a session that
+    must log in but cannot fails there instead of silently skipping auth.
     """
 
     def _ws(self, private, credentials, ever_logged_in, logged_in):
@@ -674,15 +676,15 @@ class TestNeedsLoginPredicate(unittest.TestCase):
             # private, credentials, ever_logged_in, logged_in, expected
             (False, False, False, False, False),
             (False, False, False, True, False),
-            (False, False, True, False, False),
+            (False, False, True, False, True),
             (False, False, True, True, False),
             (False, True, False, False, False),
             (False, True, False, True, False),
             (False, True, True, False, True),
             (False, True, True, True, False),
-            (True, False, False, False, False),
+            (True, False, False, False, True),
             (True, False, False, True, False),
-            (True, False, True, False, False),
+            (True, False, True, False, True),
             (True, False, True, True, False),
             (True, True, False, False, True),
             (True, True, False, True, False),
@@ -693,7 +695,16 @@ class TestNeedsLoginPredicate(unittest.TestCase):
             with self.subTest(private=private, credentials=credentials,
                               ever_logged_in=ever, logged_in=logged):
                 ws = self._ws(private, credentials, ever, logged)
-                self.assertIs(ws._needs_login(), expected)
+                self.assertIs(ws._must_login(), expected)
+
+    def test_must_login_without_credentials_raises_from_login(self):
+        ws = self._ws(private=True, credentials=False,
+                      ever_logged_in=False, logged_in=False)
+        self.assertTrue(ws._must_login())
+        with self.assertRaises(ValueError) as ctx:
+            asyncio.run(ws.login())
+        self.assertIn('apiKey, secretKey and passphrase are required for login',
+                      str(ctx.exception))
 
     def test_is_logged_in_is_read_only(self):
         ws = _public()

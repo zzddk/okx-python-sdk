@@ -14,7 +14,7 @@ from okxsdk.websocket.WsPublicAsync import WsPublicAsync
 
 from ..fakes import mock_transport
 
-from .fakes import FakeSocket
+from .fakes import FakeConnector, FakeSocket
 
 PROXY = 'http://127.0.0.1:8080'
 
@@ -64,6 +64,12 @@ class TestSessionConfig(unittest.TestCase):
     def test_demo_flag_selects_the_demo_host(self):
         config = session_config(_transport(flag='1'), HOSTS)
         self.assertEqual(config['url'], 'wss://demo.example')
+
+    def test_no_credential_transport_yields_empty_ws_credentials(self):
+        config = session_config(mock_transport(), HOSTS)
+        self.assertEqual(
+            (config['apiKey'], config['passphrase'], config['secretKey']),
+            ('', '', ''))
 
     def test_url_overrides_the_host_table(self):
         config = session_config(_transport(flag='1'), HOSTS, url='wss://explicit.example')
@@ -141,6 +147,71 @@ class TestFromTransport(unittest.TestCase):
             WsPublicAsync.from_transport(object())
         self.assertIn('Transport', str(ctx.exception))
         self.assertIn('object', str(ctx.exception))
+
+
+class TestNoCredentials(unittest.TestCase):
+    """A Transport with no credentials must cross the seam as an absence.
+
+    The REST side marks this with a sentinel; the WS side uses empty strings.
+    Copying the sentinel verbatim makes `'-1'` look like three usable keys, so
+    a private session tries to log in with it. See .scratch/no-credential-ws/spec.md
+    and the Update in ADR-0014.
+    """
+
+    REJECT = '{"event":"login","code":"60009","msg":"Login failed"}'
+    MESSAGE = 'apiKey, secretKey and passphrase are required for login'
+
+    def _private(self):
+        # `mock_transport()` has no credentials, i.e. all three fields are the
+        # REST sentinel. Inject a scripted connector so start() never touches
+        # the network and we can assert on what was actually sent.
+        sock = FakeSocket(answer_login=self.REJECT)
+        ws = WsPrivateAsync.from_transport(mock_transport())
+        ws._connection.connector = FakeConnector(sock)
+        return ws, sock
+
+    def test_start_reports_missing_credentials_without_a_login_frame(self):
+        ws, sock = self._private()
+
+        async def run():
+            with self.assertRaises(ValueError) as ctx:
+                await ws.start()
+            return str(ctx.exception)
+
+        message = asyncio.run(run())
+        self.assertIn(self.MESSAGE, message)
+        self.assertNotIn('login', [p.get('op') for p in sock.payloads])
+        # The error surfaced from the first _open(): no supervisor task was
+        # created, so it cannot fall into _reconnect()'s retry loop.
+        self.assertIsNone(ws._connection._task)
+
+    def test_subscribe_reports_missing_credentials_before_start(self):
+        ws, sock = self._private()
+
+        async def run():
+            with self.assertRaises(ValueError) as ctx:
+                await ws.subscribe([{'channel': 'account'}])
+            return str(ctx.exception)
+
+        message = asyncio.run(run())
+        self.assertIn(self.MESSAGE, message)
+        self.assertEqual(sock.payloads, [])
+
+    def test_public_channel_still_connects_without_credentials(self):
+        # The bridge must not disturb a public session: it has no login to
+        # perform, so an empty credential set changes nothing about it.
+        sock = FakeSocket()
+        ws = WsPublicAsync.from_transport(mock_transport())
+        ws._connection.connector = FakeConnector(sock)
+
+        async def run():
+            await ws.start()
+            try:
+                return [p.get('op') for p in sock.payloads]
+            finally:
+                await ws.stop()
+
+        self.assertEqual(asyncio.run(run()), [])
 
 
 class TestProxyInheritance(unittest.TestCase):

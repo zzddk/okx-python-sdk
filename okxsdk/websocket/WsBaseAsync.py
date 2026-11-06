@@ -224,7 +224,7 @@ class WsBaseAsync:
         """
         self._is_logged_in = False
         self._subs.drop_requests()
-        if self._needs_login():
+        if self._must_login():
             await self.login()
         await self._replay()
 
@@ -314,21 +314,19 @@ class WsBaseAsync:
     def _has_credentials(self) -> bool:
         return bool(self.apiKey and self.passphrase and self.secretKey)
 
-    def _needs_login(self) -> bool:
-        """Whether this connection should authenticate before it is used.
+    def _must_login(self) -> bool:
+        """Whether this connection must authenticate before it is used.
 
         `_LOGIN_REQUIRED` is what the class always wanted; `_ever_logged_in`
         keeps a public client that logged in for the business channel logging
-        in after a reconnect. The other two terms are the current state.
+        in after a reconnect. Whether credentials exist is `login()`'s
+        concern: a session that must log in but cannot must fail there, not
+        silently skip authentication here.
         """
-        return (
-            (self._LOGIN_REQUIRED or self._ever_logged_in)
-            and not self._is_logged_in
-            and self._has_credentials()
-        )
+        return (self._LOGIN_REQUIRED or self._ever_logged_in) and not self._is_logged_in
 
     async def _ensure_login(self) -> None:
-        if self._needs_login():
+        if self._must_login():
             await self.login()
 
     # ------------------------------------------------------------------ operations

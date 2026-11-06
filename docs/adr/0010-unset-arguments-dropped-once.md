@@ -6,6 +6,8 @@
 
 我们决定：**端点方法把每个形参无条件放进 dict，`None` 的省略只在 `Transport` 发生一次**。ADR-0001 的「`None` 是唯一未设置值」原样成立，变的只是谁来执行它。
 
+> Update (2026-11-07): 澄清上面「`None` 是唯一未设置值」的措辞——它说的是**端点形参**。另有一类刻意保留的端点形参 unset 哨兵：`SubAccount.reset_subaccount_apikey` 的 `ip='-1'` 表示「不写入该键」，永不上送服务器（见 `.scratch/endpoint-params/spec.md:14` 与本文 Consequences 第 21 行）。它与凭据配置的 `_NO_CREDENTIAL` 是不同层、不同解释点、永不交叉的两个概念，都不要与 `GLOSSARY.md` 的「凭据缺席」混用。OKX 的 wire 惯例里 `-1` 还是真实取值（如市价 `orderPx=-1`），因此不要做「去重所有 `-1`」的重构。凭据侧的空值契约处理见 ADR-0014 的 Update。
+
 ## Considered Options
 
 - **保留调用点分支**：分支与 `Transport` 的行为从未不同，删除它不转移复杂度。保留的唯一效果是让同一条规则有 136 份副本，并把「这个参数可不可以不传」从签名默认值变成每个方法自行决定。
