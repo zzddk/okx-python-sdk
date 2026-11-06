@@ -1,0 +1,44 @@
+# 地图：2026-11-06 全项目审查（review-2026-11-r3）
+
+> **状态（2026-11-06）**：评审已出，八张工单已开，全部 `needs-triage`；尚未开工，也没有拍板记录。
+
+## Destination
+
+把 2026-11-06 全项目审查的八个发现推到可施工：三处正确性（01–03）先定口径，签名与测试盲区（04–06）补齐，门禁与债务（07–08）合并批次。地图内不改代码、不发版。
+
+## Notes
+
+- 评审源：仓库根目录 `architecture-review-20261106-202110.html`（本次新增）。
+- 基线（2026-11-06 实测）：`pytest` 856 passed / 313 subtests；覆盖率 97%（2023 行，漏 51）；`ruff 0.16.8` 默认规则 `okx/` 525 条、全仓 638 条、115 个文件待格式化；`master` 领先 `origin` 91 个提交，`v0.15.0` 在 `2c721a4`，HEAD `215dba9`。
+- 候选编号 01–08 与前两批（`review-2026-11-r2` 的 01–06、更早的 01–06）重名；引用时必须带 effort 名。
+- 语言：中文；工单沿用 `.scratch/<effort>/issues/NN-*.md`，Comments 追加在文件末尾。
+- 判据优先级：ADR 与工单 Answer > 评审 HTML > README/CHANGELOG 的叙述。本次评审只给证据与建议，未替代任何 ADR。
+
+## Decisions so far
+
+（暂无——八张工单都还需要一次拍板或施工确认。）
+
+## Not yet specified
+
+1. **32 条 project-only 路径怎么处理**：补表、删掉、还是记成「官方未收录」的显式豁免？影响 01 的豁免表措辞，也可能变成公开方法删除（minor）。
+2. **重连失败的永久/瞬时判据**：用异常类型（`LoginRejected`）还是错误码？是否需要重试次数上限？影响 03 的对外行为。
+3. **lint 规则集与格式化**：只开 `E4,E7,E9,F`，还是一步到 `I/B/UP`？formatter 做不做？25 个星号导入改不改？影响 07 的规模。
+4. **`raise_on_error=False` 以文档还是代码为准**：评审建议以代码为准（网络错误仍重试），但需确认这不是原意的丢失。影响 05。
+
+## Out of scope
+
+- 全量补齐 273 条限流值（属持续维护，不在本 effort）。
+- 端点返回类型建模（`Dict[str, Any]` → 类型化响应），本评审未展开。
+- 0.15.0 的 push：共享状态操作，需单独确认，不随本 effort 进行。
+- 0.16.0 的发版节拍：等 01–08 的破坏面清点后再按 ADR-0004 决定。
+
+## 工单索引
+
+- [01 · 限流表的覆盖不变量](issues/01-rate-limit-coverage-invariant.md) — grilling
+- [02 · 正常关闭不进 on_lost](issues/02-clean-close-on-lost.md) — task
+- [03 · 重连把永久失败当瞬时失败](issues/03-reconnect-permanent-failures.md) — grilling
+- [04 · REST 签名路径没有测试](issues/04-rest-signature-test.md) — task
+- [05 · raise_on_error=False 的文档与行为相反](issues/05-raise-on-error-docs.md) — task
+- [06 · 限流接线与并发登录](issues/06-limiter-wiring-and-login-race.md) — task
+- [07 · lint 门是装饰](issues/07-lint-gate.md) — grilling
+- [08 · 清理批次](issues/08-cleanup-batch.md) — task

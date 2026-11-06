@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>python-okx 全项目审查 · 2026-11-06</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose", flowchart: { htmlLabels: true, curve: "basis" } });
+</script>
+<style>
+  .seam { stroke-dasharray: 5 5; }
+  .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+  .chip { font-variant-ligatures: none; }
+  .mermaid { font-size: 12px; }
+  .out { white-space: pre-wrap; }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans antialiased">
+<main class="max-w-5xl mx-auto px-6 py-12 space-y-14">
+
+  <header class="space-y-4">
+    <div class="text-xs uppercase tracking-[0.2em] text-slate-500">Whole-project review</div>
+    <h1 class="font-serif text-4xl leading-tight">python-okx · 全项目审查</h1>
+    <p class="text-slate-600 max-w-2xl">0.15.0 加未发布的限流/重试改动，八个候选：三处正确性、三处契约与测试、两处工程卫生。每条结论都有实测、复现或覆盖率支撑；评审本身不改代码。</p>
+    <div class="flex flex-wrap gap-x-6 gap-y-2 text-xs text-slate-500 pt-2 border-t border-slate-200">
+      <span class="flex items-center gap-2"><span class="inline-block px-2 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-200 font-semibold">Correctness</span>会静默出错或挂死</span>
+      <span class="flex items-center gap-2"><span class="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold">Strong</span>契约与实现脱节</span>
+      <span class="flex items-center gap-2"><span class="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 font-semibold">Worth exploring</span>测试盲区</span>
+      <span class="flex items-center gap-2"><span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-300 font-semibold">Hygiene</span>门禁与债务</span>
+    </div>
+  </header>
+
+  <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div class="text-[10px] uppercase tracking-widest text-slate-400">pytest</div>
+      <div class="font-serif text-2xl">856 <span class="text-sm text-slate-500">passed</span></div>
+      <div class="text-[10px] text-slate-500">313 subtests · 1.77s</div>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div class="text-[10px] uppercase tracking-widest text-slate-400">coverage</div>
+      <div class="font-serif text-2xl">97<span class="text-sm text-slate-500">%</span></div>
+      <div class="text-[10px] text-slate-500">2023 行，漏 51</div>
+    </div>
+    <div class="rounded-lg border border-rose-200 bg-rose-50/50 px-4 py-3">
+      <div class="text-[10px] uppercase tracking-widest text-rose-600">可达但未限流</div>
+      <div class="font-serif text-2xl text-rose-700">36<span class="text-sm text-rose-500"> / 273</span></div>
+      <div class="text-[10px] text-rose-700">其中 32 条无任何说明</div>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div class="text-[10px] uppercase tracking-widest text-slate-400">release state</div>
+      <div class="font-serif text-2xl">91 <span class="text-sm text-slate-500">ahead</span></div>
+      <div class="text-[10px] text-slate-500">v0.15.0 @ 2c721a4 · HEAD 215dba9</div>
+    </div>
+  </section>
+
+  <section id="candidates" class="space-y-16">
+
+    <!-- ============ 01 ============ -->
+    <article id="c01" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">01 · 限流表只覆盖 237/273：把「表 = 可达集 − 豁免」变成不变量</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/consts/rate_limits.py:1-15 · okx/rate_limit.py:23-25 · test/unit/okx/test_rate_limits.py:10-11 · CHANGELOG.md:9 · .scratch/rate-retry-policy/spec.md:26-31</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 三份事实，只有一份断言</div>
+          <pre class="mermaid">
+flowchart LR
+  A["端点方法<br/>273 条可达路径"] --> B["RATE_LIMITS<br/>237 条"]
+  C["验收快照<br/>237 条（手工）"] --> B
+  B --> D{"测试断言<br/>表 == 快照"}
+  A -. "36 条从未进入断言" .-> E["静默不限流"]
+  classDef bad fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  class E bad
+          </pre>
+          <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] text-red-800 leading-relaxed">
+            4 条 orders-only 写进了注释；另 <b>32 条</b>既不在表里、代码里也没有说明，只存在于 spec 的「仅项目 33」。
+          </div>
+        </div>
+
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 一条不变量，豁免必须带原因</div>
+          <pre class="mermaid">
+flowchart LR
+  A["可达路径<br/>（test_contract 派生）"] --> T{"表 ∪ 豁免<br/>== 可达集"}
+  B["RATE_LIMITS"] --> T
+  C["豁免表<br/>path → 原因"] --> T
+  T -- 失败 --> F["点名缺失路径"]
+  classDef good fill:#0f172a,stroke:#0f172a,color:#f8fafc
+  class T good
+          </pre>
+          <div class="rounded border border-emerald-300 bg-white px-3 py-2 text-[10px] font-mono leading-relaxed">
+            /api/v5/account/fixed-loan/* → 原因待定<br/>
+            /api/v5/market/block-trades → official-list gap<br/>
+            /api/v5/trade/batch-orders → orders-only（已有）
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>可达集有 273 条，表内 237 条，差 36 条；其中 4 条 batch-order 已在注释里说明，另 32 条没有任何记录。<span class="font-mono">RateLimiter.acquire()</span> 对未知路径直接放行，所以 <span class="font-mono">rate_limit=True</span> 在这 32 条上是个静默的空操作。<span class="font-mono">CHANGELOG.md:9</span> 却写成「the endpoints this package exposes」。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>用 <span class="font-mono">test_contract.ALL_API_METHODS</span> 现成的捕获器派生可达集，加一张「豁免 → 原因」表，断言「表 ∪ 豁免 = 可达集」。漂移从静默变成一条点名路径的红测试。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 只改测试与注释，不动运行时</li>
+        <li>· 可复用端点表的调用捕获器</li>
+        <li>· 每条豁免被迫写原因</li>
+        <li>· 新增端点会自动被要求归类</li>
+        <li>· 32 条怎么处理需要一次拍板</li>
+        <li>· CHANGELOG 措辞要同步收紧</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">spec 的判定规则把 33 条「仅项目」路径称为「项目没有这个路径，不是豁免」，但代码里这 32 条仍然可通过公开方法调用。先确认它们是官方漏列、已下线，还是路径写错；这决定豁免表的措辞是「未收录」还是「待删除」。</div>
+    </article>
+
+    <!-- ============ 02 ============ -->
+    <article id="c02" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">02 · 正常关闭不进 <span class="font-mono text-xl">_on_lost</span>：登录握手要等满 10 秒</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-rose-100 text-rose-800 border border-rose-200">Correctness</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/connection.py:217-238 · okx/websocket/WsBaseAsync.py:207-214 · test/unit/okx/websocket/fakes.py:7</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 只接住了一半的关闭</div>
+          <pre class="mermaid">
+flowchart TB
+  S["服务器关闭连接"] --> OK["1000 / 1001<br/>ConnectionClosedOK"]
+  S --> ERR["其他码<br/>ConnectionClosedError"]
+  ERR --> H["except ConnectionClosedError<br/>→ on_lost → 重连"]
+  OK --> M["没有匹配的 except<br/>→ 穿透 _read"]
+  M --> T["登录握手等满 10s 超时"]
+  classDef bad fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  class M,T bad
+          </pre>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-slate-900 p-4 space-y-2">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Repro · 同一监督者，只换异常类型</div>
+          <div class="out rounded bg-black/40 px-3 py-3 text-[10px] font-mono text-slate-200 leading-relaxed">$ 构造 FakeConnector，socket 直接抛异常
+ConnectionClosedOK    -> task raised ConnectionClosedOK    | on_lost calls: 0
+ConnectionClosedError -> task raised ConnectionClosedError | on_lost calls: 1</div>
+          <div class="text-[10px] text-slate-400 leading-relaxed">ConnectionClosedOK 是 ConnectionClosed 的子类，不是 ConnectionClosedError 的子类。</div>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span><span class="font-mono">_read()</span> 只捕获 <span class="font-mono">ConnectionClosedError</span>。真实服务器的正常关闭（1000/1001）走 <span class="font-mono">ConnectionClosedOK</span>，既不通知 <span class="font-mono">on_lost</span>，也不中断进行中的登录握手；docstring 却承诺「A closed connection is reported to on_lost」。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>捕获基类 <span class="font-mono">ConnectionClosed</span>（或单独补 OK），让关闭语义只分「自己停的」和「连接没的」两种；补一个 <span class="font-mono">ConnectionClosedOK</span> 的用例，锁住 <span class="font-mono">on_lost</span> 被调用。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 一行改动 + 一个新用例</li>
+        <li>· 登录不再空等 10s</li>
+        <li>· 日志不再把正常关闭记成 warning</li>
+        <li>· 与 docstring 重新一致</li>
+        <li>· 要定 reconnect=False 时正常关闭算不算错误</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">如果希望「正常关闭」在 <span class="font-mono">reconnect=False</span> 下表现为 task 正常结束，而不是抛异常，需要让 <span class="font-mono">_read</span> 返回一个结束原因；只把 except 放宽会把两种关闭都当失败。</div>
+    </article>
+
+    <!-- ============ 03 ============ -->
+    <article id="c03" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">03 · 重连把永久失败当瞬时失败：task 永远不结束</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-rose-100 text-rose-800 border border-rose-200">Correctness</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/websocket/connection.py:188-210 · okx/websocket/WsBaseAsync.py:207-214 · okx/websocket/login.py:80-86</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 所有异常都进同一条循环</div>
+          <pre class="mermaid">
+flowchart TB
+  R["读循环结束"] --> RC["_reconnect()"]
+  RC --> O["_open()"]
+  O --> RD["on_ready()<br/>login()"]
+  RD -- "登录被拒 / proxy 不支持" --> X["except Exception"]
+  X --> SLEEP["sleep 1s → 60s"]
+  SLEEP --> RC
+  RD -- 成功 --> LIVE["连接可用"]
+  classDef bad fill:#fef2f2,stroke:#dc2626,color:#7f1d1d
+  class X,SLEEP bad
+          </pre>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 先分类，再决定重试</div>
+          <div class="rounded border border-slate-300 bg-white px-3 py-3 text-[10px] font-mono leading-relaxed">
+            transient → backoff → retry<br/>
+            permanent → task 以原异常结束<br/>
+            <span class="text-slate-400">（登录拒绝、proxy 能力缺失、URL 非法）</span>
+          </div>
+          <p class="text-[10px] text-slate-600 leading-relaxed">start() 返回的 task 是唯一能报错的地方；ADR-0005 已经这么承诺，只是重连路径没做到。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span><span class="font-mono">_reconnect()</span> 的 <span class="font-mono">except Exception</span> 把「凭证被拒」「websockets 不支持 proxy」这类不会自愈的错误也当成网络抖动，按 1s→60s 无限重试。<span class="font-mono">start()</span> 之后用户机器上只剩日志里的 Reconnect failed，task 永远不结束。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>把「这次失败能不能靠重试修复」变成一个显式判据：登录握手抛出的 <span class="font-mono">ConnectionError</span> 用一个专门类型（或 error code）标成永久，能力缺失用 <span class="font-mono">RuntimeError</span> 标成永久，其余才进退避。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 永久失败终于能被调用方看见</li>
+        <li>· 不再无限打日志</li>
+        <li>· 与 ADR-0005 的 task 语义对齐</li>
+        <li>· 需要给握手错误一个类型，不能靠文案匹配</li>
+        <li>· 首次连接与重连走同一条判据</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900"><span class="font-mono">LoginHandshake.rejection()</span> 现在抛的是普通 <span class="font-mono">ConnectionError</span>，与「网络断了」共用类型。分类前先给它一个 <span class="font-mono">LoginRejected</span> 子类，否则只能把两者一起当永久，会把可恢复的断线也停掉。</div>
+    </article>
+
+    <!-- ============ 04 ============ -->
+    <article id="c04" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">04 · REST 签名是唯一没有测试的鉴权路径</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Strong</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/transport.py:148-150 · okx/utils.py:20-37 · test/unit/okx/test_login.py:29 · test/unit/okx/test_transport.py</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 覆盖率 0 的两段</div>
+          <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-mono text-red-800 leading-relaxed">
+            okx/transport.py:148-150<br/>
+            <span class="pl-3">if self.API_KEY != _NO_CREDENTIAL:</span><br/>
+            <span class="pl-6">sign / get_header</span><br/><br/>
+            okx/utils.py:26-37 get_header —— 0%
+          </div>
+          <div class="text-[10px] text-slate-600 leading-relaxed">全套测试没有一处断言 OK-ACCESS-SIGN 或 OK-ACCESS-TIMESTAMP；在 test/unit 下搜索 get_header 无命中。</div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 时钟变成接缝，签名可逐字节断言</div>
+          <pre class="mermaid">
+flowchart LR
+  T["Transport"] --> C["clock()<br/>注入固定时间戳"]
+  C --> P["pre_hash<br/>method + path + body"]
+  P --> S["sign()"]
+  S --> H["header 断言<br/>逐字节"]
+  classDef good fill:#0f172a,stroke:#0f172a,color:#f8fafc
+  class C,H good
+          </pre>
+          <p class="text-[10px] text-slate-600 leading-relaxed">与 login_payload(timestamp=...) 同构：固定向量已经覆盖了 HMAC 原语，缺的是 REST 的拼接规则。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>登录签名有固定向量测试（<span class="font-mono">test_login.py:29</span>），REST 签名却完全没测。<span class="font-mono">pre_hash</span> 比登录多了 method、query string 和 POST body 的拼接，这三处正是最容易错的地方；签错只会在真实请求时以 401/50113 暴露。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>把时间戳来源从 <span class="font-mono">_send()</span> 里抽成一个可注入的 clock（默认 <span class="font-mono">utils.get_timestamp</span>），用固定时间戳断言 GET（带 query）与 POST（body 逐字节一致）两组 header。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 鉴权路径第一次有回归保护</li>
+        <li>· 静态时间戳让断言可重复</li>
+        <li>· GET 与 POST 的拼接差异被锁住</li>
+        <li>· 不触网、不依赖私钥</li>
+        <li>· 只多一个构造参数</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900"><span class="font-mono">utils.sign</span> 已被登录向量覆盖，别把「HMAC 正确」当成「REST 签名正确」；要断言的是 <span class="font-mono">pre_hash</span> 的输出与最终 base64。</div>
+    </article>
+
+    <!-- ============ 05 ============ -->
+    <article id="c05" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">05 · <span class="font-mono text-xl">raise_on_error=False</span> 的文档与行为相反</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200">Worth exploring</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">README.md:117 · okx/transport.py:121-128 · test/unit/okx/test_retry.py:121 · .scratch/rate-retry-policy/spec.md:90,94</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 文档说「不重试」，代码重试了 3 次</div>
+          <div class="out rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-mono text-red-800 leading-relaxed">Transport(raise_on_error=False, max_retries=2)
+  GET /api/v5/public/time → ConnectError
+  raised ConnectError | attempts: 3</div>
+          <div class="text-[10px] text-slate-600 leading-relaxed">_retry_allowed() 只看 replayable 与 max_retries，不看 raise_on_error。测试只覆盖「业务码以 payload 返回」，名字却叫 never_retries。</div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 一句话说清两条边界</div>
+          <div class="rounded border border-slate-300 bg-white px-3 py-3 text-[10px] leading-relaxed">
+            <b>业务错误</b>：raise_on_error=False 时以 payload 返回，不重试。<br/><br/>
+            <b>网络错误</b>：仍然重试；POST 仍受 replayable 约束。
+          </div>
+          <div class="text-[10px] text-slate-600 leading-relaxed">代码行为是合理的：GET 重试安全，POST 没幂等键不重试。要改的是 README 与 spec 的措辞，以及测试名。</div>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>把 <span class="font-mono">raise_on_error=False</span> 当「完全关闭重试」用的调用方会得到相反的行为；spec 第 5 节写了同一句错话，下一个施工者会照抄。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>以代码为准改文档：业务错误返回 payload、网络错误仍重试；测试改名成 <span class="font-mono">test_business_error_payload_is_returned_without_retry</span>，再加一个「网络错误仍然重试」的用例把边界锁死。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 两处文档一起改</li>
+        <li>· 测试名不再撒谎</li>
+        <li>· 行为不变，无迁移成本</li>
+        <li>· 加一条反向用例</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">如果原意确实是「raise_on_error=False 就完全不重试」，那要改的是 <span class="font-mono">_retry_allowed()</span>；但这样会让 GET 的网络抖动退化为一次失败，需要重新评估默认值。</div>
+    </article>
+
+    <!-- ============ 06 ============ -->
+    <article id="c06" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">06 · 两个没人踩过的分支：限流只测了类，登录没防并发</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-amber-100 text-amber-800 border border-amber-200">Worth exploring</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/transport.py:122-123 · test/unit/okx/test_retry.py:203-216 · okx/websocket/WsBaseAsync.py:259-300</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 接线处没有用例</div>
+          <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-mono text-red-800 leading-relaxed">transport.py:122  if self._limiter is not None:<br/>
+transport.py:123      self._limiter.acquire(path)   ← 覆盖率 0</div>
+          <p class="text-[10px] text-slate-600 leading-relaxed">RateLimiter 本身被测得很细，但没有一个用例让 request() 在 rate_limit=True 下真的走一遍；删掉这两行，856 个测试仍全绿。</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 两个 login 互相覆盖握手</div>
+          <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-mono text-red-800 leading-relaxed">await asyncio.gather(ws.login(), ws.login())
+  → self._handshake 被第二个覆盖
+  → 第一个等满 DEFAULT_LOGIN_TIMEOUT</div>
+          <p class="text-[10px] text-slate-600 leading-relaxed">私有客户端 start() 已登录，日常触发面小；但订阅路径一旦被并发调用，就会出现 10 秒空等。</p>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>前者是「回归不会被发现」，后者是「共享状态没有单写者」。两处都不大，但都属于测试与结构一起失守的位置。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>限流加一个 <span class="font-mono">rate_limit=True</span> + 注入 <span class="font-mono">sleep</span> 的请求级用例；登录把 in-flight handshake 存下来复用（或加 <span class="font-mono">asyncio.Lock</span>），让并发调用共享同一次握手。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 接线处有回归保护</li>
+        <li>· 并发登录只发一次请求</li>
+        <li>· 不需要新模块</li>
+        <li>· 登录锁只在会话内，无跨连接共享</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">复用 in-flight 握手要处理「第一个失败后第二个还能重试」；直接锁住整个 <span class="font-mono">login()</span> 更简单，但要确认它不会被 <span class="font-mono">_on_ready</span> 的重入卡死。</div>
+    </article>
+
+    <!-- ============ 07 ============ -->
+    <article id="c07" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">07 · lint 门是装饰：advisory + 未锁版本</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-slate-100 text-slate-700 border border-slate-300">Hygiene</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">.github/workflows/ci.yml:60-83 · okx/consts/__init__.py · okx/Account.py:1-4</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-slate-400">Before · 绿勾不代表任何事</div>
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="rounded border border-slate-300 px-2 py-3"><div class="font-serif text-xl">525</div><div class="text-[9px] text-slate-500">okx/ 默认规则</div></div>
+            <div class="rounded border border-slate-300 px-2 py-3"><div class="font-serif text-xl">638</div><div class="text-[9px] text-slate-500">全仓</div></div>
+            <div class="rounded border border-slate-300 px-2 py-3"><div class="font-serif text-xl">115</div><div class="text-[9px] text-slate-500">待格式化文件</div></div>
+          </div>
+          <div class="rounded border border-red-200 bg-red-50 px-3 py-2 text-[10px] text-red-800 leading-relaxed">
+            continue-on-error: true；pip install ruff 不锁版本；只跑 okx/，E501 被忽略。
+          </div>
+        </div>
+        <div class="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-3">
+          <div class="text-[10px] uppercase tracking-widest text-emerald-700">After · 先小后大，让门真的会关</div>
+          <div class="rounded border border-slate-300 bg-white px-3 py-3 text-[10px] leading-relaxed">
+            第一步：锁 ruff 版本，选 E4/E7/E9/F（先抓 undefined name），失败即红。<br/><br/>
+            第二步：再谈 I / B / UP 与 formatter；from .consts import * 的 F405 用 per-file-ignore 或显式导入处理。
+          </div>
+        </div>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>lint 任务永远绿，规则随安装的 ruff 版本漂移；真正有价值的检查（未定义名、未使用导入）被 continue-on-error 和星号导入的噪声一起淹掉。全仓格式也不统一。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>先把门做成真的：锁版本、缩小规则集、失败即红；再分批扩大规则与格式化。不要一次开全套，否则第一周就会再次 continue-on-error。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· 检查失败会挡住合并</li>
+        <li>· 版本锁定后噪声可复现</li>
+        <li>· 先覆盖 F/E9，收益最高</li>
+        <li>· 星号导入要单独处理</li>
+        <li>· 格式化是独立决定</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">启用 F 规则前先决定 from .consts import * 的去留：25 个 API 模块都这么导入，F403/F405 会一次冒出几百条；可以先用 per-file-ignore 过渡。</div>
+    </article>
+
+    <!-- ============ 08 ============ -->
+    <article id="c08" class="space-y-5">
+      <div class="flex items-start justify-between gap-6">
+        <h2 class="font-serif text-2xl leading-snug">08 · 一次清理批次：警告、过期 ADR、死代码、仓库杂物</h2>
+        <span class="shrink-0 text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-slate-100 text-slate-700 border border-slate-300">Hygiene</span>
+      </div>
+      <p class="font-mono text-xs text-slate-500 leading-relaxed">okx/utils.py:75 · docs/adr/0003-retry-idempotency.md:5 · okx/exceptions.py:30-45</p>
+
+      <div class="overflow-hidden rounded-lg border border-slate-200 bg-white">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500">
+            <tr><th class="px-4 py-2 font-medium">项</th><th class="px-4 py-2 font-medium">现状</th><th class="px-4 py-2 font-medium">处理</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr><td class="px-4 py-2 font-mono">utils.py:75</td><td class="px-4 py-2">utcnow() 已弃用，整套测试 49 条 warning</td><td class="px-4 py-2">改 now(timezone.utc)，输出格式不变</td></tr>
+            <tr><td class="px-4 py-2 font-mono">ADR-0003</td><td class="px-4 py-2">仍把 50004 列为可重试，已被 ADR-0018 细化</td><td class="px-4 py-2">加一行指针/替代说明</td></tr>
+            <tr><td class="px-4 py-2 font-mono">exceptions.py</td><td class="px-4 py-2">OkxRequestException / OkxParamsException 零引用</td><td class="px-4 py-2">minor 里删，进 Migration 表</td></tr>
+            <tr><td class="px-4 py-2 font-mono">transport.py:192-195</td><td class="px-4 py-2">退避无 jitter，多客户端同频重试</td><td class="px-4 py-2">加 ±20% 抖动（可选）</td></tr>
+            <tr><td class="px-4 py-2 font-mono">pagination.py:101-104</td><td class="px-4 py-2">max_pages / page_size 无范围校验</td><td class="px-4 py-2">负值在调用点报错</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="text-sm text-slate-700"><span class="font-semibold">问题：</span>单条都不致命，但 49 条 warning 会训练人忽略输出；过期 ADR 会让下一个人照着旧结论施工；根目录 471KB 的会话记录会把 git status 变成噪声。</p>
+      <p class="text-sm text-slate-700"><span class="font-semibold">方案：</span>合成一个「清理」提交组，每条一个独立小提交；删公共异常按 ADR-0001 的批次规则进 minor，并在 Migration 表加一行。</p>
+      <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-xs text-slate-600">
+        <li>· warning 归零后才能看见新警告</li>
+        <li>· ADR 读者不会再拿到旧集合</li>
+        <li>· 仓库根回到可读状态</li>
+        <li>· 删除异常需要版本策略</li>
+      </ul>
+      <div class="rounded border-l-4 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-900">OkxRequestException / OkxParamsException 虽然无内部引用，但属于公开模块；直接删是破坏性变更，按 ADR-0004 与 ADR-0001 进 minor，不要混进 patch。</div>
+    </article>
+
+  </section>
+
+  <section id="top-recommendation">
+    <div class="rounded-xl border-2 border-slate-900 bg-white p-6 space-y-3">
+      <div class="text-[10px] uppercase tracking-widest text-slate-500">Top recommendation</div>
+      <h2 class="font-serif text-2xl">先做 01 · 限流覆盖不变量</h2>
+      <p class="text-sm text-slate-700 max-w-2xl">它不需要改运行时，却能把「三份事实各写各的」收成一条会红的断言；32 条静默路径的处置也随之被迫做出决定。02 是一行代码的修复、用户可感知（登录少等 10 秒），建议紧随其后；04 是唯一能防止「鉴权回归静默上线」的测试，排在第三。07 / 08 可以并行，不阻塞前三个。</p>
+      <a href="#c01" class="inline-block text-xs font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-4">回到候选 01</a>
+    </div>
+  </section>
+
+  <footer class="text-xs text-slate-400 border-t border-slate-200 pt-4">
+    python-okx 0.15.0 + 未发布改动 · 全仓只读审查 · 基线：856 passed / 97% cov / ruff 0.16.8 · 复现脚本仅经 stdin，未落盘
+  </footer>
+</main>
+</body>
+</html>
