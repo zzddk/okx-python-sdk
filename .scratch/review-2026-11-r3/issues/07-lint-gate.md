@@ -1,7 +1,8 @@
 # 07 · lint 门是装饰
 
 Type: grilling
-Status: needs-triage
+Status: resolved
+Done in: 4477b5d
 Blocked by: —
 
 ## Question
@@ -24,10 +25,19 @@ Blocked by: —
 3. `okx/` 在选定规则集下为 0；星号导入的处理方式写进配置注释。
 4. 格式化的去留单独记录（做或不做都行，但不能悬着）。
 
-## 未决
+## Answer
 
-- 是否同时改掉 25 个 API 模块的星号导入？改成显式导入会扩大 diff，但能让 F 规则真正有效。
+**拍板（2026-11-06）**：第一道门开 E4/E7/E9/F；19 个星号导入模块用 per-file-ignore；格式化暂不做。
+
+- 规则集：语法 + undefined name + unused import + true/false 比较；`okx/` 下只剩 4 处 E712，已手改。
+- 星号导入：只对实际使用 `from .consts import *` 的 19 个文件忽略 F403/F405（不是工单里写的 25，25 是 N999 的数量）。F821 仍全局生效；这些文件的常量拼写由契约测试兜底（它调用每个公开方法）。显式导入留作独立机械批次。
+- 格式化：59/64 个文件会重排，单独一批，避免纯格式 diff 掩盖本次改动。
+- 版本：`ruff==0.16.8` 同时锁在 `dev_requirements.txt` 与 CI；`continue-on-error` 删除，`--ignore=E501` 由 `ruff.toml` 接管。
+- 范围：CI 仍只检查 `okx/`，`test/` 未纳入本道门。
+
+**验收对照**：`ruff check okx/` 通过；stdin 注入 undefined name 会被报；同样内容只在被豁免的 API 模块里静默；871 passed / 313 subtests。
 
 ## Comments
 
 - 2026-11-06 评审提出：`architecture-review-20261106-202110.html` 候选 07。
+- 2026-11-06 施工完成：4477b5d（master）。新增 ruff.toml、锁版本、删 continue-on-error、修 4 处 E712；全量 871 passed / 313 subtests。
