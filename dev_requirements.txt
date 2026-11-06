@@ -6,6 +6,8 @@ python-dotenv>=1.0.0
 pytest>=7.0.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.0.0
-ruff>=0.1.0
+# Pinned to the version the lint gate was tuned against; keep in sync with
+# ruff.toml and the CI lint job.
+ruff==0.16.8
 build>=1.0.0
 twine>=4.0.0

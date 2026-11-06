@@ -18,7 +18,7 @@ def sign(message: str, secretKey: str) -> bytes:
 
 
 def pre_hash(timestamp: str, method: str, request_path: str, body: str, debug: bool = True) -> str:
-    if debug == True:
+    if debug:
         logger.debug(f'body: {body}')
     return str(timestamp) + str.upper(method) + request_path + body
 
@@ -32,7 +32,7 @@ def get_header(api_key: str, sign: Any, timestamp: str, passphrase: str, flag: s
     header[c.OK_ACCESS_TIMESTAMP] = str(timestamp)
     header[c.OK_ACCESS_PASSPHRASE] = passphrase
     header['x-simulated-trading'] = flag
-    if debug == True:
+    if debug:
         logger.debug(f'header: {header}')
     return header
 
@@ -40,7 +40,7 @@ def get_header_no_sign(flag: str, debug: bool = True) -> Dict[str, Any]:
     header = dict()
     header[c.CONTENT_TYPE] = c.APPLICATION_JSON
     header['x-simulated-trading'] = flag
-    if debug == True:
+    if debug:
         logger.debug(f'header: {header}')
     return header
 

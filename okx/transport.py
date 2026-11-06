@@ -151,7 +151,7 @@ class Transport:
             header = utils.get_header(self.API_KEY, sign, timestamp, self.PASSPHRASE, self.flag, self.debug)
         else:
             header = utils.get_header_no_sign(self.flag, self.debug)
-        if self.debug == True:
+        if self.debug:
             logger.debug(f'domain: {self.domain}')
             logger.debug(f'url: {full_path}')
             logger.debug(f'body:{body}')
