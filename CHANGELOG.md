@@ -2,6 +2,19 @@
 
 All notable changes to `python-okx` are documented in this file.
 
+## [Unreleased]
+
+### Changed
+- `RATE_LIMITS` now records the limits published for the endpoints this package
+  exposes: 237 paths (up from 8), snapshot 2026-11-06. The four batch-order
+  endpoints are left out because their limit is in orders per window, not
+  requests, which the table cannot express.
+- `50004` (request timeout) and `51149` (order timeout) are no longer retried.
+  OKX documents both as "does not mean that the request was successful or
+  failed, please check the request result", so a retry could execute the order
+  twice. `50001` / `50011` / `50013` remain retryable. Only affects callers
+  that turned `max_retries` on.
+
 ## [0.15.0]
 
 Breaking release, the batch ADR-0004 keeps for changes that share one migration
@@ -333,7 +346,7 @@ Feature release, opt-in only: the defaults are unchanged, so upgrading changes n
 
 ### Notes
 - Every retry rebuilds the timestamp and signature, so an expired signature is never replayed.
-- Passing `client=` copies the retry and rate-limit settings from that client, including the shared limiter.
+- Passing `client=` copies the retry and rate-limit settings from that client, including the shared limiter. (Superseded in 0.14.0: API classes now take a `Transport`; see the 0.14.0 Migration table.)
 
 ## [0.5.0]
 

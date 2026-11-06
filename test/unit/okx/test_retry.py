@@ -126,6 +126,36 @@ class TestRetryBusinessErrors(_ClientTestCase):
         self.assertEqual(len(self.calls), 1)
 
 
+class TestOutcomeUnknownCodes(_ClientTestCase):
+    """A timeout means the request may already have been executed."""
+
+    def test_request_timeout_is_not_retried(self):
+        client = self._make([
+            _response(400, {'code': '50004', 'msg': 'API endpoint request timeout'}),
+        ], max_retries=3, retry_backoff=0)
+        with self.assertRaises(exceptions.OkxAPIException) as ctx:
+            client.request(c.POST, TEST_PATH, {'instId': 'BTC-USDT', 'clOrdId': 'abc'})
+        self.assertEqual(ctx.exception.code, '50004')
+        self.assertEqual(len(self.calls), 1)
+
+    def test_order_timeout_is_not_retried_even_on_500(self):
+        client = self._make([
+            _response(500, {'code': '51149', 'msg': 'Order timed out'}),
+        ], max_retries=3, retry_backoff=0)
+        with self.assertRaises(exceptions.OkxAPIException) as ctx:
+            client.request(c.POST, TEST_PATH, {'instId': 'BTC-USDT', 'clOrdId': 'abc'})
+        self.assertEqual(ctx.exception.code, '51149')
+        self.assertEqual(len(self.calls), 1)
+
+    def test_service_unavailable_is_still_retried(self):
+        client = self._make([
+            _response(503, {'code': '50001', 'msg': 'Service temporarily unavailable'}),
+            _response(200, {'code': '0', 'data': []}),
+        ], max_retries=1, retry_backoff=0)
+        payload = client.request(c.POST, TEST_PATH, {'instId': 'BTC-USDT', 'clOrdId': 'abc'})
+        self.assertEqual(payload['code'], '0')
+        self.assertEqual(len(self.calls), 2)
+
 class TestRetryNonJsonErrors(_ClientTestCase):
     """A 429/5xx body that is not JSON must not escape the retry loop."""
 

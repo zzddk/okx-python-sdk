@@ -1,6 +1,7 @@
 # 限流与重试策略 spec
 
 > 状态：决策已完成（wayfinder 地图 `.scratch/rate-retry-policy/map.md`，2026-11-06 已收图，14 张决策工单全部 resolved）。
+> 施工状态：第 7 节的六项已落地（2026-11-06：`RATE_LIMITS` 237 条、重试三分类、文档与覆盖断言）。
 > 性质：handoff 交付物，把决策整理成施工方能直接执行的规格；本图本身不改代码、不发版。
 > 范围：REST 传输层限流（`okx/consts/rate_limits.py`、`okx/rate_limit.py`）与重试（`okx/transport.py`）。WS 层限速不在内。
 
@@ -24,7 +25,7 @@
 1. 只在 S1 完整版端点详情里出现 `Rate Limit:` 行的端点才进表；项目路径常量里没有对应端点的（S1 口径 **33 个**）不进表，按「未收录端点」维持不限流——这是「项目没有这个路径」，不是豁免。
 2. **同路径多方法**：按**项目实际暴露的 HTTP 方法**取值，不取严、不取松。当前 5 个 POST / GET 值不同的路径里，4 个不在项目里（`account/mmp-config`、`asset/monthly-statement`、`rfq/mmp-config`、`users/subaccount/apikey`），唯一两侧都有的 `bills-history-archive` 项目只暴露 POST，取 `12 requests per day`。若将来出现「项目同时暴露两方法、官方值不同」，该路径不进表并列入已知差异（`(method, path)` 升级属新 effort）。
 3. **非 2 秒窗口**：按秒数记（`per second`→1、`per day`→86400、`per month`→2592000），并注明「滑动窗口语义不等价于 UTC 0:00 重置」。
-4. 表覆盖的规模（S1 口径）：两侧都有 **241** / 仅官方 145 / 仅项目 33。
+4. 表覆盖的规模（S1 口径）：两侧都有 241 个路径，其中 **237 个是请求数限额、已进表**；另 4 个 batch-order 端点官方的限额单位是 orders 而非 requests（`amend-batch-orders`、`batch-orders`、`cancel-algos`、`cancel-batch-orders`），请求数 limiter 无法准确表达，**不进表**、写进模块注释。仅官方 145 / 仅项目 33。
 5. 补全表属**施工**，本 spec 不承诺补全进度；本文件只给规则与取数方法，不列最终表。
 
 **已知差异（写进 spec / 注释，不在表里表达）**：
@@ -111,6 +112,6 @@
 3. 重试三分类落地：移除 50004、加 `_OUTCOME_UNKNOWN_CODES`、改注释、改 README 重试段。
 4. README 补三组说明（05 / 04）。
 5. CHANGELOG `:336` 订正；下一个版本 `### Changed` 记录重试行为变化。
-6. 表覆盖断言：口径是「验收线集合」。09 的清单在 throwaway 分支、不合并，所以施工时要把验收线集合**固化进测试**（字面量或 fixture），不能引用该分支；补全表本身属施工（规则见第 2 节）。
+6. 表覆盖断言：**已落**——验收线集合固化在 `test/unit/okx/rate_limit_acceptance.py`（237 个请求数路径 + 4 个 orders-only 排除项），`test/unit/okx/test_rate_limits.py` 断言 `RATE_LIMITS` 与该集合恰好相等。09 的清单仍在 throwaway 分支、不合并，fixture 是它的稳定快照；覆盖线变化时按 findings 重新生成。
 
 **不在本 spec 范围**：WS 层限速与重连退避；限流算法重写（令牌桶 / 并发控制）；按 VIP / 账户层级运行时拉限额；全量补全 274 个端点本身；发版与 push；跨 `Transport` 共享计数；表条目升级（value 三元组 / key `(method, path)` / UTC 固定窗口 / 按维度计数）。

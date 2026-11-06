@@ -19,10 +19,16 @@ from .rate_limit import RateLimiter
 
 logger = logging.getLogger(__name__)
 
-# Business codes worth retrying: the request was rejected before it could be
-# matched, so replaying it cannot double-execute. Everything else (parameter
-# errors, insufficient balance, …) is a definitive answer, not a transient one.
-_RETRYABLE_CODES = frozenset({'50001', '50004', '50011', '50013'})
+# Business codes OKX tells you to retry: the service is unavailable, the rate
+# limit was hit, or the system is busy - "please try again later". Replaying one
+# of these is what the vendor asks for.
+_RETRYABLE_CODES = frozenset({'50001', '50011', '50013'})
+
+# Business codes whose outcome is unknown. OKX says a timeout "does not mean
+# that the request was successful or failed, please check the request result",
+# so replaying it could execute the order twice. Checked before the HTTP-status
+# shortcut, so a 500 carrying one of these is not retried either.
+_OUTCOME_UNKNOWN_CODES = frozenset({'50004', '51149'})
 
 # A POST body is only replayable if the caller supplied an idempotency key;
 # otherwise a retry is a second order.
@@ -91,9 +97,12 @@ class Transport:
         The default (`None`) derives it: GET is always replayable, POST only
         when the body carries an idempotency key (`clOrdId`, `algoClOrdId` or
         `reqId`). Transient failures — `httpx.TransportError`, HTTP 429/5xx and
-        business codes 50001/50004/50011/50013 — are retried up to
-        `max_retries` times with exponential backoff. Every attempt rebuilds
-        the timestamp and signature, so a retry never replays an expired one.
+        business codes 50001/50011/50013 — are retried up to `max_retries`
+        times with exponential backoff. A failure whose outcome is unknown
+        (`50004` request timeout, `51149` order timeout) is never retried: OKX
+        says the request may or may not have been processed, so replaying it
+        could execute twice. Every attempt rebuilds the timestamp and
+        signature, so a retry never replays an expired one.
 
         A 429/5xx response whose body is not JSON raises `OkxAPIException`
         carrying that status code, and is retried like any other transient
@@ -172,10 +181,13 @@ class Transport:
 
     @staticmethod
     def _is_transient(exc: exceptions.OkxAPIException) -> bool:
+        code = str(getattr(exc, 'code', ''))
+        if code in _OUTCOME_UNKNOWN_CODES:
+            return False
         status = getattr(exc, 'status_code', None) or 0
         if status == 429 or status >= 500:
             return True
-        return str(getattr(exc, 'code', '')) in _RETRYABLE_CODES
+        return code in _RETRYABLE_CODES
 
     def _backoff(self, attempt: int) -> None:
         delay = self.retry_backoff * (2 ** (attempt - 1))

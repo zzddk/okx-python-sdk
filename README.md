@@ -108,9 +108,13 @@ trade = Trade.TradeAPI(Transport(
     api_key, secret, passphrase, flag="0", max_retries=2, rate_limit=True))
 ```
 
-Retries only replay requests that are safe to replay: every GET, and a POST only when it carries `clOrdId`, `algoClOrdId` or `reqId`. **Without one of those keys an order is never retried** — a retry would place it twice. Transient failures (network errors, HTTP 429/5xx, business codes 50001/50004/50011/50013) are retried with exponential backoff; a rejection such as a parameter error is returned immediately.
+Retries only replay requests that are safe to replay: every GET, and a POST only when it carries `clOrdId`, `algoClOrdId` or `reqId`. **Without one of those keys an order is never retried** — a retry would place it twice. A retry is not exactly-once either: OKX keeps `clOrdId` unique only while the order is pending, so an id from a filled or cancelled order can be reused.
 
-`rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, which covers the endpoints with published limits. Endpoints missing from that table are not throttled.
+Transient failures (network errors, HTTP 429/5xx, business codes `50001` / `50011` / `50013`) are retried with exponential backoff; a rejection such as a parameter error is returned immediately. **Timeouts are not retried**: `50004` (request timeout) and `51149` (order timeout) mean OKX does not know whether the request was processed — "does not mean that the request was successful or failed, please check the request result". Query the order or the request result instead of replaying.
+
+`rate_limit=True` throttles calls using `okx.consts.rate_limits.RATE_LIMITS`, a per-path `(requests, window_seconds)` table. It covers the endpoints whose limits this package has recorded — **a path missing from the table is not throttled, and that does not mean OKX publishes no limit for it**. Four batch-order endpoints are left out because their limit is in orders per window, not requests.
+
+`replayable=True` on `request()` overrides the derived safety for one call; `replayable=False` opts out. With `raise_on_error=False` nothing is retried — an error payload is returned as-is.
 
 ### Pagination
 
