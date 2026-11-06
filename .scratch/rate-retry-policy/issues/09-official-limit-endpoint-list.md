@@ -21,3 +21,5 @@ Blocked by: 03
 ## Context
 
 findings 落在 throwaway 分支 `research/official-limit-endpoint-list` 上的 `.scratch/rate-retry-policy/research/official-limit-endpoint-list.md`；按 wayfinder 约定永不合并，沿用本地保留决定、不 push。
+
+> **来自 08 的输入（2026-11-06）**：[限额表条目要不要容纳计数维度与任意窗口](08-limit-entry-shape.md) 已定**保持二元组 + `path` 单键、表不承载计数维度 / 窗口语义 / 多方法 / REST-WS 共享**。因此本工单的清单是这些官方事实的**唯一载体**：解 09 时把「路径 + 限额数值 + 时间窗 + 计数维度 + 多方法区分 + 来源页」逐条列全，尤其标出同路径多方法（`/api/v5/trade/order` 的 POST + GET）限额是否不同——若不同，是 08 触发条件里「另开新工单」的输入。
