@@ -1,6 +1,28 @@
 # Changelog
 
-All notable changes to `python-okx` are documented in this file.
+All notable changes to `okx-python-sdk` are documented in this file.
+
+## [Unreleased]
+
+### Changed
+- The declared Python floor is now 3.9: `python_requires=">=3.9"`, the 3.7/3.8
+  classifiers are gone, and `ruff.toml` targets `py39`. The CI matrix (3.9, 3.12)
+  is unchanged, so the declaration now matches what is actually tested.
+- Packaging metadata uses the SPDX `license="MIT"` expression instead of the
+  deprecated `License ::` classifier. LICENSE still ships in the wheel.
+
+### Fixed
+- Debug logging no longer writes credentials. `OK-ACCESS-KEY`, `OK-ACCESS-SIGN`,
+  `OK-ACCESS-PASSPHRASE` and the WebSocket login frame's `apiKey`/`passphrase`/
+  `sign` are masked with `***`, and `debug=True` no longer changes the module
+  logger level globally -- it is per-instance again.
+- A shadowed unit test (`test_login_goes_through_the_shared_payload_builder`)
+  is collected again, and the lint gate now covers `test/unit/` so a duplicate
+  class name cannot silently drop a test.
+- POST bodies use httpx `content=` instead of the deprecated `data=`, removing
+  the `DeprecationWarning` on every request.
+- The source distribution no longer ships the un-runnable end-to-end test files
+  (`prune test` in `MANIFEST.in`); the wheel is unchanged.
 
 ## [0.17.0]
 

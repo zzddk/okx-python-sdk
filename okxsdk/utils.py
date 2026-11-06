@@ -10,6 +10,17 @@ from . import consts as c
 
 logger = logging.getLogger(__name__)
 
+_SENSITIVE_HEADER_KEYS = (c.OK_ACCESS_KEY, c.OK_ACCESS_SIGN, c.OK_ACCESS_PASSPHRASE)
+
+
+def _masked_header(header: Dict[str, Any]) -> Dict[str, Any]:
+    """A copy for logging: field names stay, credential values do not."""
+    masked = dict(header)
+    for key in _SENSITIVE_HEADER_KEYS:
+        if key in masked:
+            masked[key] = '***'
+    return masked
+
 
 def sign(message: str, secretKey: str) -> bytes:
     mac = hmac.new(bytes(secretKey, encoding='utf8'), bytes(message, encoding='utf-8'), digestmod='sha256')
@@ -33,7 +44,7 @@ def get_header(api_key: str, sign: Any, timestamp: str, passphrase: str, flag: s
     header[c.OK_ACCESS_PASSPHRASE] = passphrase
     header['x-simulated-trading'] = flag
     if debug:
-        logger.debug(f'header: {header}')
+        logger.debug(f'header: {_masked_header(header)}')
     return header
 
 def get_header_no_sign(flag: str, debug: bool = True) -> Dict[str, Any]:
@@ -41,7 +52,7 @@ def get_header_no_sign(flag: str, debug: bool = True) -> Dict[str, Any]:
     header[c.CONTENT_TYPE] = c.APPLICATION_JSON
     header['x-simulated-trading'] = flag
     if debug:
-        logger.debug(f'header: {header}')
+        logger.debug(f'header: {_masked_header(header)}')
     return header
 
 def parse_params_to_str(params: Dict[str, Any]) -> str:

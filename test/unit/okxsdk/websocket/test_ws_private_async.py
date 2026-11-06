@@ -68,7 +68,7 @@ class TestWsPrivateAsyncInit(unittest.TestCase):
         self.assertEqual(ws.url, consts.WS_PRIVATE_URL)
 
 
-class TestWsPrivateAsyncLogin(unittest.TestCase):
+class TestWsPrivateAsyncLoginPayload(unittest.TestCase):
     """The login frame is built by the shared primitive, not by a copy here."""
 
     def test_login_goes_through_the_shared_payload_builder(self):

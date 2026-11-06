@@ -158,7 +158,7 @@ class Transport:
         if method == c.GET:
             response = self._http.get(full_path, headers=header)
         elif method == c.POST:
-            response = self._http.post(full_path, data=body, headers=header)
+            response = self._http.post(full_path, content=body, headers=header)
         else:
             raise ValueError(f"unsupported HTTP method: {method!r}")
         try:

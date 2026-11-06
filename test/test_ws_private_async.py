@@ -2,7 +2,6 @@ import asyncio
 
 from okxsdk.websocket.WsPrivateAsync import WsPrivateAsync
 from test.config import get_api_credentials
-from okxsdk.transport import Transport
 
 # Test constants
 WS_PRIVATE_URL = "wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999"

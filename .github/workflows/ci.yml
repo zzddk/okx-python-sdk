@@ -77,7 +77,7 @@ jobs:
 
       - name: Run ruff
         run: |
-          ruff check okxsdk/
+          ruff check okxsdk/ test/unit/
 
   # ============================================
   # TEST JOB

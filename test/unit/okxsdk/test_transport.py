@@ -162,6 +162,27 @@ class TestTransportSigning(unittest.TestCase):
         self.assertEqual(seen[0].content, POST_BODY)
 
 
+class TestPostBodyEncoding(unittest.TestCase):
+    """The POST body is sent as content, not the deprecated data=<str>."""
+
+    def test_post_does_not_emit_the_httpx_data_deprecation(self):
+        import warnings
+
+        def handler(request):
+            return httpx.Response(200, json={'code': '0'})
+
+        transport = Transport(http=httpx.MockTransport(handler))
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter('always', DeprecationWarning)
+            transport.request(c.POST, POST_PATH, POST_PARAMS)
+
+        offenders = [str(w.message) for w in caught
+                     if issubclass(w.category, DeprecationWarning)
+                     and 'content=' in str(w.message)]
+        self.assertEqual(offenders, [],
+                         f'a POST body still goes through deprecated data=: {offenders}')
+
+
 class TestSharedConnectionPool(unittest.TestCase):
     def test_api_classes_share_one_connection_pool(self):
         """`client=` fans one pool out instead of building one per API class."""

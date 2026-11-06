@@ -17,9 +17,9 @@ If any of these files don't exist, **proceed silently**. Don't flag their absenc
 /
 ├── GLOSSARY.md
 ├── docs/adr/
-│   ├── 0001-event-sourced-orders.md
-│   └── 0002-postgres-for-write-model.md
-└── okx/
+│   ├── 0001-release-strategy.md
+│   └── 0002-errors-raise-by-default.md
+└── okxsdk/
 ```
 
 ## Use the glossary's vocabulary

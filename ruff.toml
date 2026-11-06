@@ -1,6 +1,7 @@
-# Lint gate for the package. `test/` is outside this gate for now.
+# Lint gate for the package and its unit tests (see the CI lint job).
+# The end-to-end checks in test/ and the example notebooks stay outside.
 # Keep the ruff version in sync with dev_requirements.txt and the CI lint job.
-target-version = "py37"
+target-version = "py39"
 
 [lint]
 select = ["E4", "E7", "E9", "F"]

@@ -130,9 +130,6 @@ class WsBaseAsync:
             debug=debug,
         )
 
-        if debug:
-            logger.setLevel(logging.DEBUG)
-
     # ------------------------------------------------------------------ views
 
     @property
@@ -293,7 +290,12 @@ class WsBaseAsync:
                 secret_key=self.secretKey,
             )
             if self.debug:
-                logger.debug("login: %s", payload)
+                masked = json.loads(payload)
+                for arg in masked.get("args", []):
+                    for field in ("apiKey", "passphrase", "sign"):
+                        if field in arg:
+                            arg[field] = "***"
+                logger.debug("login: %s", json.dumps(masked))
 
             handshake = LoginHandshake(timeout)
             self._handshake = handshake

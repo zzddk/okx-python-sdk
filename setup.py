@@ -1,11 +1,10 @@
 import os
 import setuptools
 
+import okxsdk
+
 # Get the directory where setup.py is located
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-# Read version from package
-import okxsdk
 
 # Read README
 with open(os.path.join(HERE, "README.md"), "r", encoding="utf-8") as fh:
@@ -45,16 +44,14 @@ setuptools.setup(
     url="https://github.com/zzddk/okx-python-sdk",
     packages=setuptools.find_packages(exclude=["test", "test.*", "example"]),
     package_data={"okxsdk": ["py.typed"]},
-    python_requires=">=3.7",
+    python_requires=">=3.9",
+    license="MIT",
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     install_requires=parse_requirements(),
