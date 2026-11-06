@@ -1,7 +1,8 @@
 # 03 · POST 改用 content=，消掉 httpx 弃用告警
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: a464c12
 Blocked by: —
 
 ## Question
@@ -31,15 +32,15 @@ Blocked by: —
 
 ## Answer
 
-**施工完成（2026-11-06，未提交）。**
+**施工完成（2026-11-06，已提交 `a464c12`）。**
 
 - `okxsdk/transport.py:161` 的 `data=body` 改为 `content=body`，一行；其余不动。
 - 新增 `test/unit/okxsdk/test_transport.py::TestPostBodyEncoding.test_post_does_not_emit_the_httpx_data_deprecation`：用 `warnings.catch_warnings` 捕获 POST 期间的 DeprecationWarning，断言不含 httpx 的 `content=<...>` 告警。**改动前红**（捕到 `Use 'content=<...>' to upload raw bytes/text content.`），**改动后绿**——TDD 先行。
 - 验收：`pytest` 852 passed / 336 subtests；`ruff check okxsdk/` 通过；普通跑法已无 warnings summary（原 12 条 httpx 告警全消失）；`pytest -q -W error::DeprecationWarning -W ignore::pytest.PytestDeprecationWarning` 全仓 852 passed。
 - 裸 `-W error::DeprecationWarning` 会撞上 pytest-asyncio 在 `pytest_configure` 阶段的 `asyncio_default_fixture_loop_scope` 未设置告警（`INTERNALERROR`），与被测代码无关；按本单预留的豁免口径记录，未改 `pytest.ini`。
-- 状态暂留 `needs-triage`：代码已施工但未提交，无 commit hash 可写 `Done in:`；提交后再转 `resolved`。
+- 已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
 ## Comments
 
 - 2026-11-06 审查提出：P1。修复最小、零测试改动。
-- 2026-11-06 用户确认机械项，直接施工；TDD 红→绿，未提交。
+- 2026-11-06 用户确认机械项，直接施工；TDD 红→绿，已提交 `a464c12`。

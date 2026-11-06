@@ -1,7 +1,8 @@
 # 02 · debug 语义：日志脱敏与实例级开关
 
 Type: grilling
-Status: ready-for-agent
+Status: resolved
+Done in: a464c12
 Blocked by: —
 
 ## Question
@@ -54,9 +55,9 @@ Blocked by: —
 - 补 2 条契约测试到 `test/unit/okxsdk/test_logging.py`：日志不含凭据；连续建两个 debug 取值不同的实例后模块 logger level 不变。
 - 不选 B（排障价值太低）、C（`debug=True` 失去意义）。
 - ADR-0020 头部提案状态行已删除，Considered Options 里「保留字段名、值打掩码」标为拍板采纳项。
-- 状态暂留 `ready-for-agent`：代码已施工并验证但未提交，无 commit hash 可写 `Done in:`；提交后再转 `resolved`。
+- 已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
-**施工（2026-11-06，并行子代理 B，未提交）**：
+**施工（2026-11-06，并行子代理 B，已提交 `a464c12`）**：
 
 - `okxsdk/utils.py` 新增 `_masked_header()` 返回脱敏副本，`get_header` / `get_header_no_sign` 的 debug 行改打印副本；真正返回给请求的 header 不变。
 - `okxsdk/websocket/WsBaseAsync.py` 删 `logger.setLevel(logging.DEBUG)`，login debug 行把 `apiKey` / `passphrase` / `sign` 置 `***` 后再打印，保留 op/args 结构。
@@ -67,4 +68,4 @@ Blocked by: —
 ## Comments
 
 - 2026-11-06 审查提出：P1。对应 ADR-0020。
-- 2026-11-06 用户逐条拍板取 A、两张 ADR 都生效；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent`。
+- 2026-11-06 用户逐条拍板取 A、两张 ADR 都生效；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent` → `resolved`（`a464c12`）。

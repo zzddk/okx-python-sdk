@@ -1,7 +1,8 @@
 # 04 · 声明的 Python 支持面与 CI 对齐
 
 Type: grilling
-Status: ready-for-agent
+Status: resolved
+Done in: a464c12
 Blocked by: —
 
 ## Question
@@ -35,7 +36,7 @@ Blocked by: —
 2. `ruff check okxsdk/` 在新 target-version 下通过。
 3. `python -m build --no-isolation` + `twine check` 通过，且不再出现 `License classifiers are deprecated` 告警；wheel 仍含 LICENSE 与 `py.typed`。
 4. CHANGELOG 记一条 Changed；若下限提高属破坏性，按 ADR-0004 判断是否要进 minor 批次。
-5. ADR-0021 已拍板生效、头部提案状态行已删除；本单代码已施工并验证但未提交，暂留 `ready-for-agent`，提交后再转 `resolved` 并补 `Done in:`。
+5. ADR-0021 已拍板生效、头部提案状态行已删除；本单已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
 ## Answer
 
@@ -46,9 +47,9 @@ Blocked by: —
 - CHANGELOG 记一条 Changed。**下限提高是否属破坏性、要不要进 minor 批次，按 ADR-0004 另判**，不在本次拍板范围内。
 - 不选 B（3.7 已 EOL、`setup-python` 未必提供，`int | None` 静态口径要额外处理）、C（多一个 CI 作业，收益不抵成本）。
 - ADR-0021 头部提案状态行已删除，正文「具体取 3.9 / 3.8 / 3.7 由工单 04 拍板」改为「工单 04 已拍板取 3.9」，Considered Options 的 A 标为拍板采纳项。
-- 状态暂留 `ready-for-agent`：代码已施工并验证但未提交，无 commit hash 可写 `Done in:`；提交后再转 `resolved`。
+- 已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
-**施工（2026-11-06，并行子代理 C，未提交）**：
+**施工（2026-11-06，并行子代理 C，已提交 `a464c12`）**：
 
 - `setup.py`：`>=3.9`、删 3.7 / 3.8 classifiers、`license="MIT"`、顺手把 `import okxsdk` 移到顶部（消 E402）。
 - `ruff.toml`：`py37` → `py39`；注释由主线程同步为「覆盖 okxsdk/ 与 test/unit/」。
@@ -59,4 +60,4 @@ Blocked by: —
 ## Comments
 
 - 2026-11-06 审查提出：P2。核实过 httpx 0.24.0 元数据，「3.7 无法安装」是误判，未列入发现。
-- 2026-11-06 用户逐条拍板取 A、两张 ADR 都生效；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent`。
+- 2026-11-06 用户逐条拍板取 A、两张 ADR 都生效；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent` → `resolved`（`a464c12`）。

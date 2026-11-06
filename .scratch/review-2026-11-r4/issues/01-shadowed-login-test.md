@@ -1,7 +1,8 @@
 # 01 · 被遮蔽的登录测试与 lint 门禁范围
 
 Type: grilling
-Status: ready-for-agent
+Status: resolved
+Done in: a464c12
 Blocked by: —
 
 ## Question
@@ -50,9 +51,9 @@ Blocked by: —
 - `:71` 的类改名（如 `TestWsPrivateAsyncLoginPayload`），恢复 `test_login_goes_through_the_shared_payload_builder`；顺手清掉 `test/test_ws_private_async.py` / `test/test_ws_public_async.py` 的 2×F401、`test/test_market.py` 的 2×E402、`setup.py` 的 1×E402，让新门禁一次绿。
 - 不选 B：全仓 `ruff check .` 要维护排除清单，并把 1630 行未维护的集成测试拉进视野。不选 C：白名单只覆盖列出来的名字，挡不住新的重名。
 - 施工前基线已随并发 effort 变为 851 passed / 336 subtests；验收按「当前基线 +1 passed」判定，不写死 846。
-- 状态暂留 `ready-for-agent`：代码已施工并验证但未提交，无 commit hash 可写 `Done in:`；提交后再转 `resolved`。
+- 已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
-**施工（2026-11-06，并行子代理 A，未提交）**：
+**施工（2026-11-06，并行子代理 A，已提交 `a464c12`）**：
 
 - `test/unit/okxsdk/websocket/test_ws_private_async.py:71` 的类改名 `TestWsPrivateAsyncLoginPayload`，被遮蔽用例重新被 `--collect-only` 收集。
 - 新增 `test/unit/okxsdk/test_no_duplicate_test_classes.py`：AST 守卫断言同文件无重名类、同类内无重名方法，失败时点名文件与名字；已用「改回重名 → 守卫红 → 改回」验证。
@@ -62,4 +63,4 @@ Blocked by: —
 ## Comments
 
 - 2026-11-06 审查提出（`/ub-mode 审查整个项目`）：P0，本轮唯一正确性问题，也是其余 P2 lint 残留的根因。
-- 2026-11-06 用户逐条拍板取 A；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent`。
+- 2026-11-06 用户逐条拍板取 A；结论落在 `## Answer`，状态 `needs-triage` → `ready-for-agent` → `resolved`（`a464c12`）。

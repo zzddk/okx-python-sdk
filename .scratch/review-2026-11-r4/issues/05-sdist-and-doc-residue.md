@@ -1,7 +1,8 @@
 # 05 · sdist 清理与改名后的文档残留
 
 Type: task
-Status: needs-triage
+Status: resolved
+Done in: a464c12
 Blocked by: —
 
 ## Question
@@ -36,7 +37,7 @@ Blocked by: —
 
 ## Answer
 
-**施工完成（2026-11-06，未提交）。**
+**施工完成（2026-11-06，已提交 `a464c12`）。**
 
 - `MANIFEST.in` 加 `prune test`；重建 sdist 后 `tar tzf dist/*.tar.gz | grep '/test/'` 为空（原 19 个顶层集成测试文件不再随 sdist 发布）。
 - `CHANGELOG.md:3` 标题行 `python-okx` → `okx-python-sdk`；第 9 / 14 / 26 / 529 行的 `python-okx` 是 Migration 与历史叙述，按 ADR-0019 保留。
@@ -44,9 +45,9 @@ Blocked by: —
 - `.gitignore` 补末尾换行。
 - 验收：`python -m build --no-isolation` + `twine check` 均 PASSED；wheel 仍含 `licenses/LICENSE` 与 `okxsdk/py.typed`；构建产物已清理。
 - 构建仍报 `License classifiers are deprecated`：那是工单 04（SPDX 表达式）的范围，本单不动。
-- 状态暂留 `needs-triage`：代码已施工但未提交，提交后再转 `resolved` 并补 `Done in:`。
+- 已提交于 `a464c12`，Status 转 `resolved`，`Done in:` 见文件头。
 
 ## Comments
 
 - 2026-11-06 审查提出：P2 机械清理。
-- 2026-11-06 用户确认机械项，直接施工；未提交。
+- 2026-11-06 用户确认机械项，直接施工；已提交 `a464c12`。

@@ -1,6 +1,6 @@
 # 地图：2026-11-06 全项目审查（review-2026-11-r4）
 
-> **状态（2026-11-06）**：01 / 02 / 04 已逐条拍板（均取 A），由 3 个并行子代理施工、主线程集成验证通过；`docs/adr/0020`、`0021` 已定稿生效；03 / 05 已施工并验证。**五张工单全部已施工、未提交** —— 01 / 02 / 04 停在 `ready-for-agent`，03 / 05 暂留 `needs-triage`；提交后统一转 `resolved` 并补 `Done in:`。
+> **状态（2026-11-06）**：01 / 02 / 04 已逐条拍板（均取 A），由 3 个并行子代理施工、主线程集成验证通过；`docs/adr/0020`、`0021` 已定稿生效；03 / 05 已施工并验证。**五张工单全部已施工并提交于 `a464c12`**，状态统一转 `resolved`，文件头补了 `Done in:`。
 > **补记（同日后段）**：发现一处本轮遗漏的 P0，由并发 effort `.scratch/bug-hunt-2026-11-06/` 修复（0.17.0 把网络主机名一并改名）。用户拍板补 `docs/adr/0022` 并把修复 + 回归测试提交于 `7bbfa98`（只 commit，未 push、未发版）；详见 `spec.md` 第 7 节。
 
 Labels: wayfinder:map
@@ -26,15 +26,15 @@ Labels: wayfinder:map
 
 ## Decisions so far
 
-- [01 · 被遮蔽的登录测试与 lint 门禁范围](issues/01-shadowed-login-test.md)：**拍板 A，已施工未提交**——CI 并列 `ruff check test/unit/`、AST 重名守卫、类改名恢复契约用例、清 F401/E402；门禁不扩到 notebook 与顶层集成测试。不选 B / C。
-- [02 · debug 语义](issues/02-debug-semantics.md)：**拍板 A，已施工未提交**——保留字段名、值打掩码 `***`；删 `logger.setLevel` 改回实例级；补 2 条契约测试。ADR-0020 按 A 定稿生效。
-- [04 · Python 支持面对齐](issues/04-python-support-matrix.md)：**拍板 A，已施工未提交**——收窄到 `>=3.9`、删 3.7/3.8 classifiers、`ruff py39`、CI 矩阵不动、SPDX `license="MIT"`。ADR-0021 按 A 定稿生效。下限提高是否进 minor 批次按 ADR-0004 另判。
-- [03 · POST 改用 content=](issues/03-httpx-content.md)：机械项，**已施工未提交**——`data=body` → `content=body`，新增 `warnings.catch_warnings` 契约测试（改动前红、改动后绿）；12 条 httpx 告警清零。
-- [05 · sdist 清理与文档残留](issues/05-sdist-and-doc-residue.md)：机械项，**已施工未提交**——`MANIFEST.in` 加 `prune test`、CHANGELOG 标题行、domain.md 示例树、`.gitignore` 换行；sdist 不再夹带 `test/`。
+- [01 · 被遮蔽的登录测试与 lint 门禁范围](issues/01-shadowed-login-test.md)：**拍板 A，已提交 `a464c12`**——CI 并列 `ruff check test/unit/`、AST 重名守卫、类改名恢复契约用例、清 F401/E402；门禁不扩到 notebook 与顶层集成测试。不选 B / C。
+- [02 · debug 语义](issues/02-debug-semantics.md)：**拍板 A，已提交 `a464c12`**——保留字段名、值打掩码 `***`；删 `logger.setLevel` 改回实例级；补 2 条契约测试。ADR-0020 按 A 定稿生效。
+- [04 · Python 支持面对齐](issues/04-python-support-matrix.md)：**拍板 A，已提交 `a464c12`**——收窄到 `>=3.9`、删 3.7/3.8 classifiers、`ruff py39`、CI 矩阵不动、SPDX `license="MIT"`。ADR-0021 按 A 定稿生效。下限提高是否进 minor 批次按 ADR-0004 另判。
+- [03 · POST 改用 content=](issues/03-httpx-content.md)：机械项，**已提交 `a464c12`**——`data=body` → `content=body`，新增 `warnings.catch_warnings` 契约测试（改动前红、改动后绿）；12 条 httpx 告警清零。
+- [05 · sdist 清理与文档残留](issues/05-sdist-and-doc-residue.md)：机械项，**已提交 `a464c12`**——`MANIFEST.in` 加 `prune test`、CHANGELOG 标题行、domain.md 示例树、`.gitignore` 换行；sdist 不再夹带 `test/`。
 
 ## Not yet specified
 
-（无——五张工单全部已施工。剩下的都是决策而非规格：提交、转 `resolved`、0.17.1 发版、下限提高是否进 minor 批次。）
+（无——五张工单全部已施工并提交。剩下的都是决策而非规格：0.17.1 发版、下限提高是否进 minor 批次、任何 push。）
 
 ## Out of scope
 
@@ -46,8 +46,8 @@ Labels: wayfinder:map
 
 ## 工单索引
 
-- [01 · 被遮蔽的登录测试与 lint 门禁范围](issues/01-shadowed-login-test.md) — ready-for-agent（P0，拍板 A；已施工 / 待提交）
-- [02 · debug 语义：日志脱敏与实例级开关](issues/02-debug-semantics.md) — ready-for-agent（P1，拍板 A；已施工 / 待提交；ADR-0020 已生效）
-- [03 · POST 改用 content=](issues/03-httpx-content.md) — needs-triage（P1，已施工 / 待提交）
-- [04 · 声明的 Python 支持面与 CI 对齐](issues/04-python-support-matrix.md) — ready-for-agent（P2，拍板 A；已施工 / 待提交；ADR-0021 已生效）
-- [05 · sdist 清理与改名后的文档残留](issues/05-sdist-and-doc-residue.md) — needs-triage（P2，已施工 / 待提交）
+- [01 · 被遮蔽的登录测试与 lint 门禁范围](issues/01-shadowed-login-test.md) — resolved（P0，拍板 A；Done in `a464c12`）
+- [02 · debug 语义：日志脱敏与实例级开关](issues/02-debug-semantics.md) — resolved（P1，拍板 A；Done in `a464c12`；ADR-0020 已生效）
+- [03 · POST 改用 content=](issues/03-httpx-content.md) — resolved（P1；Done in `a464c12`）
+- [04 · 声明的 Python 支持面与 CI 对齐](issues/04-python-support-matrix.md) — resolved（P2，拍板 A；Done in `a464c12`；ADR-0021 已生效）
+- [05 · sdist 清理与改名后的文档残留](issues/05-sdist-and-doc-residue.md) — resolved（P2；Done in `a464c12`）
