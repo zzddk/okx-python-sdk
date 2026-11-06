@@ -1,7 +1,7 @@
 """HTTP header names, HTTP verbs, base URL and the credential sentinel."""
 
 # Http header
-API_URL = 'https://www.okxsdk.com'
+API_URL = 'https://www.okx.com'
 
 CONTENT_TYPE = 'Content-Type'
 OK_ACCESS_KEY = 'OK-ACCESS-KEY'

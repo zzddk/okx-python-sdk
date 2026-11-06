@@ -10,7 +10,7 @@ def publicCallback(message):
 
 async def main():
     # url = "wss://wspap.okex.com:8443/ws/v5/public?brokerId=9999"
-    url = "wss://wspap.okxsdk.com:8443/ws/v5/public?brokerId=9999"
+    url = "wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999"
     ws = WsPublicAsync(url=url, debug=True)  # Enable debug logging
     await ws.start()
     args = []
@@ -42,7 +42,7 @@ async def test_business_channel_with_login():
     Test business channel login functionality
     Business channel requires login to subscribe to certain private data
     """
-    url = "wss://wspap.okxsdk.com:8443/ws/v5/business?brokerId=9999"
+    url = "wss://wspap.okx.com:8443/ws/v5/business?brokerId=9999"
     ws = WsPublicAsync(
         url=url,
         apiKey="your apiKey",
@@ -65,7 +65,7 @@ async def test_business_channel_with_login():
 
 async def test_send_method():
     """Test generic send method"""
-    url = "wss://wspap.okxsdk.com:8443/ws/v5/public?brokerId=9999"
+    url = "wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999"
     ws = WsPublicAsync(url=url, debug=True)
     await ws.start()
 
