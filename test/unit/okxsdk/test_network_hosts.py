@@ -21,12 +21,12 @@ from okxsdk.websocket.WsPublicAsync import WsPublicAsync
 
 EXPECTED_HOSTS = {
     'API_URL': 'https://www.okx.com',
-    'WS_PUBLIC_URL': 'wss://ws.okx.com:8443/ws/v5/public',
-    'WS_PRIVATE_URL': 'wss://ws.okx.com:8443/ws/v5/private',
-    'WS_BUSINESS_URL': 'wss://ws.okx.com:8443/ws/v5/business',
-    'WS_PUBLIC_DEMO_URL': 'wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999',
-    'WS_PRIVATE_DEMO_URL': 'wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999',
-    'WS_BUSINESS_DEMO_URL': 'wss://wspap.okx.com:8443/ws/v5/business?brokerId=9999',
+    'WS_PUBLIC_URL': 'wss://ws.okx.com/ws/v5/public',
+    'WS_PRIVATE_URL': 'wss://ws.okx.com/ws/v5/private',
+    'WS_BUSINESS_URL': 'wss://ws.okx.com/ws/v5/business',
+    'WS_PUBLIC_DEMO_URL': 'wss://wspap.okx.com/ws/v5/public?brokerId=9999',
+    'WS_PRIVATE_DEMO_URL': 'wss://wspap.okx.com/ws/v5/private?brokerId=9999',
+    'WS_BUSINESS_DEMO_URL': 'wss://wspap.okx.com/ws/v5/business?brokerId=9999',
 }
 
 
@@ -49,6 +49,17 @@ class TestNetworkHostConstants(unittest.TestCase):
                 host = urlparse(value).hostname
                 self.assertTrue(host == 'okx.com' or host.endswith('.okx.com'),
                                 '%s points at %r' % (name, host))
+
+    def test_network_hosts_use_the_default_port(self):
+        """OKX retired :8443; no WebSocket host may pin a non-default port."""
+        ws_urls = {name: value for name, value in vars(consts).items()
+                   if isinstance(value, str)
+                   and value.startswith(('ws://', 'wss://'))}
+        self.assertTrue(ws_urls, 'no WebSocket host constants found')
+        for name, value in ws_urls.items():
+            with self.subTest(constant=name):
+                self.assertIn(urlparse(value).port, (None, 443),
+                              '%s pins an explicit port' % name)
 
 
 class TestNetworkHostCallSites(unittest.TestCase):

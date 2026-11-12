@@ -4,8 +4,8 @@ from okxsdk.websocket.WsPrivateAsync import WsPrivateAsync
 from test.config import get_api_credentials
 
 # Test constants
-WS_PRIVATE_URL = "wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999"
-WS_BUSINESS_URL = "wss://wspap.okx.com:8443/ws/v5/business?brokerId=9999"
+WS_PRIVATE_URL = "wss://wspap.okx.com/ws/v5/private?brokerId=9999"
+WS_BUSINESS_URL = "wss://wspap.okx.com/ws/v5/business?brokerId=9999"
 
 
 def privateCallback(message):
