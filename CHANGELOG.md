@@ -2,6 +2,19 @@
 
 All notable changes to `okx-python-sdk` are documented in this file.
 
+## [0.18.1]
+
+Bug-fix release. OKX retired WebSocket port 8443 for the public internet on
+2026-10-31 (Colo follows on 2026-11-16), so the six WebSocket endpoint
+constants no longer pin `:8443`; hosts and paths are unchanged and `wss://`
+defaults to 443. See ADR-0025.
+
+### Fixed
+- **WebSocket endpoints no longer target the retired port 8443.**
+  `WS_PUBLIC_URL`, `WS_PRIVATE_URL`, `WS_BUSINESS_URL` and their demo
+  counterparts dropped the explicit `:8443`. `test_network_hosts.py` now also
+  asserts that no WebSocket host constant pins a non-default port.
+
 ## [0.18.0]
 
 First usable release. 0.17.0 pointed every REST and WebSocket request at
