@@ -7,3 +7,7 @@
 **凭据缺席（No credentials）**：
 一个 REST 客户端或 WebSocket 会话在构造时没有被赋予可用于认证的凭据的状态。它是缺席，不是一个可发送的凭据值；跨过 Transport 到 WebSocket 会话的接缝时必须被识别为缺席，而不是被当作凭据传递。
 _Avoid_: 空凭据、匿名、未登录、无鉴权、未设置参数
+
+**实盘 / 模拟盘（Live / Demo trading）**：
+OKX 的两套相互隔离的交易环境。`flag='0'` 指向实盘、`'1'` 指向模拟盘；REST 用 `x-simulated-trading` 头区分，WebSocket 则切换到不同主机（模拟盘域名带 `brokerId=9999`）。
+_Avoid_: 正式盘、测试网、沙箱、paper
